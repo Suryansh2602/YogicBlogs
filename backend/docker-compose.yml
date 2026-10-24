@@ -1,0 +1,28 @@
+# Local development services for the backend. MySQL runs as a Windows service, so only Redis is here.
+#   Start:  docker compose up -d redis      (from backend/, reads REDIS_PASSWORD from backend/.env)
+#   Stop:   docker compose down             (data is kept in the redis-data volume)
+#   Shell:  docker compose exec redis sh -c 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli'
+name: nerve-nector
+
+services:
+  redis:
+    image: redis:8.10-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in backend/.env}
+    # Password required; append-only persistence so keys survive restarts.
+    # noeviction: never silently drop security state (rate-limit counters, pending logins) under memory pressure.
+    command: ['sh', '-c', 'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction']
+    # Bound to localhost only: not reachable from your network.
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis-data:

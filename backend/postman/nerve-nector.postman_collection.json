@@ -1,0 +1,78 @@
+{
+  "info": {
+    "name": "Nerve and Nector API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Nerve and Nector REST API (/api/v1). Import together with local.postman_environment.json and select the \"Nerve and Nector — Local\" environment.\n\nKept in sync with docs/api.md: every branch that changes an endpoint updates this file. Never store real secrets here."
+  },
+  "item": [
+    {
+      "name": "Health",
+      "description": "Dependency status. Public.",
+      "item": [
+        {
+          "name": "GET health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "200 {status:\"ok\", database, redis} when healthy; 503 {status:\"degraded\"} when MySQL (or an enabled Redis) is down. redis is \"disabled\" locally when REDIS_ENABLED=false."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 503', () => pm.expect(pm.response.code).to.be.oneOf([200, 503]));",
+                  "pm.test('reports database and redis state', () => { const b = pm.response.json(); pm.expect(b).to.have.keys('status', 'database', 'redis'); });",
+                  "pm.test('has rate-limit headers', () => pm.expect(pm.response.headers.has('RateLimit')).to.be.true);",
+                  "pm.test('hides the framework', () => pm.expect(pm.response.headers.has('X-Powered-By')).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown route returns safe 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "does-not-exist"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 with generic message', () => { pm.response.to.have.status(404); pm.expect(pm.response.json().error.message).to.eql('Route not found'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": []
+}
