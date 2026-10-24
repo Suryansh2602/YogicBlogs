@@ -1,0 +1,56 @@
+/* Blue lagoon palette. Components use these tokens, never raw colours. */
+:root {
+  --color-lagoon-900: #08434a;
+  --color-lagoon-700: #0e7c86;
+  --color-lagoon-500: #2bb3b1;
+  --color-lagoon-300: #7fd6d0;
+  --color-lagoon-100: #e3f6f4;
+
+  --color-bg: #f7fbfb;
+  --color-surface: #ffffff;
+  --color-text: #1d2b2e;
+  --color-text-muted: #5a6b6e;
+  --color-primary: var(--color-lagoon-700);
+  --color-primary-contrast: #ffffff;
+  --color-border: #d6e6e5;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 10px;
+  --space: 1rem;
+  --max-width: 72rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b1a1c;
+    --color-surface: #112629;
+    --color-text: #e6f2f1;
+    --color-text-muted: #9bb3b2;
+    --color-primary: var(--color-lagoon-500);
+    --color-primary-contrast: #06282b;
+    --color-border: #1f3b3e;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
