@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Env files (keep the .example ones)
+.env
+.env.*
+!.env.example
+
+# Builds
+frontend/dist/
+backend/dist/
+coverage/
+
+# Runtime data
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/logs/*
+!backend/logs/.gitkeep
+*.log
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
