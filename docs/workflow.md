@@ -3,7 +3,7 @@
 Every change flows through the same stream, one branch per feature or task.
 
 ```
-main ──► branch ──► 1. Developer ──► 2. Reviewer ──► 3. Tester ──► commit ──► PR ──► merge to main
+main ──► branch ──► 1. Developer ──► 2. Reviewer ──► 3. Tester ──► commit + push ──► 4. Owner review ──► merge to main
 ```
 
 ## Branches
@@ -22,6 +22,7 @@ One branch per feature or task, cut from an up-to-date `main`. Never commit to `
 - Write the code following the existing structure (`backend/src/modules/<feature>`, `frontend/src/features/<feature>`).
 - Validate all input with zod; parameterised SQL only; no secrets in code.
 - Write unit and integration tests alongside the code.
+- Update `docs/` (architecture, api, database, plan status) and the Postman collection (`backend/postman/`) in the same branch.
 
 ## 2. Reviewer
 
@@ -40,7 +41,15 @@ Findings are listed with a severity and fixed (or explicitly accepted with a rea
   - `npm run test:coverage` — unit + integration, coverage ≥ 80% lines / 75% branches
   - `npm audit --omit=dev --audit-level=high`
   - client only: `npm run build` (also checks no secret-like `VITE_*` variable exists)
-- Checks staged files: no `.env`, keys or credentials.
+- **Load test** (`npm run test:load` in `backend/`): thousands of concurrent requests against the real API; throughput, p99 latency and error rate must meet the thresholds, and a single-IP flood must be answered with fast `429`s while the server stays responsive.
+- **Attack-prevention tests** (`backend/tests/security/`): hostile requests (oversized and deeply nested bodies, malformed JSON, prototype pollution, SQL-injection and XSS strings, path traversal, bad methods, foreign origins, huge headers, slow connections) plus feature-specific attacks (brute force, token tampering, privilege escalation, IDOR, CSRF).
+- **Credential check before every commit/push:** `.env`, `.env.test` and `backend/.local/` are git-ignored and not staged; the real secret values from the local env files are compared against the staged diff (without printing them); staged files are scanned for keys, passwords and tokens.
 - Adds missing tests for anything the review flagged, including abuse cases (bad input, missing auth, wrong role).
 
-Only when all three stages pass is the work committed and a PR opened. There is no CI yet, so `npm run qa` must pass locally before every commit.
+Only when all three stages pass is the work committed and pushed. There is no CI yet, so `npm run qa` must pass locally before every commit.
+
+## 4. Owner review
+
+- Every branch is pushed to GitHub; the owner opens the branch (or its pull request) and reviews the diff, and tests the API in Postman.
+- The owner is notified before any merge, with: what the branch contains, the Reviewer findings, the Tester results (incl. load and attack tests), and where to look.
+- **Nothing is merged into `main` without the owner's explicit approval for that branch.**
