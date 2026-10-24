@@ -15,6 +15,13 @@ describe('ApiError', () => {
     expect(err.message).toBe(message);
   });
 
+  it('skips stack capture for expected 4xx errors but keeps it for 5xx', () => {
+    const before = Error.stackTraceLimit;
+    expect(ApiError.notFound().stack).not.toMatch(/\n\s+at /);
+    expect(new ApiError(503, 'Unavailable').stack).toMatch(/\n\s+at /);
+    expect(Error.stackTraceLimit).toBe(before); // global setting restored
+  });
+
   it('keeps custom messages and details', () => {
     const err = ApiError.badRequest('Bad title', [{ path: 'title' }]);
     expect(err.message).toBe('Bad title');
