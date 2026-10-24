@@ -30,13 +30,13 @@ If a secret is ever committed or pasted somewhere: rotate it immediately (genera
 The app connects as its own user with only the rights it needs, never `root`:
 
 ```sql
-CREATE DATABASE nerve_nector CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE DATABASE NerveAndNectar CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 CREATE USER 'nerve_app'@'localhost' IDENTIFIED BY '<generated password>';
-GRANT SELECT, INSERT, UPDATE, DELETE ON nerve_nector.* TO 'nerve_app'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON NerveAndNectar.* TO 'nerve_app'@'localhost';
 ```
 
 Migrations run with a separate user that also has `CREATE, ALTER, INDEX, DROP, REFERENCES`.
-All queries go through `query()` in `config/db.js` with placeholders; multi-statement queries are disabled.
+All queries go through Sequelize models (parameterised); raw SQL, if ever needed, must use `replacements`/bind parameters. Multi-statement queries are disabled at the driver.
 
 ## Frontend / backend separation
 
