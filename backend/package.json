@@ -24,7 +24,8 @@
     "db:migrate": "node --env-file-if-exists=.env src/db/cli.js up",
     "db:migrate:undo": "node --env-file-if-exists=.env src/db/cli.js down",
     "db:migrate:status": "node --env-file-if-exists=.env src/db/cli.js status",
-    "db:seed": "node --env-file-if-exists=.env src/db/cli.js seed"
+    "db:seed": "node --env-file-if-exists=.env src/db/cli.js seed",
+    "test:load": "node tests/load/load-test.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

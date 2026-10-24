@@ -27,4 +27,9 @@ export default [
     files: ['tests/**/*.js', '*.config.js'],
     rules: { 'security/detect-non-literal-fs-filename': 'off' },
   },
+  {
+    // CLI tool: printing the results table is its job. The server itself must use the redacting logger.
+    files: ['tests/load/**/*.js'],
+    rules: { 'no-console': 'off' },
+  },
 ];

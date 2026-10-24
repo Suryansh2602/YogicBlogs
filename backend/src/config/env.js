@@ -9,6 +9,8 @@ const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(5000),
+    // Optional override; defaults: debug (development), info (production), silent (test).
+    LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
     // Comma-separated list: the client is deployed separately, possibly on several origins.
     CLIENT_ORIGIN: z
       .string()
