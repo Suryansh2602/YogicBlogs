@@ -1,4 +1,5 @@
 import { createApp } from './app.js';
+import { createHttpServer } from './httpServer.js';
 import { env } from './config/env.js';
 import { closeDatabase, pingDatabase } from './config/db.js';
 import { closeRedis, connectRedis, isRedisEnabled } from './config/redis.js';
@@ -30,7 +31,7 @@ async function start() {
     process.exit(1);
   }
 
-  const server = createApp().listen(env.PORT, () => {
+  const server = createHttpServer(createApp()).listen(env.PORT, () => {
     logger.info(`API listening on http://localhost:${env.PORT}/api/v1`);
   });
 

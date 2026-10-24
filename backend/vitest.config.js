@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['tests/unit/**/*.test.js', 'tests/integration/**/*.test.js'],
+    include: ['tests/unit/**/*.test.js', 'tests/integration/**/*.test.js', 'tests/security/**/*.test.js'],
     // tests/db needs real MySQL + Redis: run with npm run test:db
     restoreMocks: true,
     // Test-only values so config/env.js validates without a real .env file.

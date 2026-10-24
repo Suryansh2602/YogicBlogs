@@ -16,10 +16,10 @@ export function createRedisStore(name, client = redis) {
 }
 
 /** General limit for every request. Fails open if Redis is down so a cache outage isn't a site outage. */
-export function createApiLimiter(store) {
+export function createApiLimiter(store, limit = 300) {
   return rateLimit({
     windowMs: FIFTEEN_MINUTES,
-    limit: 300,
+    limit,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     store,
