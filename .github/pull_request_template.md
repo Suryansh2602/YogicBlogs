@@ -25,7 +25,11 @@
 - [ ] Attack-prevention tests pass (`tests/security/`)
 - [ ] Credential check: no `.env`, keys or secret values in the diff
 
-## 4. Owner review
+## 4. Feedback
+
+- [ ] Feedback log `docs/feedback/<branch>.md` updated; every item fixed or accepted
+
+## 5. Owner review
 
 - [ ] Diff reviewed on GitHub
 - [ ] Tested in Postman (`backend/postman/`)

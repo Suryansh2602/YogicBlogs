@@ -3,7 +3,10 @@
 Every change flows through the same stream, one branch per feature or task.
 
 ```
-main ──► branch ──► 1. Developer ──► 2. Reviewer ──► 3. Tester ──► commit + push ──► 4. Owner review ──► merge to main
+main ──► branch ──► 1. Developer ──► 2. Reviewer ──► 3. Tester ──► 4. Feedback ──┐
+                         ▲                                            │ (fix / accept)
+                         └────────────── loop until clean ◄───────────┘
+                                          ──► push ──► 5. Owner review ──► merge to main
 ```
 
 ## Branches
@@ -46,9 +49,13 @@ Findings are listed with a severity and fixed (or explicitly accepted with a rea
 - **Credential check before every commit/push:** `.env`, `.env.test` and `backend/.local/` are git-ignored and not staged; the real secret values from the local env files are compared against the staged diff (without printing them); staged files are scanned for keys, passwords and tokens.
 - Adds missing tests for anything the review flagged, including abuse cases (bad input, missing auth, wrong role).
 
-Only when all three stages pass is the work committed and pushed. There is no CI yet, so `npm run qa` must pass locally before every commit.
+Only when every stage passes and the latest feedback round is clean is the work pushed (pushing means: tests pass and the code is production-ready). There is no CI yet, so `npm run qa` must pass locally before every commit.
 
-## 4. Owner review
+## 4. Feedback
+
+After **every** test run (unit, integration, attack, load, DB) and every review, the findings are written to `docs/feedback/<branch-name>.md`: round, source, finding, severity, decision, change. Each item is reviewed and either **fixed** or **accepted with a reason**. The branch loops back to the Developer until a round comes back clean. Only then is it pushed.
+
+## 5. Owner review
 
 - Every branch is pushed to GitHub; the owner opens the branch (or its pull request) and reviews the diff, and tests the API in Postman.
 - The owner is notified before any merge, with: what the branch contains, the Reviewer findings, the Tester results (incl. load and attack tests), and where to look.
