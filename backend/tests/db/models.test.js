@@ -1,17 +1,19 @@
 import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ForeignKeyConstraintError, OptimisticLockError, UniqueConstraintError } from 'sequelize';
+import { OptimisticLockError, UniqueConstraintError } from 'sequelize';
+import { isInUseError, isMissingReferenceError } from '../../src/utils/dbErrors.js';
 import { connectAsApp, connectAsMigrator, inOneMinute, makeCondition, makeUser, resetTables } from './helpers.js';
 
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 
 describe('models against MySQL', () => {
-  let sequelize;
+  let app;
   let models;
   let migrator;
 
   beforeAll(() => {
-    ({ sequelize, models } = connectAsApp());
+    app = connectAsApp();
+    ({ models } = app);
     migrator = connectAsMigrator();
   });
 
@@ -20,7 +22,7 @@ describe('models against MySQL', () => {
   });
 
   afterAll(async () => {
-    await Promise.all([sequelize.close(), migrator.close()]);
+    await Promise.all([app.close(), migrator.close()]);
   });
 
   const refreshToken = (user, hashSeed) => ({
@@ -165,13 +167,13 @@ describe('models against MySQL', () => {
     it('refuses to delete a condition that still has articles', async () => {
       const condition = await makeCondition(models);
       await models.Article.create({ conditionId: condition.id, title: 'Article', slug: 'article' });
-      await expect(condition.destroy({ force: true })).rejects.toBeInstanceOf(ForeignKeyConstraintError);
+      await expect(condition.destroy({ force: true })).rejects.toSatisfy(isInUseError);
     });
 
     it('rejects an article for a condition that does not exist', async () => {
       await expect(
         models.Article.create({ conditionId: '01890000-0000-7000-8000-000000000000', title: 'Orphan', slug: 'orphan' }),
-      ).rejects.toBeInstanceOf(ForeignKeyConstraintError);
+      ).rejects.toSatisfy(isMissingReferenceError);
     });
 
     it('tracks bookmarks and reading progress for the user dashboard', async () => {

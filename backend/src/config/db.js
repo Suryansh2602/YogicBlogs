@@ -11,6 +11,7 @@ export function createSequelize({
   database = env.DB_NAME,
   username = env.DB_USER,
   password = env.DB_PASSWORD,
+  poolMax = env.DB_CONNECTION_LIMIT,
 } = {}) {
   return new Sequelize(database, username, password, {
     dialect: 'mysql',
@@ -19,7 +20,7 @@ export function createSequelize({
     timezone: '+00:00',
     // SQL logging can include row values, so it is debug-only and refused in production (config/env.js).
     logging: env.DB_LOGGING ? (sql) => logger.debug({ sql }, 'sql') : false,
-    pool: { max: env.DB_CONNECTION_LIMIT, min: 0, acquire: 30_000, idle: 10_000 },
+    pool: { max: poolMax, min: 0, acquire: 30_000, idle: 10_000 },
     dialectOptions: {
       // Never allow several statements in one query: closes off stacked-query SQL injection.
       multipleStatements: false,
@@ -35,12 +36,15 @@ export function createSequelize({
 }
 
 export const sequelize = createSequelize();
-export const models = initModels(sequelize, { auditSchema: env.AUDIT_DB_NAME });
+// The audit log lives in its own database (the app user may only INSERT/SELECT there). Sequelize can't
+// address another MySQL database from one instance, so the audit model gets its own small pool.
+export const auditSequelize = createSequelize({ database: env.AUDIT_DB_NAME, poolMax: 3 });
+export const models = initModels(sequelize, { auditSequelize });
 
 export async function pingDatabase() {
   await sequelize.authenticate({ logging: false });
 }
 
 export async function closeDatabase() {
-  await sequelize.close();
+  await Promise.all([sequelize.close(), auditSequelize.close()]);
 }

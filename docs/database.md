@@ -19,7 +19,7 @@ MySQL 8 holds everything permanent. Redis holds only short-lived, rebuildable da
 
 | MySQL user | Rights | Used by |
 |---|---|---|
-| `nerve_app` | `SELECT, INSERT, UPDATE, DELETE` on app DBs; **`SELECT, INSERT` only** on audit DBs | The running API |
+| `nerve_app` | `SELECT, INSERT, UPDATE, DELETE` on app DBs; **`SELECT, INSERT` only** on audit DBs | The running API (two pools: the app DB, and a small one for the audit DB) |
 | `nerve_migrator` | Plus `CREATE, ALTER, DROP, INDEX, REFERENCES` | `npm run db:migrate` and DB tests only |
 | `root` | Everything | Never used by the app. The owner uses it once to run `create-db-users.sql`. |
 
@@ -37,6 +37,7 @@ Setup script: [`backend/src/db/setup/create-db-users.sql`](../backend/src/db/set
 - **Unique among live rows:** a generated column `alive = IF(deleted_at IS NULL, 1, NULL)` plus `UNIQUE(col, alive)`. MySQL ignores NULLs in unique indexes, so soft-deleted rows don't block reusing a slug or email.
 - **Allowed values:** stored as `VARCHAR` and enforced twice, by the model (`isIn`) and by a MySQL `CHECK` constraint. Values live in `src/config/constants.js`. Adding one means updating the constant and adding a migration that updates the CHECK.
 - **Secrets:** stored only as SHA-256/HMAC hashes (`CHAR(64)`) or AES-256-GCM ciphertext. Never plain text.
+- **Foreign-key errors:** MySQL may report errno 1216/1217 (older codes) instead of 1451/1452. `src/utils/dbErrors.js` handles all four (400 for a missing reference, 409 for "still in use").
 - **Foreign keys:** owned data uses `ON DELETE CASCADE` (a user's sessions, 2FA, consents, bookmarks, progress). References use `SET NULL` (article → author, cover image). Required parents use `RESTRICT` (article → condition).
 
 ---

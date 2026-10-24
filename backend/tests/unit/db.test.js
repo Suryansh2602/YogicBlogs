@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { closeDatabase, createSequelize, models, pingDatabase, sequelize } from '../../src/config/db.js';
+import { auditSequelize, closeDatabase, createSequelize, models, pingDatabase, sequelize } from '../../src/config/db.js';
 
 describe('db', () => {
   it('configures Sequelize for MySQL with injection-safe, UTF-8, UTC settings', () => {
@@ -38,8 +38,10 @@ describe('db', () => {
     );
   });
 
-  it('places the audit log in the separate audit database', () => {
-    expect(models.AuditLog.getTableName()).toEqual(expect.objectContaining({ tableName: 'audit_logs', schema: 'NerveAndNectar_test_audit' }));
+  it('places the audit log on its own connection to the separate audit database', () => {
+    expect(models.AuditLog.sequelize).toBe(auditSequelize);
+    expect(auditSequelize.config.database).toBe('NerveAndNectar_test_audit');
+    expect(auditSequelize.options.pool.max).toBe(3);
   });
 
   it('pingDatabase() authenticates without logging', async () => {
@@ -53,9 +55,11 @@ describe('db', () => {
     await expect(pingDatabase()).rejects.toThrow('ECONNREFUSED');
   });
 
-  it('closeDatabase() closes the pool', async () => {
-    const spy = vi.spyOn(sequelize, 'close').mockResolvedValue();
+  it('closeDatabase() closes both pools', async () => {
+    const app = vi.spyOn(sequelize, 'close').mockResolvedValue();
+    const audit = vi.spyOn(auditSequelize, 'close').mockResolvedValue();
     await closeDatabase();
-    expect(spy).toHaveBeenCalledOnce();
+    expect(app).toHaveBeenCalledOnce();
+    expect(audit).toHaveBeenCalledOnce();
   });
 });

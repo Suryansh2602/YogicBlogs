@@ -60,7 +60,16 @@ Final run (all PASS):
 
 ## Round 3 — real MySQL tests (`npm run test:db`)
 
-_Pending: waiting for the owner to run `create-db-users.sql`._
+The owner ran `create-db-users.sql`. Migrations were applied to `NerveAndNectar` and to the test database.
+
+| # | Source | Finding | Sev | Decision / change |
+|---|---|---|---|---|
+| 3.1 | DB test | Foreign-key violations came back as a generic `DatabaseError`. MySQL returned errno **1216** (`ER_NO_REFERENCED_ROW`), which Sequelize doesn't map (it only knows 1451/1452), so the API would have answered 500. | Medium | Fixed: `utils/dbErrors.js` recognises 1216, 1217, 1451 and 1452. The error handler maps a missing reference to 400 `INVALID_REFERENCE` and "still in use" to 409 `IN_USE`. |
+| 3.2 | DB test | Audit writes failed. Sequelize quotes `db.table` as one identifier for MySQL, so the cross-database model never worked. | High | Fixed: the audit log has its own small Sequelize pool (max 3) connected to the audit database |
+| 3.3 | DB test | `schema_migrations` used legacy `utf8mb3` (Umzug's default history model) | Low | Fixed: our own utf8mb4 history model, plus migration `…000600`, which converts existing history tables |
+| 3.4 | Error handler | DB errors (duplicate, stale version, model validation) all fell through to 500 | Medium | Fixed: 409 `CONFLICT`, 409 `STALE_VERSION`, 400 `VALIDATION_FAILED`. Errors now carry a machine-readable `code`. |
+
+Result: **25/25 real-MySQL tests** pass (the 4 Redis tests are skipped because Redis is off locally), and **98/98 hermetic tests** pass.
 
 ## Round 4 — Reviewer stage
 

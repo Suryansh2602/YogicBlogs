@@ -71,16 +71,16 @@ describe('schema (migrations)', () => {
   });
 
   it('models match the migrated columns (no drift)', async () => {
-    const { sequelize, models } = connectAsApp();
+    const app = connectAsApp();
     try {
-      const qi = sequelize.getQueryInterface();
-      for (const model of Object.values(models)) {
-        const columns = Object.keys(await qi.describeTable(model.getTableName()));
+      for (const model of Object.values(app.models)) {
+        // Each model through its own connection (the audit log uses the audit database).
+        const columns = Object.keys(await model.sequelize.getQueryInterface().describeTable(model.getTableName()));
         const attributes = Object.values(model.getAttributes()).map((a) => a.field);
         expect(columns.filter((c) => !DB_ONLY_COLUMNS.includes(c)).sort(), model.name).toEqual(attributes.sort());
       }
     } finally {
-      await sequelize.close();
+      await app.close();
     }
   });
 
@@ -96,14 +96,16 @@ describe('schema (migrations)', () => {
 });
 
 describe('least privilege', () => {
+  let conn;
   let app;
 
   beforeAll(() => {
-    app = connectAsApp().sequelize;
+    conn = connectAsApp();
+    app = conn.sequelize;
   });
 
   afterAll(async () => {
-    await app.close();
+    await conn.close();
   });
 
   it('the runtime app user cannot change the schema', async () => {

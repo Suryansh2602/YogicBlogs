@@ -2,10 +2,16 @@ import { env } from '../../src/config/env.js';
 import { createSequelize } from '../../src/config/db.js';
 import { initModels } from '../../src/db/models/index.js';
 
-/** Connection as the runtime (least-privilege) user, with models registered. */
+/** Connections as the runtime (least-privilege) user (app DB + audit DB), with models registered. */
 export function connectAsApp() {
   const sequelize = createSequelize();
-  return { sequelize, models: initModels(sequelize, { auditSchema: env.AUDIT_DB_NAME }) };
+  const auditSequelize = createSequelize({ database: env.AUDIT_DB_NAME, poolMax: 2 });
+  return {
+    sequelize,
+    auditSequelize,
+    models: initModels(sequelize, { auditSequelize }),
+    close: () => Promise.all([sequelize.close(), auditSequelize.close()]),
+  };
 }
 
 /** Connection as the migrator user, for schema inspection and resetting data. */

@@ -7,11 +7,11 @@ import { initAuditLog } from './auditLog.model.js';
  * Register every model on a Sequelize instance and wire the associations.
  * Kept as a function (not import side effects) so tests can build models on their own instance.
  */
-export function initModels(sequelize, { auditSchema } = {}) {
+export function initModels(sequelize, { auditSequelize = sequelize } = {}) {
   const User = initUser(sequelize);
   const auth = initAuthModels(sequelize);
   const content = initContentModels(sequelize);
-  const AuditLog = initAuditLog(sequelize, { schema: auditSchema });
+  const AuditLog = initAuditLog(auditSequelize);
 
   const { OAuthAccount, RefreshToken, UserTwoFactor, TwoFactorBackupCode, AuthToken, UserConsent } = auth;
   const { Condition, Media, Article, ArticleBookmark, ReadingProgress } = content;
@@ -50,8 +50,8 @@ export function initModels(sequelize, { auditSchema } = {}) {
   Article.hasMany(ReadingProgress, { as: 'readingProgress', foreignKey: 'articleId', onDelete: 'CASCADE' });
   ReadingProgress.belongsTo(Article, { as: 'article', foreignKey: 'articleId' });
 
-  // No DB constraint: the audit DB is separate and entries must outlive the user.
-  AuditLog.belongsTo(User, { as: 'actor', foreignKey: 'actorId', constraints: false });
+  // AuditLog has no association: it lives in a separate database (own connection) and entries must
+  // outlive the users they mention. Look actors up by actorId when displaying the log.
 
   return { User, AuditLog, ...auth, ...content };
 }
