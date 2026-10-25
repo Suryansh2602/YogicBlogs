@@ -47,43 +47,54 @@
 
 .btn:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* Text colour is set for every state, so nothing (link styles, hover) can ever hide the label. */
+.btn--primary,
+.btn--primary:hover,
+.btn--primary:focus-visible {
+  color: var(--primary-contrast);
 }
 
 .btn--primary {
-  color: var(--primary-contrast);
   background: var(--primary);
-  box-shadow: 0 6px 18px -8px var(--primary);
-}
-
-/* A soft sheen sweeps across the primary button on hover. */
-.btn--primary::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
-  transform: translateX(-120%);
-  transition: transform 700ms var(--ease-out);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .btn--primary:hover:not(:disabled) {
   background: var(--primary-hover);
-  box-shadow: 0 10px 26px -10px var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.3);
 }
 
-.btn--primary:hover:not(:disabled)::after {
-  transform: translateX(120%);
+.btn--primary:disabled {
+  color: var(--text-muted);
+  background: var(--surface-muted);
 }
 
-.btn--secondary {
+/* Optional arrow on call-to-action buttons: nudges forward on hover. */
+.btn__arrow {
+  display: inline-block;
+  transition: transform var(--dur) var(--ease-spring);
+}
+
+.btn:hover:not(:disabled) .btn__arrow {
+  transform: translateX(4px);
+}
+
+.btn--secondary,
+.btn--secondary:focus-visible {
   color: var(--text);
   background: var(--surface);
   border-color: var(--border-strong);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  border-color: var(--primary);
   color: var(--primary);
+  background: var(--surface);
+  border-color: var(--primary);
+  transform: translateY(-1px);
 }
 
 .btn--ghost {
@@ -103,6 +114,21 @@
 
 .btn--danger:hover:not(:disabled) {
   background: var(--danger-bg);
+}
+
+.btn--secondary:disabled,
+.btn--ghost:disabled,
+.btn--danger:disabled {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* Pressed: placed after the hover rules so it wins while the button is held down. */
+.btn--primary:active:not(:disabled),
+.btn--secondary:active:not(:disabled),
+.btn--ghost:active:not(:disabled),
+.btn--danger:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn__label {
@@ -259,11 +285,46 @@
 }
 
 .check__input {
+  appearance: none;
+  display: grid;
+  place-content: center;
   width: 1.15rem;
   height: 1.15rem;
   margin: 0.2rem 0 0;
-  accent-color: var(--primary);
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 5px;
   cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.check__input:hover {
+  border-color: var(--primary);
+}
+
+.check__input:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.check__input::before {
+  content: '';
+  width: 0.62rem;
+  height: 0.62rem;
+  background: var(--primary-contrast);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+  transform: scale(0);
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+
+.check__input:checked::before {
+  transform: scale(1);
+}
+
+.check--invalid .check__input {
+  border-color: var(--danger);
 }
 
 .check__label {
@@ -319,14 +380,17 @@
 .otp {
   display: flex;
   justify-content: center;
-  gap: 0.55rem;
+  gap: clamp(0.3rem, 1.5vw, 0.55rem);
+  min-inline-size: 0;
   border: 0;
   padding: 0;
   margin: 0 0 var(--space-4);
 }
 
 .otp__box {
-  width: 3rem;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 3rem;
   height: 3.5rem;
   text-align: center;
   font-family: var(--font-serif);
@@ -365,12 +429,6 @@
   }
 }
 
-@media (max-width: 380px) {
-  .otp__box {
-    width: 2.6rem;
-    height: 3.1rem;
-  }
-}
 
 /* ── Theme switcher ──────────────────────────────────────────────────────────────────────────── */
 .theme-switcher {

@@ -29,7 +29,7 @@ frontend/
 ├── scripts/              check-bundle-size.mjs (performance budget, part of npm run qa)
 ├── src/
 │   ├── components/
-│   │   ├── brand/        Logo (theme-aware), Mandala, LotusBloom
+│   │   ├── brand/        Logo (theme-aware), Mandala, LotusBloom, Nakshatra (stars), Yantra
 │   │   ├── motion/       BlurReveal, ShinyText, SpotlightCard, Aurora (CSS-only animation)
 │   │   ├── ui/           Button, TextField, PasswordField, Checkbox, Alert, OtpInput, ThemeSwitcher, Spinner
 │   │   └── layout/       Site shell (header/footer), AuthLayout (split screen with a verse)

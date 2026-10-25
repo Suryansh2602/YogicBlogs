@@ -53,13 +53,14 @@ p {
   margin: 0 0 var(--space-4);
 }
 
-a {
+/* Plain text links only: buttons rendered as links (.btn) keep their own colours in every state. */
+:where(a:not(.btn)) {
   color: var(--primary);
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 
-a:hover {
+:where(a:not(.btn)):hover {
   color: var(--primary-hover);
 }
 
@@ -91,19 +92,21 @@ svg {
   border: 0;
 }
 
+/* Hidden until a keyboard user tabs to it; no shadow while hidden (it used to smudge the top-left corner). */
 .skip-link {
   position: absolute;
   left: var(--space-4);
-  top: -3rem;
+  top: var(--space-4);
   z-index: 100;
   padding: var(--space-2) var(--space-4);
   background: var(--surface);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
+  transform: translateY(-200%);
 }
 
 .skip-link:focus {
-  top: var(--space-4);
+  transform: none;
+  box-shadow: var(--shadow);
 }
 
 /* Devanagari accents: a small cultural touch beside English text. */
@@ -173,8 +176,9 @@ svg {
   }
 }
 
+/* "backwards" (not "both"): once finished, the animation lets go of transform so hover effects work. */
 .rise-in {
-  animation: rise-in var(--dur-slow) var(--ease-out) both;
+  animation: rise-in var(--dur-slow) var(--ease-out) backwards;
   animation-delay: var(--delay, 0ms);
 }
 

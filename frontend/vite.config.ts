@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => {
       testTimeout: 20_000,
       // Most page tests cover the email flows; tests switch it off with vi.stubEnv where needed.
       env: { VITE_FEATURE_EMAIL: 'true' },
+      // CSS is skipped in tests except the theme tokens, which the contrast test reads (?raw).
+      css: { include: [/styles[\\/]tokens\.css/] },
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}', 'config/**/*.ts'],

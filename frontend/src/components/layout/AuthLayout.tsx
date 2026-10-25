@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Mandala } from '../brand/Mandala';
 import { LogoMark } from '../brand/Logo';
 import { Aurora } from '../motion/Aurora';
+import { Nakshatra } from '../brand/Nakshatra';
 import './layout.css';
 
 interface AuthLayoutProps {
@@ -24,6 +25,7 @@ export function AuthLayout({ title, subtitle, children, verse = DEFAULT_VERSE }:
     <div className="auth">
       <aside className="auth__art" aria-hidden="true">
         <Aurora />
+        <Nakshatra />
         <Mandala size={560} className="auth__mandala" />
         <div className="auth__verse">
           <LogoMark size={64} animated />

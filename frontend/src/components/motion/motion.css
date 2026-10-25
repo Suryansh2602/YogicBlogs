@@ -23,9 +23,9 @@
 .shiny-text {
   background: linear-gradient(
       110deg,
-      transparent 35%,
+      transparent 42%,
       var(--shine) 50%,
-      transparent 65%
+      transparent 58%
     )
     0 0 / 250% 100% no-repeat,
     linear-gradient(var(--primary), var(--primary));
@@ -60,24 +60,13 @@
     border-color var(--dur) var(--ease-out);
 }
 
-.spotlight-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  opacity: 0;
-  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), var(--accent-soft), transparent 45%);
-  transition: opacity var(--dur) var(--ease-out);
-}
-
+/* Hover: a clean lift with a tinted edge (no wash over the content). */
 .spotlight-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--border-strong);
-}
-
-.spotlight-card:hover::before {
-  opacity: 1;
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  box-shadow:
+    var(--shadow),
+    0 14px 28px -16px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Aurora ──────────────────────────────────────────────────────────────────────────────────── */

@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { LogoMark } from '../components/brand/Logo';
 import { Mandala } from '../components/brand/Mandala';
+import { Nakshatra } from '../components/brand/Nakshatra';
+import { Yantra } from '../components/brand/Yantra';
 import { Aurora } from '../components/motion/Aurora';
 import { BlurReveal } from '../components/motion/BlurReveal';
 import { ShinyText } from '../components/motion/ShinyText';
@@ -33,11 +35,15 @@ export default function HomePage() {
     <>
       <section className="hero">
         <Aurora />
+        <Nakshatra />
         <Mandala size={720} className="hero__mandala" />
         <div className="container hero__inner">
-          <LogoMark size={88} animated className="hero__mark" />
+          <div className="hero__emblem">
+            <Yantra size={190} className="hero__yantra" />
+            <LogoMark size={88} animated className="hero__mark" />
+          </div>
           <p className="eyebrow rise-in" style={{ '--delay': '150ms' } as CSSProperties}>
-            <span className="deva">स्वास्थ्य मार्ग</span> · The path to wellbeing
+            <span className="deva dandas">स्वास्थ्य मार्ग</span> The path to wellbeing
           </p>
           <h1 className="hero__title">
             <BlurReveal text="Ancient wisdom for" delay={250} />{' '}
@@ -53,11 +59,17 @@ export default function HomePage() {
             {user ? (
               <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="btn btn--primary btn--lg">
                 <span className="btn__label">Continue your path</span>
+                <span className="btn__arrow" aria-hidden="true">
+                  →
+                </span>
               </Link>
             ) : (
               <>
                 <Link to="/signup" className="btn btn--primary btn--lg">
                   <span className="btn__label">Begin free</span>
+                  <span className="btn__arrow" aria-hidden="true">
+                    →
+                  </span>
                 </Link>
                 <Link to="/signin" className="btn btn--secondary btn--lg">
                   <span className="btn__label">Sign in</span>
@@ -90,6 +102,9 @@ export default function HomePage() {
       </section>
 
       <section className="sutra-band">
+        <span className="om-watermark" aria-hidden="true">
+          ॐ
+        </span>
         <div className="container sutra-band__inner">
           <p className="deva sutra-band__sanskrit">योगश्चित्तवृत्तिनिरोधः</p>
           <p className="sutra-band__translit">yogaś citta-vṛtti-nirodhaḥ</p>

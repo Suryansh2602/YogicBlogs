@@ -27,7 +27,7 @@
 
 .dash-card {
   padding: var(--space-5) var(--space-5) var(--space-6);
-  animation: rise-in var(--dur-slow) var(--ease-out) both;
+  animation: rise-in var(--dur-slow) var(--ease-out) backwards;
 }
 
 .dash-card:nth-child(2) {
@@ -60,9 +60,8 @@
   display: grid;
   align-content: start;
   gap: var(--space-1);
-  background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 55%),
-    var(--surface);
+  background: var(--surface);
+  box-shadow: inset 0 3px 0 var(--gold), var(--shadow);
 }
 
 .dash-verse__sanskrit {
