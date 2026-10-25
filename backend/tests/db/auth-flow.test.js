@@ -131,13 +131,24 @@ describe('auth flows (real database)', () => {
       await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: current }).expect(401);
     });
 
-    it('answers a token rotated a moment ago as a two-tab race (409) without revoking anything', async () => {
+    it('re-issues for a token rotated a moment ago (lost reply / reload mid-refresh), and both new tokens work', async () => {
       await signIn();
       const old = jar.hm_rt;
       const res = await cookieCall('/api/v1/auth/refresh').expect(200);
-      const race = await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: old }).expect(409);
-      expect(race.body.error.code).toBe('REFRESH_RACE');
+      // The browser never received res's cookie (e.g. the page reloaded) and presents the old one again.
+      const again = await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: old }).expect(200);
+      expect(again.body.accessToken).toEqual(expect.any(String));
+      await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: cookiesOf(again).hm_rt }).expect(200);
       await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: cookiesOf(res).hm_rt }).expect(200);
+    });
+
+    it('never revives a signed-out session with a recently rotated token', async () => {
+      await signIn();
+      const old = jar.hm_rt;
+      const res = await cookieCall('/api/v1/auth/refresh').expect(200);
+      await cookieCall('/api/v1/auth/logout', { ...jar, hm_rt: cookiesOf(res).hm_rt }).expect(204);
+      const revived = await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: old }).expect(401);
+      expect(revived.body.error.code).toBe('NO_SESSION');
     });
 
     it('signs out: the refresh token and the access token both stop working at once', async () => {
