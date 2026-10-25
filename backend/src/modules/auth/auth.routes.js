@@ -29,8 +29,13 @@ export function createAuthRouter(strict) {
   router.get('/csrf', c.csrf);
 
   router.post('/register', strict, requireRecaptcha('register'), validate({ body: registerSchema }), c.register);
-  router.post('/verify-email', strict, validate({ body: tokenSchema }), c.verifyEmail);
-  router.post('/verify-email/resend', strict, requireRecaptcha('resend_verification'), validate({ body: emailOnlySchema }), c.resendVerification);
+  // Email features exist only while EMAIL_ENABLED=true; otherwise these paths answer 404 like any unknown route.
+  if (env.EMAIL_ENABLED) {
+    router.post('/verify-email', strict, validate({ body: tokenSchema }), c.verifyEmail);
+    router.post('/verify-email/resend', strict, requireRecaptcha('resend_verification'), validate({ body: emailOnlySchema }), c.resendVerification);
+    router.post('/password/forgot', strict, requireRecaptcha('forgot_password'), validate({ body: emailOnlySchema }), c.forgotPassword);
+    router.post('/password/reset', strict, validate({ body: resetPasswordSchema }), c.resetPassword);
+  }
 
   // Login fails open on reCAPTCHA outages (lockout still protects it); a lower score is tolerated.
   const loginCaptcha = requireRecaptcha('login', { minScore: env.RECAPTCHA_LOGIN_MIN_SCORE, failOpen: true });
@@ -44,8 +49,6 @@ export function createAuthRouter(strict) {
   router.post('/logout', requireCsrf, c.logout);
   router.post('/logout-all', authenticate, c.logoutEverywhere);
 
-  router.post('/password/forgot', strict, requireRecaptcha('forgot_password'), validate({ body: emailOnlySchema }), c.forgotPassword);
-  router.post('/password/reset', strict, validate({ body: resetPasswordSchema }), c.resetPassword);
 
   router.post('/2fa/setup', authenticate, c.beginEnrolment);
   router.post('/2fa/enable', strict, authenticate, validate({ body: totpEnableSchema }), c.enable);

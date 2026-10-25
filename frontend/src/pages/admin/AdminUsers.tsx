@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { TextField } from '../../components/ui/TextField';
 import { adminApi } from '../../features/auth/api';
 import { useAdminData } from './useAdminData';
+import { emailEnabled } from '../../config/features';
 
 const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
@@ -81,11 +82,10 @@ export default function AdminUsers() {
                   <td>
                     {u.status === 'suspended' ? (
                       <span className="badge badge--danger">Suspended</span>
-                    ) : u.emailVerified ? (
-                      <span className="badge badge--ok">Active</span>
                     ) : (
-                      <span className="badge">Unverified</span>
+                      <span className="badge badge--ok">Active</span>
                     )}
+                    {emailEnabled() && !u.emailVerified && <span className="badge">Email not confirmed</span>}
                   </td>
                   <td>{formatDate(u.lastLoginAt)}</td>
                   <td>{formatDate(u.createdAt)}</td>

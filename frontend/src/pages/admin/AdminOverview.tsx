@@ -4,6 +4,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { adminApi, type AdminStats } from '../../features/auth/api';
 import { useAuth } from '../../features/auth/useAuth';
 import { useAdminData } from './useAdminData';
+import { emailEnabled } from '../../config/features';
 
 const CARDS: { key: keyof AdminStats; label: string; note: string }[] = [
   { key: 'users', label: 'Members', note: 'All accounts' },
@@ -29,7 +30,7 @@ export default function AdminOverview() {
       {stats.status === 'error' && <Alert tone="danger">{stats.message}</Alert>}
       {stats.status === 'ready' && (
         <div className="stat-grid">
-          {CARDS.map((card, i) => (
+          {CARDS.filter((card) => card.key !== 'verified' || emailEnabled()).map((card, i) => (
             <SpotlightCard key={card.key} className="stat rise-in">
               <span className="stat__label">{card.label}</span>
               <span className="stat__value" style={{ animationDelay: `${i * 60}ms` }}>

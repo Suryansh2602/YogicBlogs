@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 5173,
+      // Test and build output isn't app code: without this, every test run's coverage report made the
+      // dev server reload the open browser tab.
+      watch: { ignored: ['**/coverage/**', '**/dist/**'] },
     },
     build: {
       // No source maps in production: they would publish the original source.
@@ -22,6 +25,8 @@ export default defineConfig(({ mode }) => {
       restoreMocks: true,
       // Page tests type into real forms and load lazy routes; generous, but still catches hangs.
       testTimeout: 20_000,
+      // Most page tests cover the email flows; tests switch it off with vi.stubEnv where needed.
+      env: { VITE_FEATURE_EMAIL: 'true' },
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}', 'config/**/*.ts'],

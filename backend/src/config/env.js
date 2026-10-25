@@ -66,6 +66,9 @@ const schema = z
     // startup and printed to the server console while no admin exists.
     ADMIN_SETUP_CODE: z.string().min(16).optional(),
 
+    // Email features (verify email, password reset, security alerts). Off until an email provider is set
+    // up: sign-up then signs people straight in, and the email routes aren't mounted at all.
+    EMAIL_ENABLED: bool.default(false),
     // Email: "outbox" writes messages to backend/.local/outbox (development); "smtp" sends them.
     MAIL_MODE: z.enum(['outbox', 'smtp']).default('outbox'),
     MAIL_FROM: z.string().min(3).default('Healthmarg <no-reply@healthmarg.local>'),
@@ -113,7 +116,7 @@ const schema = z
       }
       if (!cfg.APP_URL.startsWith('https://')) fail('APP_URL', 'must use https in production');
       if (cfg.RECAPTCHA_MODE !== 'live') fail('RECAPTCHA_MODE', 'must be live in production');
-      if (cfg.MAIL_MODE !== 'smtp') fail('MAIL_MODE', 'must be smtp in production');
+      if (cfg.EMAIL_ENABLED && cfg.MAIL_MODE !== 'smtp') fail('MAIL_MODE', 'must be smtp in production when EMAIL_ENABLED=true');
     }
   });
 

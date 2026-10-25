@@ -1,4 +1,5 @@
 import { ApiRequestError } from '../../services/apiClient';
+import { emailEnabled } from '../../config/features';
 
 /** "about 14 minutes" / "about a minute" / "a few seconds", from a Retry-After value in seconds. */
 export function waitText(seconds: number | undefined): string {
@@ -13,7 +14,9 @@ export function waitText(seconds: number | undefined): string {
 const MESSAGES: Record<string, (error: ApiRequestError) => string> = {
   RATE_LIMITED: (e) => `Too many attempts from your network in a short time. Please try again in ${waitText(e.retryAfter)}.`,
   LOGIN_LOCKED: (e) =>
-    `Too many wrong passwords for this account, so sign-in is paused for your safety. Try again in ${waitText(e.retryAfter)}, or reset your password.`,
+    `Too many wrong passwords for this account, so sign-in is paused for your safety. Try again in ${waitText(e.retryAfter)}${
+      emailEnabled() ? ', or reset your password' : ''
+    }.`,
   CAPTCHA_FAILED: () => 'Our automatic check thought this might be a bot. Please try again.',
   CSRF_FAILED: () => 'This page was open too long and its security check expired. Reload the page and try again.',
 };

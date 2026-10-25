@@ -19,7 +19,8 @@ export interface RegisterInput {
 const withCaptcha = <T extends object>(body: T, captchaToken: string | undefined) => (captchaToken ? { ...body, captchaToken } : body);
 
 export const authApi = {
-  register: (input: RegisterInput) => apiClient.post<Message>('/auth/register', input),
+  /** Email on: 202 "check your email". Email off: 201 with a session (signed in straight away). */
+  register: (input: RegisterInput) => apiClient.post<Message | SessionResponse>('/auth/register', input),
   verifyEmail: (token: string) => apiClient.post<Message>('/auth/verify-email', { token }),
   resendVerification: (email: string, captchaToken?: string) =>
     apiClient.post<Message>('/auth/verify-email/resend', withCaptcha({ email }, captchaToken)),

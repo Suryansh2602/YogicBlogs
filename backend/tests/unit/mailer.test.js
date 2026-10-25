@@ -46,6 +46,23 @@ describe('mailer (outbox mode)', () => {
     expect(file).toMatch(/outbox[\\/][^\\/]+$/);
   });
 
+  it('sends nothing at all while email features are switched off', async () => {
+    const previous = process.env.EMAIL_ENABLED;
+    process.env.EMAIL_ENABLED = 'false';
+    try {
+      vi.resetModules();
+      const fsp = await import('node:fs/promises');
+      const { sendMail: sendMailOff } = await import('../../src/services/mailer.js');
+      await sendMailOff('verifyEmail', 'x@example.com', { name: 'X', url: 'http://localhost:5173/v' });
+      expect(fsp.writeFile).not.toHaveBeenCalled();
+      expect(fsp.mkdir).not.toHaveBeenCalled();
+      expect(sendMailSmtp).not.toHaveBeenCalled();
+    } finally {
+      process.env.EMAIL_ENABLED = previous;
+      vi.resetModules();
+    }
+  });
+
   it('never throws, so a mail failure cannot break sign-up', async () => {
     vi.mocked(writeFile).mockRejectedValueOnce(new Error('disk full'));
     await expect(sendMail('passwordChanged', 'x@example.com', { name: 'X' })).resolves.toBeUndefined();

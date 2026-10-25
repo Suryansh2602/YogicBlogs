@@ -81,6 +81,13 @@ Public. Reports whether dependencies are reachable, and never reveals versions, 
 
 Credential endpoints use the strict rate limit. Steps marked 🤖 require a reCAPTCHA v3 token (`captchaToken` in the body) when `RECAPTCHA_MODE=live` (always in production; `off` locally).
 
+> **Email features are switched off for now** (`EMAIL_ENABLED=false` on the API, `VITE_FEATURE_EMAIL=false` on the frontend; owner decision 2026-10-25). While off:
+> - `POST /auth/register` answers **`201` with a session** (signed in at once, refresh cookie set), or **`409 EMAIL_TAKEN`** (`details[0].path = "email"`) for a registered email.
+> - Login does not require a confirmed email.
+> - `/auth/verify-email`, `/auth/verify-email/resend`, `/auth/password/forgot` and `/auth/password/reset` are **not mounted (404)**, and no emails are sent.
+>
+> Trade-off while off: sign-up reveals whether an email is registered (rate limits slow down probing). Turning both flags on restores everything below, including the silent `202`.
+
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/auth/csrf` | — | Issue a CSRF token for the cookie endpoints |

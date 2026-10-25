@@ -12,6 +12,7 @@ import { useAuth } from '../../features/auth/useAuth';
 import { useRecaptcha } from '../../features/auth/useRecaptcha';
 import { emailProblem } from '../../features/auth/validation';
 import { useFormErrors } from '../../hooks/useFormErrors';
+import { emailEnabled } from '../../config/features';
 import type { User } from '../../features/auth/types';
 import '../../features/auth/auth.css';
 
@@ -134,9 +135,7 @@ export default function SignInPage() {
         />
         <div className="auth__row">
           <span />
-          <Link to="/forgot-password">
-            Forgot password?
-          </Link>
+          {emailEnabled() && <Link to="/forgot-password">Forgot password?</Link>}
         </div>
         <Button type="submit" variant="primary" size="lg" block loading={busy}>
           Sign in

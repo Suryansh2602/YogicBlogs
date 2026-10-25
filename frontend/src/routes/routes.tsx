@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout';
 import HomePage from '../pages/HomePage';
 import NotFoundPage from '../pages/NotFoundPage';
 import { GuestOnly, RequireAuth } from '../features/auth/guards';
+import { EmailOnly } from '../features/auth/EmailOnly';
 import {
   AdminAudit,
   AdminGate,
@@ -31,10 +32,11 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'signin', element: guest(<SignInPage />) },
       { path: 'signup', element: guest(<SignUpPage />) },
-      { path: 'check-email', element: <CheckEmailPage /> },
-      { path: 'verify-email', element: <VerifyEmailPage /> },
-      { path: 'forgot-password', element: guest(<ForgotPasswordPage />) },
-      { path: 'reset-password', element: <ResetPasswordPage /> },
+      // Email pages exist only while email features are on (see config/features.ts).
+      { path: 'check-email', element: <EmailOnly><CheckEmailPage /></EmailOnly> },
+      { path: 'verify-email', element: <EmailOnly><VerifyEmailPage /></EmailOnly> },
+      { path: 'forgot-password', element: <EmailOnly>{guest(<ForgotPasswordPage />)}</EmailOnly> },
+      { path: 'reset-password', element: <EmailOnly><ResetPasswordPage /></EmailOnly> },
       {
         path: 'dashboard',
         element: (

@@ -98,6 +98,7 @@ const getTransport = () =>
  * Failures are logged, never thrown: a mail outage must not break sign-up or reveal anything to the caller.
  */
 export async function sendMail(template, to, data) {
+  if (!env.EMAIL_ENABLED) return; // email features are switched off (EMAIL_ENABLED=false)
   const { subject, html } = templates[template](data);
   try {
     if (env.MAIL_MODE === 'smtp') {

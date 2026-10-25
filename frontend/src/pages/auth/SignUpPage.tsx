@@ -11,6 +11,7 @@ import { errorMessage, fieldErrors } from '../../features/auth/errors';
 import { passwordProblems } from '../../features/auth/passwordPolicy';
 import { emailProblem, nameProblem } from '../../features/auth/validation';
 import { useRecaptcha } from '../../features/auth/useRecaptcha';
+import { setSession } from '../../features/auth/session';
 import { useFormErrors } from '../../hooks/useFormErrors';
 
 type Field = 'displayName' | 'email' | 'password' | 'acceptTerms';
@@ -43,7 +44,7 @@ export default function SignUpPage() {
     setBusy(true);
     try {
       const captchaToken = await getCaptcha('register');
-      await authApi.register({
+      const result = await authApi.register({
         email: email.trim(),
         password,
         displayName: displayName.trim(),
@@ -51,7 +52,13 @@ export default function SignUpPage() {
         acceptPrivacy: true,
         ...(captchaToken && { captchaToken }),
       });
-      void navigate('/check-email', { state: { email: email.trim() } });
+      if ('accessToken' in result) {
+        // Email features are off: the new account is already signed in.
+        setSession(result);
+        void navigate('/dashboard', { replace: true });
+      } else {
+        void navigate('/check-email', { state: { email: email.trim() } });
+      }
     } catch (err) {
       // A problem with one field is shown under that field only; anything else goes in the banner.
       const fields = fieldErrors(err);

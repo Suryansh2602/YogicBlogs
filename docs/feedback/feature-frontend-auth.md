@@ -69,3 +69,32 @@ Kept generic on purpose: a failed sign-in never says whether the email or the pa
 QA: backend 190 tests (94.4% merged coverage); frontend 71 tests (91.3%); 0 vulnerabilities; bundle within budget. On the live API: a bad domain, a short password and a breached password (21,613 times) each produced the exact message.
 
 Locally, emails are files: open the newest one in `backend/.local/outbox/` (Explorer, or `Get-ChildItem E:\YogicBlog\backend\.local\outbox | Sort-Object LastWriteTime | Select-Object -Last 1 | Invoke-Item` in PowerShell).
+
+## Round 4: owner feedback ("read the logs, solve it" + "remove the email feature for now")
+
+| Source | Finding | Change |
+|---|---|---|
+| Dev-server log | `page reload coverage/...html`, hundreds of times: every test run wrote its coverage report inside `frontend/`, Vite treated it as code and reloaded the owner's open tab | `server.watch.ignored` for `coverage/` and `dist/` |
+| API log | `does not provide an export named 'isBreachedPassword'`: watch mode restarted mid-edit while the function was being renamed | Transient (recovered on the next restart). The API was healthy when checked |
+| API log | The owner's confirmation email was waiting in the outbox, and opening local email files was awkward | Superseded by the next row |
+| Owner | "Remove the email feature for now, we'll do it later" | Switched off, not deleted: `EMAIL_ENABLED=false` (API) and `VITE_FEATURE_EMAIL=false` (site). Sign-up now signs people straight in (`201`), a duplicate gets `409 EMAIL_TAKEN` under the email field, sign-in no longer needs a confirmed email, the email routes and pages don't exist (404), and no emails are sent. The finished, tested email code comes back by switching both flags on |
+
+Trade-off accepted while email is off: sign-up reveals whether an email is registered. The strict rate limit slows down probing.
+
+### Independent review of the email switch (ultracode workflow: 3 reviewers + 1 skeptic per finding)
+
+12 findings raised: **4 confirmed**, 8 refuted on reading the code.
+
+| Confirmed finding | Fix |
+|---|---|
+| **[medium]** With email off, someone can register *another person's* address and turn on 2FA. When email returns, the owner's password reset kept that 2FA, so the owner was locked out for good, with no route to remove it | A password reset on an account whose email was never confirmed now **removes any 2FA and backup codes** set up before that first proof of ownership, and audits it as `auth.2fa.cleared_unproven`. The DB test reproduces the attack, and removing the fix makes it fail |
+| **[low]** The lockout message said "or reset your password", which doesn't exist while email is off | That clause is shown only when email is on |
+| **[low]** The admin members list labelled every member "Unverified" (nobody can confirm while email is off) | Status shows Active or Suspended. "Email not confirmed" and the "Verified" stat appear only while email is on |
+| **[low]** No test exercised the "send nothing" guard in `sendMail` | A unit test loads the mailer with the switch off; removing the guard makes it fail |
+
+Results:
+- **Backend QA:** 201 tests, 94.3% merged coverage.
+- **Frontend QA:** 80 tests, 91.3% coverage.
+- **Vulnerabilities:** 0.
+- **Real browser, email off:** 18/18 steps, no console errors.
+- **Dev server:** no more coverage-triggered reloads since the config fix.

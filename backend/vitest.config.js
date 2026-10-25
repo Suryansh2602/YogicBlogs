@@ -17,6 +17,8 @@ export default defineConfig({
       // 32 zero-ish bytes, base64url: test-only key.
       TWO_FACTOR_ENC_KEY: 'dGVzdC1rZXktMzItYnl0ZXMtZm9yLWFlcy0yNTYtZ2M',
       HIBP_ENABLED: 'false',
+      // Most auth tests cover the email flows; tests/db/auth-no-email.test.js covers EMAIL_ENABLED=false.
+      EMAIL_ENABLED: 'true',
     },
     // Thresholds are enforced on the merged unit + DB coverage: see vitest.coverage.config.js.
     coverage: { provider: 'v8', include: ['src/**/*.js'], exclude: ['src/server.js', 'src/db/cli.js', 'src/db/seeders/**'] },

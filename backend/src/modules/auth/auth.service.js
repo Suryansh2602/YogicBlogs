@@ -4,6 +4,7 @@
 // - Secrets are stored hashed; raw tokens exist only in the email link or cookie.
 // - Admins must pass a second factor; their first login forces 2FA enrolment.
 import { Op, UniqueConstraintError } from 'sequelize';
+import { env } from '../../config/env.js';
 import { models, sequelize } from '../../config/db.js';
 import { AUTH_TOKEN_PURPOSE, CONSENT_KIND, ROLES, USER_STATUS } from '../../config/constants.js';
 import { ApiError } from '../../utils/ApiError.js';
@@ -89,7 +90,37 @@ async function consumeEmailToken(raw, purpose, transaction) {
 
 // ── Registration & email verification ────────────────────────────────────────────────────────────
 
+/**
+ * Without email (EMAIL_ENABLED=false) there is no way to prove an address or to tell someone privately
+ * that they already have an account, so: a duplicate gets a clear 409, and a new account is signed in
+ * straight away. Returns the session. Trade-off: sign-up then reveals whether an email is registered
+ * (rate limits slow down anyone trying many emails); turning email on restores the silent 202.
+ */
+async function registerWithoutEmail({ email, password, displayName }, req) {
+  await assertAcceptablePassword(password, { email, displayName });
+  const taken = () => {
+    const message = 'An account with this email already exists. Sign in instead, or use a different email.';
+    return new ApiError(409, message, [{ path: 'email', message }], 'EMAIL_TAKEN');
+  };
+  if (await models.User.count({ where: { email } })) {
+    await audit('auth.register.duplicate', { req, metadata: { emailEnabled: false } });
+    throw taken();
+  }
+  const passwordHash = await hashPassword(password);
+  let user;
+  try {
+    ({ user } = await createAccount({ email, displayName, passwordHash }, req, { withEmailToken: false }));
+  } catch (err) {
+    if (err instanceof UniqueConstraintError) throw taken();
+    throw err;
+  }
+  await audit('auth.register', { req, actorId: user.id, entityType: 'user', entityId: user.id });
+  return completeLogin(user, ['pwd'], req);
+}
+
+/** Returns a session when email is off (signed in straight away), otherwise nothing (check your email). */
 export async function register({ email, password, displayName }, req) {
+  if (!env.EMAIL_ENABLED) return registerWithoutEmail({ email, password, displayName }, req);
   await assertAcceptablePassword(password, { email, displayName });
   const existing = await models.User.findOne({ where: { email } });
 
@@ -123,7 +154,7 @@ export async function register({ email, password, displayName }, req) {
   await audit('auth.register', { req, actorId: created.user.id, entityType: 'user', entityId: created.user.id });
 }
 
-function createAccount({ email, displayName, passwordHash }, req) {
+function createAccount({ email, displayName, passwordHash }, req, { withEmailToken = true } = {}) {
   return sequelize.transaction(async (transaction) => {
     const created = await models.User.create({ email, displayName, passwordHash }, { transaction });
     const now = new Date();
@@ -137,7 +168,7 @@ function createAccount({ email, displayName, passwordHash }, req) {
       })),
       { transaction },
     );
-    const token = await createEmailToken(created.id, AUTH_TOKEN_PURPOSE.EMAIL_VERIFICATION, transaction);
+    const token = withEmailToken ? await createEmailToken(created.id, AUTH_TOKEN_PURPOSE.EMAIL_VERIFICATION, transaction) : null;
     return { user: created, raw: token };
   });
 }
@@ -234,7 +265,8 @@ export async function login({ email, password }, req, { adminOnly = false } = {}
   if (needsRehash(user.passwordHash)) {
     await models.User.update({ passwordHash: await hashPassword(password) }, { where: { id: user.id } });
   }
-  if (!user.emailVerifiedAt) {
+  // Only enforced while email is on: without it nobody could ever confirm their address.
+  if (env.EMAIL_ENABLED && !user.emailVerifiedAt) {
     throw ApiError.forbidden('Please confirm your email first. We can send the link again.', 'EMAIL_NOT_VERIFIED');
   }
   if (user.status !== USER_STATUS.ACTIVE) {
@@ -328,11 +360,19 @@ export async function forgotPassword(email, req) {
 }
 
 export async function resetPassword({ token, password }, req) {
+  let cleared2fa = false;
   const user = await sequelize.transaction(async (transaction) => {
     const row = await consumeEmailToken(token, AUTH_TOKEN_PURPOSE.PASSWORD_RESET, transaction);
     const target = await models.User.findByPk(row.userId, { transaction });
     if (!target) throw ApiError.badRequest('This link is invalid or has expired.', undefined, 'INVALID_TOKEN');
     await assertAcceptablePassword(password, { email: target.email, displayName: target.displayName });
+    // An account whose email was never confirmed (e.g. created while email features were off) may have
+    // been registered by someone who doesn't own the address, and they could have turned on 2FA. This link
+    // is the first proof of ownership, so any 2FA set up before it is removed; the owner can enable their own.
+    if (!target.emailVerifiedAt) {
+      cleared2fa = (await models.UserTwoFactor.destroy({ where: { userId: target.id }, transaction })) > 0;
+      await models.TwoFactorBackupCode.destroy({ where: { userId: target.id }, transaction });
+    }
     await target.update(
       {
         passwordHash: await hashPassword(password),
@@ -349,6 +389,7 @@ export async function resetPassword({ token, password }, req) {
   await invalidateUserState(user.id);
   sendMail('passwordChanged', user.email, { name: user.displayName });
   await audit('auth.password.reset', { req, actorId: user.id });
+  if (cleared2fa) await audit('auth.2fa.cleared_unproven', { req, actorId: user.id, entityType: 'user', entityId: user.id });
 }
 
 // ── 2FA for signed-in users (optional for users, done at first login for admins) ────────────────

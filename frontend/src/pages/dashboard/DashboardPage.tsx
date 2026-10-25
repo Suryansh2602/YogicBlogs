@@ -13,6 +13,7 @@ import { clearSession } from '../../features/auth/session';
 import { useAuth } from '../../features/auth/useAuth';
 import type { User } from '../../features/auth/types';
 import { nameProblem } from '../../features/auth/validation';
+import { emailEnabled } from '../../config/features';
 import { greeting, verseOfTheDay } from './wisdom';
 import './dashboard.css';
 
@@ -188,7 +189,7 @@ export default function DashboardPage() {
   const firstName = user.displayName.split(' ')[0] ?? user.displayName;
   const steps = [
     { label: 'Create your account', done: true },
-    { label: 'Confirm your email', done: user.emailVerified },
+    ...(emailEnabled() ? [{ label: 'Confirm your email', done: user.emailVerified }] : []),
     { label: 'Protect it with two-step sign-in', done: user.twoFactorEnabled },
     { label: 'Explore the conditions library', done: false, soon: true },
   ];
