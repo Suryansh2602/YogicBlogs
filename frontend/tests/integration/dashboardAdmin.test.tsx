@@ -27,7 +27,7 @@ describe('member dashboard', () => {
 
   it('turns on two-step sign-in and hands over the backup codes', async () => {
     rememberSignedIn();
-    mockApi({
+    const api = mockApi({
       ...restore(),
       'POST /auth/2fa/setup': enrolment,
       'POST /auth/2fa/enable': { body: { backupCodes: codes } },
@@ -46,6 +46,8 @@ describe('member dashboard', () => {
     await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(proceed);
     expect(await screen.findByText(/On\. Signing in needs your password/)).toBeInTheDocument();
+    // Exactly one setup: a second one would replace the secret behind the QR code on screen.
+    expect(api.callsTo('POST /auth/2fa/setup')).toHaveLength(1);
   });
 
   it('says what is wrong with an empty name, and clears it on typing', async () => {

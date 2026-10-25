@@ -15,8 +15,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     // On page load, quietly restore the session from the HttpOnly refresh cookie, if this browser had one.
     if (mightHaveSession()) {
+      // A rejection here means "couldn't check" (offline, server error, page left mid-request), not
+      // "signed out": show the signed-out view but keep the hint so the next load tries again.
+      // (A definite 401 is handled inside refreshSession and does forget the session.)
       refreshSession().catch(() => {
-        clearSession();
+        clearSession({ keepHint: true });
       });
     } else {
       clearSession();

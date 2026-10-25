@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockApi, session } from '../helpers/api';
 import { preloadPages, rememberSignedIn, renderApp } from '../helpers/render';
@@ -37,6 +37,24 @@ describe('app routing', () => {
     const router = renderApp('/signin');
     expect(await screen.findByRole('heading', { name: /Welcome, Meera/ })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/dashboard');
+  });
+
+  it('keeps "was signed in" through a network failure, so the next load restores the session', async () => {
+    rememberSignedIn();
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockRejectedValue(new TypeError('Failed to fetch')));
+    renderApp('/');
+    expect(await screen.findByRole('link', { name: 'Join free' })).toBeInTheDocument();
+    expect(localStorage.getItem('hm-signed-in')).toBe('1');
+  });
+
+  it('forgets the session only when the server says it is no longer valid', async () => {
+    rememberSignedIn();
+    mockApi({ 'GET /auth/csrf': { body: { csrfToken: 'c' } }, 'POST /auth/refresh': { status: 401, body: { error: { message: 'Please sign in', code: 'NO_SESSION' } } } });
+    renderApp('/');
+    expect(await screen.findByRole('link', { name: 'Join free' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(localStorage.getItem('hm-signed-in')).toBeNull();
+    });
   });
 
   it('shows the legal placeholders', async () => {

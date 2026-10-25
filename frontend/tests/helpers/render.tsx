@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { render } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { routes } from '../../src/routes/routes';
@@ -8,12 +9,16 @@ import { AuthProvider } from '../../src/features/auth/AuthProvider';
 export function renderApp(path = '/', state?: unknown) {
   window.history.replaceState(null, '', path);
   const router = createMemoryRouter(routes, { initialEntries: [{ pathname: path.split('?')[0] ?? path, search: path.includes('?') ? `?${path.split('?')[1] ?? ''}` : '', state }] });
+  // StrictMode, as in main.tsx: React runs effects twice in development, which exposes effects that
+  // aren't safe to repeat (like starting a 2FA setup twice).
   render(
-    <ThemeProvider>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </ThemeProvider>,
+    <StrictMode>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ThemeProvider>
+    </StrictMode>,
   );
   return router;
 }

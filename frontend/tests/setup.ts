@@ -4,7 +4,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { resetSessionForTests } from '../src/features/auth/session';
 
 // Pages are lazy-loaded; their first import in a test run can take a few seconds to transform.
-configure({ asyncUtilTimeout: 5000 });
+configure({ asyncUtilTimeout: 10_000 });
 
 // jsdom has no matchMedia; the theme code asks it for the light/dark preference.
 beforeEach(() => {

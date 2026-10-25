@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { OtpInput } from '../../components/ui/OtpInput';
 import { Alert } from '../../components/ui/Alert';
@@ -35,9 +35,15 @@ export function TwoFactorEnrolment({ begin, enable, onDone, onExpired }: TwoFact
   const [saved, setSaved] = useState(false);
   const [showKey, setShowKey] = useState(false);
 
+  // Each setup request creates a new secret and replaces the previous one, so it must run exactly once per
+  // opening of this panel. React may run effects twice (StrictMode, remounts); the ref keeps the first
+  // request's promise, so a second run reuses it instead of creating a second, conflicting secret.
+  const setupRequest = useRef<Promise<TwoFactorSetup> | null>(null);
+
   useEffect(() => {
     let cancelled = false;
-    begin().then(
+    setupRequest.current ??= begin();
+    setupRequest.current.then(
       (result) => {
         if (!cancelled) setSetup(result);
       },

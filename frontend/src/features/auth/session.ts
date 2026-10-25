@@ -51,10 +51,15 @@ export function setSession(session: SessionResponse) {
   for (const listener of listeners) listener(session.user);
 }
 
-export function clearSession() {
+/**
+ * Treat the visitor as signed out. `keepHint` is for "couldn't check right now" (network hiccup, page
+ * left mid-request): the session may still be valid, so the next page load should try to restore it.
+ * Only a definite answer (signed out, session invalid) forgets that this browser was signed in.
+ */
+export function clearSession({ keepHint = false }: { keepHint?: boolean } = {}) {
   accessToken = null;
   pendingSession = null;
-  setHint(false);
+  if (!keepHint) setHint(false);
   for (const listener of listeners) listener(null);
 }
 
