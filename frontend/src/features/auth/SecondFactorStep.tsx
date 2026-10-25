@@ -68,13 +68,23 @@ export function SecondFactorStep({ ticket, onSignedIn, onRestart }: SecondFactor
           value={code}
           onChange={(e) => {
             setCode(e.target.value);
+            setError(null);
           }}
           hint="Each backup code works once."
         />
       ) : (
         <>
           <p className="muted">Open your authenticator app and enter the 6-digit code for Healthmarg.</p>
-          <OtpInput value={code} onChange={setCode} onComplete={(v) => void submit(v)} disabled={busy} invalid={Boolean(error)} />
+          <OtpInput
+            value={code}
+            onChange={(value) => {
+              setCode(value);
+              setError(null);
+            }}
+            onComplete={(v) => void submit(v)}
+            disabled={busy}
+            invalid={Boolean(error)}
+          />
         </>
       )}
       <Button type="submit" variant="primary" block loading={busy} disabled={useBackup ? code.trim().length < 10 : code.length !== 6}>

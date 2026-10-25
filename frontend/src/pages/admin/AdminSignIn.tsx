@@ -12,6 +12,8 @@ import { adminApi } from '../../features/auth/api';
 import { errorMessage } from '../../features/auth/errors';
 import { useAuth } from '../../features/auth/useAuth';
 import { useRecaptcha } from '../../features/auth/useRecaptcha';
+import { emailProblem } from '../../features/auth/validation';
+import { useFormErrors } from '../../hooks/useFormErrors';
 
 const ADMIN_VERSE = {
   sanskrit: 'धर्मो रक्षति रक्षितः',
@@ -29,7 +31,7 @@ export default function AdminSignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { fieldErrors, setFieldErrors, formError: error, setFormError: setError, edited } = useFormErrors<'email' | 'password'>();
   const [setupRequired, setSetupRequired] = useState(false);
 
   useEffect(() => {
@@ -41,11 +43,14 @@ export default function AdminSignIn() {
     );
   }, []);
 
-  const restart = useCallback(() => {
-    setStep({ kind: 'password' });
-    setPassword('');
-    setError('Your sign-in attempt expired. Please sign in again.');
-  }, []);
+  const restart = useCallback(
+    (message?: string) => {
+      setStep({ kind: 'password' });
+      setPassword('');
+      setError(message ?? 'Your sign-in attempt expired. Please sign in again.');
+    },
+    [setError],
+  );
 
   const ticket = step.kind === 'password' ? '' : step.ticket;
   const begin = useCallback(() => beginTicketEnrolment(ticket), [beginTicketEnrolment, ticket]);
@@ -53,6 +58,9 @@ export default function AdminSignIn() {
 
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const problems = { email: emailProblem(email), password: password ? undefined : 'Enter your password.' };
+    setFieldErrors(problems);
+    if (problems.email || problems.password) return;
     setBusy(true);
     setError(null);
     try {
@@ -78,7 +86,13 @@ export default function AdminSignIn() {
   if (step.kind === 'code') {
     return (
       <AuthLayout title="Two-step sign-in" subtitle="Enter the code from your authenticator app." verse={ADMIN_VERSE}>
-        <SecondFactorStep ticket={step.ticket} onSignedIn={() => undefined} onRestart={restart} />
+        <SecondFactorStep
+          ticket={step.ticket}
+          onSignedIn={() => undefined}
+          onRestart={() => {
+            restart();
+          }}
+        />
       </AuthLayout>
     );
   }
@@ -112,8 +126,10 @@ export default function AdminSignIn() {
           autoComplete="username"
           required
           value={email}
+          error={fieldErrors.email}
           onChange={(e) => {
             setEmail(e.target.value);
+            edited('email');
           }}
         />
         <PasswordField
@@ -121,11 +137,13 @@ export default function AdminSignIn() {
           autoComplete="current-password"
           required
           value={password}
+          error={fieldErrors.password}
           onChange={(e) => {
             setPassword(e.target.value);
+            edited('password');
           }}
         />
-        <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={!email || !password}>
+        <Button type="submit" variant="primary" size="lg" block loading={busy}>
           Continue
         </Button>
       </form>

@@ -10,6 +10,8 @@ import { authApi } from '../../features/auth/api';
 import { errorMessage, hasCode } from '../../features/auth/errors';
 import { useAuth } from '../../features/auth/useAuth';
 import { useRecaptcha } from '../../features/auth/useRecaptcha';
+import { emailProblem } from '../../features/auth/validation';
+import { useFormErrors } from '../../hooks/useFormErrors';
 import type { User } from '../../features/auth/types';
 import '../../features/auth/auth.css';
 
@@ -25,7 +27,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { fieldErrors, setFieldErrors, formError: error, setFormError: setError, edited } = useFormErrors<'email' | 'password'>();
   const [unverified, setUnverified] = useState(false);
   const [resent, setResent] = useState(false);
   const [ticket, setTicket] = useState<string | null>(null);
@@ -37,6 +39,9 @@ export default function SignInPage() {
 
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const problems = { email: emailProblem(email), password: password ? undefined : 'Enter your password.' };
+    setFieldErrors(problems);
+    if (problems.email || problems.password) return;
     setBusy(true);
     setError(null);
     setUnverified(false);
@@ -108,8 +113,11 @@ export default function SignInPage() {
           inputMode="email"
           required
           value={email}
+          error={fieldErrors.email}
           onChange={(e) => {
             setEmail(e.target.value);
+            edited('email');
+            setUnverified(false);
           }}
         />
         <PasswordField
@@ -117,8 +125,11 @@ export default function SignInPage() {
           autoComplete="current-password"
           required
           value={password}
+          error={fieldErrors.password}
           onChange={(e) => {
             setPassword(e.target.value);
+            edited('password');
+            setUnverified(false);
           }}
         />
         <div className="auth__row">
@@ -127,7 +138,7 @@ export default function SignInPage() {
             Forgot password?
           </Link>
         </div>
-        <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={!email || !password}>
+        <Button type="submit" variant="primary" size="lg" block loading={busy}>
           Sign in
         </Button>
       </form>

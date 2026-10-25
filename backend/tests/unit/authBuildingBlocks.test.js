@@ -6,7 +6,8 @@ import { durationToMs, durationToSeconds } from '../../src/utils/duration.js';
 import { decryptSecret, encryptSecret, randomToken, safeEqual } from '../../src/utils/crypto.js';
 import { createMemoryStore, createRedisStore } from '../../src/utils/ephemeralStore.js';
 import { createLockout, LIMITS } from '../../src/modules/auth/lockout.service.js';
-import { isBreachedPassword, passwordProblems } from '../../src/modules/auth/password.service.js';
+import { breachCount, passwordProblems } from '../../src/modules/auth/password.service.js';
+import { emailProblem } from '../../src/modules/auth/auth.validation.js';
 import { requireRecaptcha } from '../../src/middlewares/recaptcha.js';
 
 const KEY = Buffer.alloc(32, 7).toString('base64url');
@@ -123,12 +124,27 @@ describe('password policy', () => {
     expect(passwordProblems('Banyan-roots-run-deep', { email: 'meera@example.com', displayName: 'Meera' })).toEqual([]);
   });
 
-  it('explains every problem', () => {
-    expect(passwordProblems('short')).toContain('Use at least 12 characters');
-    expect(passwordProblems('x'.repeat(129))).toContain('Use at most 128 characters');
-    expect(passwordProblems('aaaaaaaaaaaaaa')).toContain('Don’t repeat a single character');
-    expect(passwordProblems('meera-loves-yoga', { email: 'meera@example.com' })).toContain('Don’t include your email in your password');
-    expect(passwordProblems('i-am-suryansh-123', { displayName: 'Suryansh' })).toContain('Don’t include your name in your password');
+  it('says exactly what is wrong, without repeating the password', () => {
+    expect(passwordProblems('short')).toEqual(['Your password has 5 characters. Use at least 12.']);
+    expect(passwordProblems('x')).toEqual(['Your password has 1 character. Use at least 12.']);
+    expect(passwordProblems('x'.repeat(129))).toContain('Your password has 129 characters. The limit is 128.');
+    expect(passwordProblems('aaaaaaaaaaaaaa')).toContain('Your password is one character repeated. Mix in other characters.');
+    expect(passwordProblems('meera-loves-yoga', { email: 'meera@example.com' })).toContain('Your password contains “meera” from your email address. Remove it.');
+    expect(passwordProblems('i-am-suryansh-123', { displayName: 'Suryansh' })).toContain('Your password contains your name. Remove it.');
+    for (const message of passwordProblems('secretpw', { email: 'secretpw@example.com' })) {
+      expect(message.replace('“secretpw”', '')).not.toContain('secretpw');
+    }
+  });
+
+  it('describes what is wrong with an email address', () => {
+    expect(emailProblem('')).toBe('Enter your email address.');
+    expect(emailProblem('meera gmail.com')).toMatch(/contains a space/);
+    expect(emailProblem('meeragmail.com')).toMatch(/missing the “@”/);
+    expect(emailProblem('a@b@c.com')).toMatch(/more than one “@”/);
+    expect(emailProblem('@gmail.com')).toMatch(/before the “@”/);
+    expect(emailProblem('meera@')).toMatch(/after the “@”/);
+    expect(emailProblem('meera@gmail')).toBe('“gmail” isn’t a complete domain. It needs an ending like .com or .in.');
+    expect(emailProblem('meera@gmail.com')).toMatch(/Check it for typos/);
   });
 });
 
@@ -138,20 +154,20 @@ describe('breached-password check (HIBP k-anonymity)', () => {
 
   it('sends only the 5-character prefix and matches the suffix', async () => {
     const fetchImpl = reply(`0000000000000000000000000000000000A:0\r\n${sha1.slice(5)}:42\r\n`);
-    expect(await isBreachedPassword('password123456', { fetchImpl, enabled: true })).toBe(true);
+    expect(await breachCount('password123456', { fetchImpl, enabled: true })).toBe(42);
     expect(fetchImpl.mock.calls[0][0]).toBe(`https://api.pwnedpasswords.com/range/${sha1.slice(0, 5)}`);
     expect(fetchImpl.mock.calls[0][0]).not.toContain(sha1.slice(5));
   });
 
   it('ignores padding entries with a zero count', async () => {
-    expect(await isBreachedPassword('password123456', { fetchImpl: reply(`${sha1.slice(5)}:0`), enabled: true })).toBe(false);
+    expect(await breachCount('password123456', { fetchImpl: reply(`${sha1.slice(5)}:0`), enabled: true })).toBe(0);
   });
 
   it('fails open on errors and outages, and is skipped when disabled', async () => {
-    expect(await isBreachedPassword('x', { fetchImpl: vi.fn().mockRejectedValue(new Error('timeout')), enabled: true })).toBe(false);
-    expect(await isBreachedPassword('x', { fetchImpl: reply('', false), enabled: true })).toBe(false);
+    expect(await breachCount('x', { fetchImpl: vi.fn().mockRejectedValue(new Error('timeout')), enabled: true })).toBe(0);
+    expect(await breachCount('x', { fetchImpl: reply('', false), enabled: true })).toBe(0);
     const fetchImpl = vi.fn();
-    expect(await isBreachedPassword('x', { fetchImpl, enabled: false })).toBe(false);
+    expect(await breachCount('x', { fetchImpl, enabled: false })).toBe(0);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

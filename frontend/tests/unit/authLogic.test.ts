@@ -1,19 +1,35 @@
 import { describe, expect, it, vi } from 'vitest';
 import { passwordProblems, passwordStrength } from '../../src/features/auth/passwordPolicy';
-import { errorMessage, fieldErrors, hasCode } from '../../src/features/auth/errors';
+import { errorMessage, fieldErrors, hasCode, waitText } from '../../src/features/auth/errors';
+import { emailProblem, nameProblem } from '../../src/features/auth/validation';
 import { ApiRequestError } from '../../src/services/apiClient';
 import { greeting, verseOfTheDay, VERSES } from '../../src/pages/dashboard/wisdom';
 import { authed, getAccessToken, mightHaveSession, onSessionChange, refreshSession, setSession, signOutSession } from '../../src/features/auth/session';
 import { apiError, makeUser, mockApi, session } from '../helpers/api';
 
 describe('password policy (mirrors the server)', () => {
-  it('accepts a passphrase and explains each problem', () => {
+  it('accepts a passphrase and says exactly what is wrong otherwise (same words as the server)', () => {
     expect(passwordProblems('Banyan-roots-run-deep', { email: 'meera@example.com', displayName: 'Meera' })).toEqual([]);
-    expect(passwordProblems('short')).toEqual(['Use at least 12 characters']);
-    expect(passwordProblems('x'.repeat(129))).toContain('Use at most 128 characters');
-    expect(passwordProblems('meera-loves-yoga', { email: 'meera@example.com' })).toContain('Don’t include your email in your password');
-    expect(passwordProblems('i-am-suryansh-1', { displayName: 'Suryansh' })).toContain('Don’t include your name in your password');
-    expect(passwordProblems('aaaaaaaaaaaaaa')).toContain('Don’t repeat a single character');
+    expect(passwordProblems('')).toEqual(['Enter a password.']);
+    expect(passwordProblems('short')).toEqual(['Your password has 5 characters. Use at least 12.']);
+    expect(passwordProblems('x')).toEqual(['Your password has 1 character. Use at least 12.']);
+    expect(passwordProblems('x'.repeat(129))).toContain('Your password has 129 characters. The limit is 128.');
+    expect(passwordProblems('meera-loves-yoga', { email: 'meera@example.com' })).toContain('Your password contains “meera” from your email address. Remove it.');
+    expect(passwordProblems('i-am-suryansh-1', { displayName: 'Suryansh' })).toContain('Your password contains your name. Remove it.');
+    expect(passwordProblems('aaaaaaaaaaaaaa')).toContain('Your password is one character repeated. Mix in other characters.');
+  });
+
+  it('says what is wrong with an email address or a name', () => {
+    expect(emailProblem('  ')).toBe('Enter your email address.');
+    expect(emailProblem('meera gmail.com')).toBe('Your email address contains a space. Remove it.');
+    expect(emailProblem('meeragmail.com')).toBe('Your email address is missing the “@”, like name@gmail.com.');
+    expect(emailProblem('a@b@c.com')).toBe('Your email address has more than one “@”. Use only one.');
+    expect(emailProblem('@gmail.com')).toBe('Add your name before the “@”, like name@gmail.com.');
+    expect(emailProblem('meera@')).toBe('Add the domain after the “@”, like name@gmail.com.');
+    expect(emailProblem('meera@gmail')).toBe('“gmail” isn’t a complete domain. It needs an ending like .com or .in.');
+    expect(emailProblem('meera@gmail.com')).toBeUndefined();
+    expect(nameProblem(' ')).toBe('Enter your name, so we know what to call you.');
+    expect(nameProblem('Meera')).toBeUndefined();
   });
 
   it('rates strength from 0 to 4, favouring length', () => {
@@ -29,11 +45,21 @@ describe('password policy (mirrors the server)', () => {
 
 describe('error messages', () => {
   it('uses friendly wording for known codes and the server message otherwise', () => {
-    expect(errorMessage(new ApiRequestError(429, 'x', 'RATE_LIMITED'))).toMatch(/Too many attempts/);
-    expect(errorMessage(new ApiRequestError(401, 'Invalid email or password', 'INVALID_CREDENTIALS'))).toBe('Invalid email or password');
-    expect(errorMessage(new ApiRequestError(500, 'boom'))).toMatch(/server had a problem/);
+    expect(errorMessage(new ApiRequestError(429, 'x', 'RATE_LIMITED', undefined, 600))).toBe(
+      'Too many attempts from your network in a short time. Please try again in about 10 minutes.',
+    );
+    expect(errorMessage(new ApiRequestError(429, 'x', 'LOGIN_LOCKED', undefined, 840))).toMatch(/Try again in about 14 minutes, or reset your password/);
+    expect(errorMessage(new ApiRequestError(401, 'The email or password is incorrect.', 'INVALID_CREDENTIALS'))).toBe('The email or password is incorrect.');
+    expect(errorMessage(new ApiRequestError(500, 'boom'))).toContain('server had a problem (not something you did)');
     expect(errorMessage(new TypeError('Failed to fetch'))).toMatch(/Can’t reach Healthmarg/);
     expect(errorMessage('weird', 'Fallback')).toBe('Fallback');
+  });
+
+  it('turns Retry-After seconds into words', () => {
+    expect(waitText(undefined)).toBe('a few minutes');
+    expect(waitText(20)).toBe('a few seconds');
+    expect(waitText(60)).toBe('about a minute');
+    expect(waitText(61)).toBe('about 2 minutes');
   });
 
   it('maps validation details to fields (first message per field)', () => {

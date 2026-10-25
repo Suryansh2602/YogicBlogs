@@ -6,6 +6,7 @@ import type { User } from '../../src/features/auth/types';
 interface Reply {
   status?: number;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 export interface Call {
@@ -43,6 +44,7 @@ export function mockApi(routes: Record<string, Handler | Handler[]>) {
       ok: status >= 200 && status < 300,
       status,
       statusText: String(status),
+      headers: new Headers(reply.headers),
       json: () => Promise.resolve(reply.body),
     } as Response;
   });
@@ -50,7 +52,11 @@ export function mockApi(routes: Record<string, Handler | Handler[]>) {
   return { calls, fetchMock, callsTo: (key: string) => calls.filter((c) => `${c.method} ${c.path.split('?')[0] ?? ''}` === key) };
 }
 
-export const apiError = (status: number, code: string, message = code) => ({ status, body: { error: { message, code } } });
+export const apiError = (status: number, code: string, message = code, headers: Record<string, string> = {}) => ({
+  status,
+  headers,
+  body: { error: { message, code } },
+});
 
 export const makeUser = (overrides: Partial<User> = {}): User => ({
   id: '0190a1b2-c3d4-7000-8000-000000000001',

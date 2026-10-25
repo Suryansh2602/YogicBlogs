@@ -10,6 +10,10 @@ import { LotusBloom } from '../../components/brand/LotusBloom';
 import { adminApi } from '../../features/auth/api';
 import { errorMessage, fieldErrors } from '../../features/auth/errors';
 import { passwordProblems } from '../../features/auth/passwordPolicy';
+import { emailProblem, nameProblem } from '../../features/auth/validation';
+import { useFormErrors } from '../../hooks/useFormErrors';
+
+type Field = 'setupCode' | 'displayName' | 'email' | 'password';
 
 /** One-time creation of the first admin. Closed for good once any admin exists (enforced by the API). */
 export default function AdminSetupPage() {
@@ -18,8 +22,7 @@ export default function AdminSetupPage() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const { fieldErrors: errors, setFieldErrors: setErrors, formError, setFormError, edited } = useFormErrors<Field>();
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(false);
 
@@ -33,24 +36,27 @@ export default function AdminSetupPage() {
         setStatus('closed');
       },
     );
-  }, []);
+  }, [setFormError]);
 
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const problem = passwordProblems(password, { email, displayName })[0];
-    if (problem) {
-      setErrors({ password: problem });
-      return;
-    }
+    const next = {
+      setupCode: setupCode.trim() ? undefined : 'Enter the setup code from the API terminal.',
+      displayName: nameProblem(displayName),
+      email: emailProblem(email),
+      password: passwordProblems(password, { email, displayName })[0],
+    };
+    setErrors(next);
+    if (Object.values(next).some(Boolean)) return;
     setBusy(true);
-    setErrors({});
     setFormError(null);
     try {
       await adminApi.setup({ setupCode: setupCode.trim(), email: email.trim(), password, displayName: displayName.trim() });
       setCreated(true);
     } catch (err) {
-      setErrors(fieldErrors(err));
-      setFormError(errorMessage(err));
+      const fields = fieldErrors(err);
+      if (Object.keys(fields).length) setErrors(fields);
+      else setFormError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -104,10 +110,11 @@ export default function AdminSetupPage() {
           spellCheck={false}
           required
           value={setupCode}
-          error={errors['setupCode']}
+          error={errors.setupCode}
           hint="Shown in the API terminal at startup (or ADMIN_SETUP_CODE in the server settings)."
           onChange={(e) => {
             setSetupCode(e.target.value);
+            edited('setupCode');
           }}
         />
         <TextField
@@ -115,9 +122,10 @@ export default function AdminSetupPage() {
           autoComplete="name"
           required
           value={displayName}
-          error={errors['displayName']}
+          error={errors.displayName}
           onChange={(e) => {
             setDisplayName(e.target.value);
+            edited('displayName');
           }}
         />
         <TextField
@@ -126,9 +134,10 @@ export default function AdminSetupPage() {
           autoComplete="username"
           required
           value={email}
-          error={errors['email']}
+          error={errors.email}
           onChange={(e) => {
             setEmail(e.target.value);
+            edited('email');
           }}
         />
         <PasswordField
@@ -137,12 +146,13 @@ export default function AdminSetupPage() {
           showStrength
           required
           value={password}
-          error={errors['password']}
+          error={errors.password}
           onChange={(e) => {
             setPassword(e.target.value);
+            edited('password');
           }}
         />
-        <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={!setupCode || !email || !password || !displayName}>
+        <Button type="submit" variant="primary" size="lg" block loading={busy} >
           Create admin account
         </Button>
       </form>

@@ -264,6 +264,13 @@ describe('attack prevention — authentication', () => {
     }
     expect(statuses.slice(0, 30).every((s) => s === 400)).toBe(true);
     expect(statuses.slice(30)).toEqual([429, 429]);
+
+    // The page can tell the person how long to wait: Retry-After is sent and readable cross-origin.
+    const blocked = await request(app).post('/api/v1/auth/password/reset').set('Origin', env.CLIENT_ORIGIN[0]).send({});
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error.code).toBe('RATE_LIMITED');
+    expect(Number(blocked.headers['retry-after'])).toBeGreaterThan(0);
+    expect(blocked.headers['access-control-expose-headers']).toMatch(/Retry-After/i);
   });
 
   it('does not throttle page-load routes with the strict limit', async () => {

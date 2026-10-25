@@ -9,13 +9,13 @@ import { authApi } from '../../features/auth/api';
 import { errorMessage, fieldErrors } from '../../features/auth/errors';
 import { passwordProblems } from '../../features/auth/passwordPolicy';
 import { useUrlToken } from './useUrlToken';
+import { useFormErrors } from '../../hooks/useFormErrors';
 
 export default function ResetPasswordPage() {
   const token = useUrlToken();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [errors, setErrors] = useState<{ password?: string | undefined; confirm?: string | undefined }>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const { fieldErrors: errors, setFieldErrors: setErrors, formError, setFormError, edited } = useFormErrors<'password' | 'confirm'>();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -23,7 +23,10 @@ export default function ResetPasswordPage() {
     event.preventDefault();
     if (!token) return;
     const problem = passwordProblems(password)[0];
-    const next = { password: problem, confirm: password !== confirm ? 'The two passwords don’t match' : undefined };
+    const next = {
+      password: problem,
+      confirm: !confirm ? 'Type the new password again.' : password !== confirm ? 'This doesn’t match the new password above. Type it again.' : undefined,
+    };
     setErrors(next);
     if (next.password || next.confirm) return;
     setBusy(true);
@@ -32,8 +35,10 @@ export default function ResetPasswordPage() {
       await authApi.resetPassword(token, password);
       setDone(true);
     } catch (err) {
-      setErrors({ password: fieldErrors(err)['password'] });
-      setFormError(errorMessage(err));
+      // A problem with the password is shown under it; anything else (like an expired link) in the banner.
+      const passwordError = fieldErrors(err)['password'];
+      if (passwordError) setErrors({ password: passwordError });
+      else setFormError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -77,6 +82,7 @@ export default function ResetPasswordPage() {
           error={errors.password}
           onChange={(e) => {
             setPassword(e.target.value);
+            edited('password');
           }}
         />
         <PasswordField
@@ -87,6 +93,7 @@ export default function ResetPasswordPage() {
           error={errors.confirm}
           onChange={(e) => {
             setConfirm(e.target.value);
+            edited('confirm');
           }}
         />
         <Button type="submit" variant="primary" size="lg" block loading={busy}>

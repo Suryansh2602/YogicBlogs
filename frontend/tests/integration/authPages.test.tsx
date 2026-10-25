@@ -15,11 +15,31 @@ describe('sign up', () => {
     const api = mockApi({});
     renderApp('/signup');
     await userEvent.click(await screen.findByRole('button', { name: 'Create my account' }));
-    expect(screen.getByText('Tell us what to call you')).toBeInTheDocument();
-    expect(screen.getByText('Enter a valid email address')).toBeInTheDocument();
-    expect(screen.getByText('Use at least 12 characters')).toBeInTheDocument();
-    expect(screen.getByText(/accept the Terms/)).toBeInTheDocument();
+    expect(screen.getByText('Enter your name, so we know what to call you.')).toBeInTheDocument();
+    expect(screen.getByText('Enter your email address.')).toBeInTheDocument();
+    expect(screen.getByText('Enter a password.')).toBeInTheDocument();
+    expect(screen.getByText('Tick the box to accept the Terms of Use and Privacy Policy.')).toBeInTheDocument();
     expect(api.calls).toHaveLength(0);
+  });
+
+  it('names the exact problem, and clears each message as soon as that field is edited', async () => {
+    mockApi({});
+    renderApp('/signup');
+    await fill(await screen.findByLabelText('Your name').then(() => 'Your name'), 'Meera');
+    await fill('Email', 'meera@gmail');
+    await fill('Password', 'meera123');
+    await userEvent.click(screen.getByRole('button', { name: 'Create my account' }));
+    expect(screen.getByText('“gmail” isn’t a complete domain. It needs an ending like .com or .in.')).toBeInTheDocument();
+    expect(screen.getByText('Your password has 8 characters. Use at least 12.')).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('Email'), '.com');
+    expect(screen.queryByText(/isn’t a complete domain/)).not.toBeInTheDocument();
+    // Editing one field leaves the other field's message until that one is edited too.
+    expect(screen.getByText('Your password has 8 characters. Use at least 12.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Password'), '-and-more');
+    expect(screen.queryByText(/Your password has 8 characters/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox'));
+    expect(screen.queryByText(/Tick the box/)).not.toBeInTheDocument();
   });
 
   it('creates the account and asks the user to check their email', async () => {
@@ -43,10 +63,11 @@ describe('sign up', () => {
   });
 
   it('shows the server’s reasons next to the fields', async () => {
+    const breached = 'This password has appeared 1,234 times in leaked password lists, so attackers try it early. Choose a different one.';
     mockApi({
       'POST /auth/register': {
         status: 400,
-        body: { error: { message: 'This password has appeared in a data breach.', code: 'BREACHED_PASSWORD', details: [{ path: 'password', message: 'Found in known data breaches' }] } },
+        body: { error: { message: breached, code: 'BREACHED_PASSWORD', details: [{ path: 'password', message: breached }] } },
       },
     });
     renderApp('/signup');
@@ -55,8 +76,10 @@ describe('sign up', () => {
     await fill('Password', 'password-password-1');
     await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: 'Create my account' }));
-    expect(await screen.findByText('Found in known data breaches')).toBeInTheDocument();
-    expect(screen.getByText(/appeared in a data breach/)).toBeInTheDocument();
+    // Shown once, under the password field (not repeated in a banner), and gone once the password is edited.
+    expect(await screen.findAllByText(breached)).toHaveLength(1);
+    await userEvent.type(screen.getByLabelText('Password'), 'x');
+    expect(screen.queryByText(breached)).not.toBeInTheDocument();
   });
 });
 
@@ -103,14 +126,14 @@ describe('sign in', () => {
   it('accepts a backup code instead, and restarts when the attempt has expired', async () => {
     mockApi({
       'POST /auth/login': { body: { mfaRequired: true, mfaTicket: 'ticket-123456789012345' } },
-      'POST /auth/login/2fa': apiError(401, 'MFA_TICKET_INVALID'),
+      'POST /auth/login/2fa': apiError(401, 'MFA_TICKET_INVALID', 'Your sign-in attempt expired. Please sign in again.'),
     });
     renderApp('/signin');
     await signIn();
     await userEvent.click(await screen.findByRole('button', { name: 'Lost your phone? Use a backup code' }));
     await fill('Backup code', 'ABCDE-12345');
     await userEvent.click(screen.getByRole('button', { name: 'Verify and continue' }));
-    expect(await screen.findByText(/sign-in attempt has expired/)).toBeInTheDocument();
+    expect(await screen.findByText(/Your sign-in attempt expired/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
   });
@@ -127,11 +150,29 @@ describe('sign in', () => {
     expect(api.callsTo('POST /auth/verify-email/resend')[0]?.body).toEqual({ email: 'meera@example.com' });
   });
 
-  it('explains a lockout in plain words', async () => {
-    mockApi({ 'POST /auth/login': apiError(429, 'LOGIN_LOCKED') });
+  it('explains a lockout, including how long to wait', async () => {
+    mockApi({ 'POST /auth/login': apiError(429, 'LOGIN_LOCKED', 'locked', { 'Retry-After': '900' }) });
     renderApp('/signin');
     await signIn();
-    expect(await screen.findByText(/sign-in is paused for a little while/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Too many wrong passwords for this account, so sign-in is paused for your safety. Try again in about 15 minutes, or reset your password.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('checks the fields before calling the API, and clears the banner when the person types again', async () => {
+    const api = mockApi({ 'POST /auth/login': apiError(401, 'INVALID_CREDENTIALS', 'The email or password is incorrect. Check both and try again.') });
+    renderApp('/signin');
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in' }));
+    expect(screen.getByText('Enter your email address.')).toBeInTheDocument();
+    expect(screen.getByText('Enter your password.')).toBeInTheDocument();
+    expect(api.calls).toHaveLength(0);
+
+    await signIn('meera@example.com', 'wrong-password-123');
+    expect(await screen.findByText('The email or password is incorrect. Check both and try again.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Password'), '4');
+    expect(screen.queryByText(/email or password is incorrect/)).not.toBeInTheDocument();
   });
 });
 
@@ -173,8 +214,9 @@ describe('emailed links', () => {
     await fill(await screen.findByLabelText('New password').then(() => 'New password'), 'Lotus-in-the-morning-sun');
     await fill('Repeat new password', 'Lotus-in-the-morning-sum');
     await userEvent.click(screen.getByRole('button', { name: 'Save new password' }));
-    expect(await screen.findByText('The two passwords don’t match')).toBeInTheDocument();
+    expect(await screen.findByText('This doesn’t match the new password above. Type it again.')).toBeInTheDocument();
     await userEvent.clear(screen.getByLabelText('Repeat new password'));
+    expect(screen.queryByText(/doesn’t match the new password/)).not.toBeInTheDocument();
     await fill('Repeat new password', 'Lotus-in-the-morning-sun');
     await userEvent.click(screen.getByRole('button', { name: 'Save new password' }));
     expect(await screen.findByRole('heading', { name: 'Password changed' })).toBeInTheDocument();

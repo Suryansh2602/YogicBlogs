@@ -7,16 +7,21 @@ import { Alert } from '../../components/ui/Alert';
 import { authApi } from '../../features/auth/api';
 import { errorMessage } from '../../features/auth/errors';
 import { useRecaptcha } from '../../features/auth/useRecaptcha';
+import { emailProblem } from '../../features/auth/validation';
+import { useFormErrors } from '../../hooks/useFormErrors';
 
 export default function ForgotPasswordPage() {
   const getCaptcha = useRecaptcha();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { fieldErrors, setFieldErrors, formError: error, setFormError: setError, edited } = useFormErrors<'email'>();
 
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const problem = emailProblem(email);
+    setFieldErrors({ email: problem });
+    if (problem) return;
     setBusy(true);
     setError(null);
     try {
@@ -52,11 +57,13 @@ export default function ForgotPasswordPage() {
             inputMode="email"
             required
             value={email}
+            error={fieldErrors.email}
             onChange={(e) => {
               setEmail(e.target.value);
+              edited('email');
             }}
           />
-          <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={!email.trim()}>
+          <Button type="submit" variant="primary" size="lg" block loading={busy}>
             Send reset link
           </Button>
         </form>

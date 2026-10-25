@@ -12,6 +12,7 @@ import { errorMessage, fieldErrors } from '../../features/auth/errors';
 import { clearSession } from '../../features/auth/session';
 import { useAuth } from '../../features/auth/useAuth';
 import type { User } from '../../features/auth/types';
+import { nameProblem } from '../../features/auth/validation';
 import { greeting, verseOfTheDay } from './wisdom';
 import './dashboard.css';
 
@@ -24,6 +25,9 @@ function ProfileCard({ user }: { user: User }) {
 
   const save = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const problem = nameProblem(name);
+    setError(problem);
+    if (problem) return;
     setBusy(true);
     setError(undefined);
     try {
@@ -49,10 +53,11 @@ function ProfileCard({ user }: { user: User }) {
             autoFocus
             onChange={(e) => {
               setName(e.target.value);
+              setError(undefined);
             }}
           />
           <div className="dash-card__actions">
-            <Button type="submit" size="sm" loading={busy} disabled={!name.trim()}>
+            <Button type="submit" size="sm" loading={busy}>
               Save
             </Button>
             <Button

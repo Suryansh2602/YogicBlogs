@@ -9,9 +9,9 @@ import { Alert } from '../../components/ui/Alert';
 import { authApi } from '../../features/auth/api';
 import { errorMessage, fieldErrors } from '../../features/auth/errors';
 import { passwordProblems } from '../../features/auth/passwordPolicy';
+import { emailProblem, nameProblem } from '../../features/auth/validation';
 import { useRecaptcha } from '../../features/auth/useRecaptcha';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { useFormErrors } from '../../hooks/useFormErrors';
 
 type Field = 'displayName' | 'email' | 'password' | 'acceptTerms';
 
@@ -22,19 +22,18 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [accepted, setAccepted] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<Field, string | undefined>>>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const { fieldErrors: errors, setFieldErrors: setErrors, formError, setFormError, edited } = useFormErrors<Field>();
   const [busy, setBusy] = useState(false);
 
   const validate = () => {
-    const next: Partial<Record<Field, string | undefined>> = {};
-    if (!displayName.trim()) next.displayName = 'Tell us what to call you';
-    if (!EMAIL_RE.test(email.trim())) next.email = 'Enter a valid email address';
-    const problem = passwordProblems(password, { email, displayName })[0];
-    if (problem) next.password = problem;
-    if (!accepted) next.acceptTerms = 'Please accept the Terms and Privacy Policy to continue';
+    const next: Partial<Record<Field, string | undefined>> = {
+      displayName: nameProblem(displayName),
+      email: emailProblem(email),
+      password: passwordProblems(password, { email, displayName })[0],
+      acceptTerms: accepted ? undefined : 'Tick the box to accept the Terms of Use and Privacy Policy.',
+    };
     setErrors(next);
-    return Object.keys(next).length === 0;
+    return Object.values(next).every((message) => !message);
   };
 
   const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -54,9 +53,13 @@ export default function SignUpPage() {
       });
       void navigate('/check-email', { state: { email: email.trim() } });
     } catch (err) {
+      // A problem with one field is shown under that field only; anything else goes in the banner.
       const fields = fieldErrors(err);
-      setErrors({ displayName: fields['displayName'], email: fields['email'], password: fields['password'] });
-      setFormError(errorMessage(err));
+      if (Object.keys(fields).length) {
+        setErrors({ displayName: fields['displayName'], email: fields['email'], password: fields['password'] });
+      } else {
+        setFormError(errorMessage(err));
+      }
     } finally {
       setBusy(false);
     }
@@ -83,6 +86,7 @@ export default function SignUpPage() {
           error={errors.displayName}
           onChange={(e) => {
             setDisplayName(e.target.value);
+            edited('displayName');
           }}
         />
         <TextField
@@ -95,6 +99,7 @@ export default function SignUpPage() {
           error={errors.email}
           onChange={(e) => {
             setEmail(e.target.value);
+            edited('email');
           }}
         />
         <PasswordField
@@ -108,6 +113,7 @@ export default function SignUpPage() {
           hint="At least 12 characters. A short phrase is easy to remember and hard to guess."
           onChange={(e) => {
             setPassword(e.target.value);
+            edited('password');
           }}
         />
         <Checkbox
@@ -115,6 +121,7 @@ export default function SignUpPage() {
           error={errors.acceptTerms}
           onChange={(e) => {
             setAccepted(e.target.checked);
+            edited('acceptTerms');
           }}
         >
           I agree to the{' '}

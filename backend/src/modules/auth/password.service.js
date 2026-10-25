@@ -28,10 +28,11 @@ export async function burnPasswordCheck(password) {
 
 /**
  * Have I Been Pwned (k-anonymity): only the first 5 characters of the SHA-1 hash leave the server.
- * Fails open (returns false) on timeout or network error so an outage never blocks sign-up.
+ * Returns how many times the password appears in known breaches (0 = not found).
+ * Fails open (returns 0) on timeout or network error so an outage never blocks sign-up.
  */
-export async function isBreachedPassword(password, { fetchImpl = fetch, timeoutMs = 2_000, enabled = env.HIBP_ENABLED } = {}) {
-  if (!enabled) return false;
+export async function breachCount(password, { fetchImpl = fetch, timeoutMs = 2_000, enabled = env.HIBP_ENABLED } = {}) {
+  if (!enabled) return 0;
   const { createHash } = await import('node:crypto');
   const sha1 = createHash('sha1').update(password).digest('hex').toUpperCase();
   const prefix = sha1.slice(0, 5);
@@ -41,30 +42,45 @@ export async function isBreachedPassword(password, { fetchImpl = fetch, timeoutM
       headers: { 'Add-Padding': 'true' },
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!res.ok) return false;
+    if (!res.ok) return 0;
     const body = await res.text();
-    return body.split('\n').some((line) => {
+    for (const line of body.split('\n')) {
       const [hashSuffix, count] = line.trim().split(':');
-      return hashSuffix === suffix && Number(count) > 0;
-    });
+      if (hashSuffix === suffix) return Number(count) || 0;
+    }
+    return 0;
   } catch (err) {
     logger.warn({ err: err.message, check: sha256Hex(prefix).slice(0, 8) }, 'Breached-password check unavailable');
-    return false;
+    return 0;
   }
 }
 
-/** Server-side policy (the frontend mirrors it for instant feedback, but this is the one that counts). */
+export const PASSWORD_MIN = 12;
+export const PASSWORD_MAX = 128;
+
+/**
+ * Server-side policy (the frontend mirrors it for instant feedback, but this is the one that counts).
+ * Each message says exactly what is wrong, without ever repeating the password itself.
+ */
 export function passwordProblems(password, { email, displayName } = {}) {
   const problems = [];
   const lower = password.toLowerCase();
-  if (password.length < 12) problems.push('Use at least 12 characters');
-  if (password.length > 128) problems.push('Use at most 128 characters');
-  if (email && lower.includes(email.split('@')[0].toLowerCase()) && email.split('@')[0].length >= 4) {
-    problems.push('Don’t include your email in your password');
+  const emailName = email ? email.split('@')[0].toLowerCase() : '';
+  const name = displayName ? displayName.trim().toLowerCase() : '';
+  if (password.length < PASSWORD_MIN) {
+    problems.push(`Your password has ${password.length} character${password.length === 1 ? '' : 's'}. Use at least ${PASSWORD_MIN}.`);
   }
-  if (displayName && displayName.length >= 4 && lower.includes(displayName.toLowerCase())) {
-    problems.push('Don’t include your name in your password');
+  if (password.length > PASSWORD_MAX) {
+    problems.push(`Your password has ${password.length} characters. The limit is ${PASSWORD_MAX}.`);
   }
-  if (/^(.)\1+$/.test(password)) problems.push('Don’t repeat a single character');
+  if (emailName.length >= 4 && lower.includes(emailName)) {
+    problems.push(`Your password contains “${emailName}” from your email address. Remove it.`);
+  }
+  if (name.length >= 4 && lower.includes(name)) {
+    problems.push('Your password contains your name. Remove it.');
+  }
+  if (password.length > 1 && /^(.)\1+$/.test(password)) {
+    problems.push('Your password is one character repeated. Mix in other characters.');
+  }
   return problems;
 }

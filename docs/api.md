@@ -129,10 +129,14 @@ Credential endpoints use the strict rate limit. Steps marked 🤖 require a reCA
 // 403 — correct password but email not confirmed
 { "error": { "message": "Please confirm your email first. We can send the link again.", "code": "EMAIL_NOT_VERIFIED" } }
 // 401 — same message for unknown email and wrong password
-{ "error": { "message": "Invalid email or password", "code": "INVALID_CREDENTIALS" } }
+{ "error": { "message": "The email or password is incorrect. Check both and try again.", "code": "INVALID_CREDENTIALS" } }
 ```
 
 Password rules: 12–128 characters, must not contain your email name or display name, must not be one repeated character, checked against known-breached passwords (HIBP k-anonymity), hashed with argon2id.
+
+**Error messages say exactly what is wrong.** Examples: `Your password has 8 characters. Use at least 12.`, `“gmail” isn’t a complete domain. It needs an ending like .com or .in.`, `This password has appeared 21,613 times in leaked password lists…`, `That code didn’t match… 3 tries left.` Field problems come in `details[{ path, message }]`, and `message` repeats the first one.
+- **Two deliberate exceptions, for security:** a failed sign-in never says whether the email or the password was wrong, and sign-up, resend and forgot-password never say whether an account exists.
+- **Waiting times:** `429` answers carry `Retry-After` (exposed to the browser via CORS), so the page can say how long to wait.
 
 **Error codes** the frontend reacts to: `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `ACCOUNT_SUSPENDED`, `LOGIN_LOCKED`, `RATE_LIMITED`, `CAPTCHA_FAILED`, `WEAK_PASSWORD`, `BREACHED_PASSWORD`, `INVALID_TOKEN` (email link), `INVALID_CODE`, `MFA_TICKET_INVALID`, `TOKEN_INVALID` / `TOKEN_REVOKED` / `NO_TOKEN` (sign in again), `NO_SESSION` / `SESSION_EXPIRED` / `SESSION_REVOKED` (refresh failed), `REFRESH_RACE` (another tab refreshed: retry once), `CSRF_FAILED`.
 

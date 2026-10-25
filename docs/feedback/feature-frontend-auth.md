@@ -51,3 +51,21 @@ Owner request (2026-10-25): design the frontend from the logo. It should be mode
 
 - Owner: create the first admin at `/admin/setup` with the code from the API terminal.
 - Later: a reCAPTCHA v3 site key (`VITE_RECAPTCHA_SITE_KEY`); CSP header on the static host; making the Playwright E2E a permanent suite (it runs from a scratch folder today).
+
+## Round 3: owner feedback
+
+> "The error messages should disappear when the user starts typing, and say what the user did wrong."
+
+| Feedback | Change |
+|---|---|
+| Messages linger after the person starts fixing the field | A shared `useFormErrors` hook on every form: editing a field clears that field's message and the form-level banner. This covers sign-up, sign-in, admin sign-in, forgot and reset password, admin setup, profile name and the 2FA code boxes. |
+| Messages were generic ("Enter a valid email address", "Use at least 12 characters") | Exact reasons, in the same words on the frontend and the server, never repeating the password. Examples: "Your password has 8 characters. Use at least 12.", "Your email address is missing the “@”…", "“gmail” isn’t a complete domain…", "This password has appeared 21,613 times in leaked password lists…", "That code didn’t match… 3 tries left." |
+| Lockouts said "for a little while" | The API exposes `Retry-After` to the browser, so the page says "Try again in about 15 minutes, or reset your password". |
+| A server-rejected field showed the same message twice (banner and field) | Field problems appear only under the field; the banner is for everything else. |
+| Disabled "Sign in" buttons couldn't explain what was missing | The buttons stay enabled; submitting with empty fields says "Enter your email address." / "Enter your password." without calling the API. |
+
+Kept generic on purpose: a failed sign-in never says whether the email or the password was wrong. Saying either would let anyone test which emails have accounts.
+
+QA: backend 190 tests (94.4% merged coverage); frontend 71 tests (91.3%); 0 vulnerabilities; bundle within budget. On the live API: a bad domain, a short password and a breached password (21,613 times) each produced the exact message.
+
+Locally, emails are files: open the newest one in `backend/.local/outbox/` (Explorer, or `Get-ChildItem E:\YogicBlog\backend\.local\outbox | Sort-Object LastWriteTime | Select-Object -Last 1 | Invoke-Item` in PowerShell).

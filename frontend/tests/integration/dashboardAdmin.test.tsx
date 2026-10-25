@@ -48,6 +48,19 @@ describe('member dashboard', () => {
     expect(await screen.findByText(/On\. Signing in needs your password/)).toBeInTheDocument();
   });
 
+  it('says what is wrong with an empty name, and clears it on typing', async () => {
+    rememberSignedIn();
+    const api = mockApi(restore());
+    renderApp('/dashboard');
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit name' }));
+    await userEvent.clear(screen.getByLabelText('Name'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByText('Enter your name, so we know what to call you.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Name'), 'M');
+    expect(screen.queryByText(/Enter your name/)).not.toBeInTheDocument();
+    expect(api.callsTo('PATCH /users/me')).toHaveLength(0);
+  });
+
   it('signs out everywhere', async () => {
     rememberSignedIn();
     const api = mockApi({ ...restore(), 'POST /auth/logout-all': { status: 204 } });

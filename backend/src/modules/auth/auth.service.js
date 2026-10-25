@@ -15,7 +15,7 @@ import { invalidateUserState, revokedSessionKey } from '../../middlewares/authen
 import {
   burnPasswordCheck,
   hashPassword,
-  isBreachedPassword,
+  breachCount,
   needsRehash,
   passwordProblems,
   verifyPassword,
@@ -35,6 +35,8 @@ export const POLICY_VERSION = '2026-10-25';
 const EMAIL_TOKEN_TTL_MS = { [AUTH_TOKEN_PURPOSE.EMAIL_VERIFICATION]: 24 * 3600_000, [AUTH_TOKEN_PURPOSE.PASSWORD_RESET]: 3600_000 };
 const MFA_TICKET_TTL_SECONDS = 5 * 60;
 const MFA_MAX_ATTEMPTS = 5;
+// Deliberately the same for an unknown email and a wrong password, so nobody can test which emails have accounts.
+const WRONG_CREDENTIALS = 'The email or password is incorrect. Check both and try again.';
 
 /** What the client may see about a user. */
 export function publicUser(user, { twoFactorEnabled = false } = {}) {
@@ -53,14 +55,12 @@ export function publicUser(user, { twoFactorEnabled = false } = {}) {
 export async function assertAcceptablePassword(password, { email, displayName }) {
   const problems = passwordProblems(password, { email, displayName });
   if (problems.length) {
-    throw ApiError.badRequest('Choose a stronger password', problems.map((message) => ({ path: 'password', message })), 'WEAK_PASSWORD');
+    throw ApiError.badRequest(problems[0], problems.map((message) => ({ path: 'password', message })), 'WEAK_PASSWORD');
   }
-  if (await isBreachedPassword(password)) {
-    throw ApiError.badRequest(
-      'This password has appeared in a data breach. Please choose a different one.',
-      [{ path: 'password', message: 'Found in known data breaches' }],
-      'BREACHED_PASSWORD',
-    );
+  const breaches = await breachCount(password);
+  if (breaches > 0) {
+    const message = `This password has appeared ${breaches.toLocaleString('en-IN')} time${breaches === 1 ? '' : 's'} in leaked password lists, so attackers try it early. Choose a different one.`;
+    throw ApiError.badRequest(message, [{ path: 'password', message }], 'BREACHED_PASSWORD');
   }
 }
 
@@ -182,11 +182,15 @@ async function failMfaAttempt(ticket, data) {
   const attempts = data.attempts + 1;
   if (attempts >= MFA_MAX_ATTEMPTS) {
     await ephemeralStore.del(ticketKey(ticket));
-    throw ApiError.unauthorized('Too many wrong codes. Please sign in again.', 'MFA_TICKET_INVALID');
+    throw ApiError.unauthorized(`That was the ${MFA_MAX_ATTEMPTS}th wrong code, so this sign-in was stopped. Please sign in again.`, 'MFA_TICKET_INVALID');
   }
   const ttl = Math.max(await ephemeralStore.ttl(ticketKey(ticket)), 1);
   await ephemeralStore.set(ticketKey(ticket), JSON.stringify({ ...data, attempts }), ttl);
-  throw ApiError.unauthorized('That code isn’t right. Please try again.', 'INVALID_CODE');
+  const left = MFA_MAX_ATTEMPTS - attempts;
+  throw ApiError.unauthorized(
+    `That code didn’t match. Codes change every 30 seconds, so enter the one your app shows now. ${left} ${left === 1 ? 'try' : 'tries'} left.`,
+    'INVALID_CODE',
+  );
 }
 
 /** Issue the session: access token in the body, refresh token as an HttpOnly cookie (set by the route). */
@@ -217,13 +221,13 @@ export async function login({ email, password }, req, { adminOnly = false } = {}
   if (!valid) {
     await lockout.recordFailure(ip, email);
     await audit('auth.login.failure', { req, actorId: user?.id ?? null, metadata: { reason: user ? 'bad_password' : 'unknown_email' } });
-    throw ApiError.unauthorized('Invalid email or password', 'INVALID_CREDENTIALS');
+    throw ApiError.unauthorized(WRONG_CREDENTIALS, 'INVALID_CREDENTIALS');
   }
   // Admin sign-in page: a valid non-admin account gets the same answer as a wrong password.
   if (adminOnly && user.role !== ROLES.ADMIN) {
     await lockout.recordFailure(ip, email);
     await audit('auth.login.failure', { req, actorId: user.id, metadata: { reason: 'not_admin' } });
-    throw ApiError.unauthorized('Invalid email or password', 'INVALID_CREDENTIALS');
+    throw ApiError.unauthorized(WRONG_CREDENTIALS, 'INVALID_CREDENTIALS');
   }
   await lockout.clear(ip, email);
 
@@ -358,7 +362,9 @@ export async function beginEnrolmentForUser(userId) {
 export async function enableForUser(userId, code, req) {
   const user = await models.User.findByPk(userId);
   const backupCodes = await twoFactor.enable(user, code);
-  if (!backupCodes) throw ApiError.badRequest('That code isn’t right. Please try again.', undefined, 'INVALID_CODE');
+  if (!backupCodes) {
+    throw ApiError.badRequest('That code didn’t match. Codes change every 30 seconds, so enter the one your app shows now.', undefined, 'INVALID_CODE');
+  }
   await audit('auth.2fa.enabled', { req, actorId: userId, entityType: 'user', entityId: userId });
   return { backupCodes };
 }

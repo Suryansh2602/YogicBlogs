@@ -16,8 +16,8 @@ interface TwoFactorEnrolmentProps {
   enable: (code: string) => Promise<string[]>;
   /** Called after the user confirms the backup codes are saved. */
   onDone: () => void;
-  /** The pending sign-in expired (admin first sign-in only). */
-  onExpired?: () => void;
+  /** The pending sign-in expired or was stopped (admin first sign-in only); gets the reason. */
+  onExpired?: (message: string) => void;
 }
 
 const groups = (secret: string) => secret.match(/.{1,4}/g)?.join(' ') ?? secret;
@@ -43,7 +43,7 @@ export function TwoFactorEnrolment({ begin, enable, onDone, onExpired }: TwoFact
       },
       (err: unknown) => {
         if (cancelled) return;
-        if (hasCode(err, 'MFA_TICKET_INVALID')) onExpired?.();
+        if (hasCode(err, 'MFA_TICKET_INVALID')) onExpired?.(errorMessage(err));
         setError(errorMessage(err));
       },
     );
@@ -59,7 +59,7 @@ export function TwoFactorEnrolment({ begin, enable, onDone, onExpired }: TwoFact
     try {
       setBackupCodes(await enable(value));
     } catch (err) {
-      if (hasCode(err, 'MFA_TICKET_INVALID')) onExpired?.();
+      if (hasCode(err, 'MFA_TICKET_INVALID')) onExpired?.(errorMessage(err));
       setError(errorMessage(err));
       setCode('');
     } finally {
@@ -158,7 +158,16 @@ export function TwoFactorEnrolment({ begin, enable, onDone, onExpired }: TwoFact
             )}
           </div>
           <p className="enrol__prompt">3. Enter the 6-digit code the app shows:</p>
-          <OtpInput value={code} onChange={setCode} onComplete={(v) => void confirm(v)} disabled={busy} invalid={Boolean(error)} />
+          <OtpInput
+            value={code}
+            onChange={(value) => {
+              setCode(value);
+              setError(null);
+            }}
+            onComplete={(v) => void confirm(v)}
+            disabled={busy}
+            invalid={Boolean(error)}
+          />
           <Button variant="primary" block loading={busy} disabled={code.length !== 6} onClick={() => void confirm(code)}>
             Turn on two-step sign-in
           </Button>
