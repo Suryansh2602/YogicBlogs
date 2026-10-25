@@ -1,0 +1,227 @@
+/*
+ * Healthmarg design tokens. Components use these variables only, never raw colours.
+ * Themes are named in Sanskrit and switched with <html data-theme="...">:
+ *   ushas  (dawn)    the logo's own palette: cream, navy, lotus pink, teal. Default for light mode.
+ *   ratri  (night)   deep indigo with temple-lamp gold. Default for dark mode.
+ *   kesar  (saffron) warm marigold and terracotta.
+ *   vana   (forest)  tulsi greens and river teal.
+ */
+
+:root {
+  /* Brand constants (from the logo) */
+  --brand-navy: #1f2b5e;
+  --brand-teal: #1c9aa0;
+  --brand-teal-deep: #12807f;
+  --brand-lotus: #e8728f;
+  --brand-lotus-soft: #f3a7b7;
+  --brand-saffron: #f2a33a;
+  --brand-cream: #fbf6ef;
+
+  /* Type */
+  --font-serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-deva: 'Tiro Devanagari Hindi', 'Noto Serif Devanagari', serif;
+
+  /* Shape and spacing */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --max-width: 74rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur: 320ms;
+  --dur-slow: 700ms;
+}
+
+/* ── Ushas · dawn (default light) ───────────────────────────────────────────────────────────── */
+:root,
+[data-theme='ushas'] {
+  color-scheme: light;
+  --bg: #fbf6ef;
+  --bg-elevated: #fffdf9;
+  --surface: #ffffff;
+  --surface-muted: #f5ede2;
+  --text: #1f2b5e;
+  --text-muted: #5b6283;
+  --text-soft: #8a8fa8;
+  --border: #eadfce;
+  --border-strong: #d8c8b2;
+
+  --primary: #12807f;
+  --primary-hover: #0e6b6a;
+  --primary-contrast: #ffffff;
+  --accent: #e8728f;
+  --accent-soft: #fbe3e9;
+  --gold: #f2a33a;
+  --focus: #e8728f;
+
+  --success: #1b7f5a;
+  --success-bg: #e3f4ec;
+  --danger: #b4233c;
+  --danger-bg: #fbe6ea;
+  --warning: #9a5b00;
+  --warning-bg: #fdf1dc;
+
+  --logo-ring: #1f2b5e;
+  --logo-stem: #1c9aa0;
+  --logo-petal: #e8728f;
+  --logo-petal-soft: #f3a7b7;
+  --logo-spark: #f2a33a;
+  --wordmark-a: #1f2b5e;
+  --wordmark-b: #12807f;
+
+  --aurora-1: rgba(232, 114, 143, 0.28);
+  --aurora-2: rgba(28, 154, 160, 0.22);
+  --aurora-3: rgba(242, 163, 58, 0.2);
+  --mandala: rgba(31, 43, 94, 0.07);
+  --shine: rgba(255, 255, 255, 0.75);
+  --shadow: 0 1px 2px rgba(31, 43, 94, 0.06), 0 8px 30px rgba(31, 43, 94, 0.08);
+  --shadow-lg: 0 2px 6px rgba(31, 43, 94, 0.06), 0 24px 60px rgba(31, 43, 94, 0.14);
+}
+
+/* ── Ratri · night ──────────────────────────────────────────────────────────────────────────── */
+[data-theme='ratri'] {
+  color-scheme: dark;
+  --bg: #0d1230;
+  --bg-elevated: #121a3f;
+  --surface: #161f4a;
+  --surface-muted: #1c2657;
+  --text: #f3ede4;
+  --text-muted: #b8b6cf;
+  --text-soft: #8b8db0;
+  --border: #27316a;
+  --border-strong: #3a4585;
+
+  --primary: #3cc4c0;
+  --primary-hover: #5fd6d2;
+  --primary-contrast: #0b1430;
+  --accent: #f3a7b7;
+  --accent-soft: #3a2547;
+  --gold: #f2b85a;
+  --focus: #f2b85a;
+
+  --success: #5fd3a0;
+  --success-bg: #12352f;
+  --danger: #ff8fa3;
+  --danger-bg: #3d1830;
+  --warning: #f2c46d;
+  --warning-bg: #3a2c12;
+
+  --logo-ring: #f3ede4;
+  --logo-stem: #3cc4c0;
+  --logo-petal: #f08aa2;
+  --logo-petal-soft: #f7bfcb;
+  --logo-spark: #f2b85a;
+  --wordmark-a: #f3ede4;
+  --wordmark-b: #3cc4c0;
+
+  --aurora-1: rgba(242, 184, 90, 0.16);
+  --aurora-2: rgba(60, 196, 192, 0.16);
+  --aurora-3: rgba(240, 138, 162, 0.16);
+  --mandala: rgba(242, 184, 90, 0.08);
+  --shine: rgba(255, 236, 200, 0.55);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.3), 0 30px 70px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Kesar · saffron ────────────────────────────────────────────────────────────────────────── */
+[data-theme='kesar'] {
+  color-scheme: light;
+  --bg: #fff5e8;
+  --bg-elevated: #fffaf2;
+  --surface: #ffffff;
+  --surface-muted: #fdead2;
+  --text: #3d1d12;
+  --text-muted: #7a4b37;
+  --text-soft: #a5785f;
+  --border: #f3d7b4;
+  --border-strong: #e7bd8c;
+
+  --primary: #c2481b;
+  --primary-hover: #a33b14;
+  --primary-contrast: #ffffff;
+  --accent: #e8941a;
+  --accent-soft: #fde6c4;
+  --gold: #d99a1e;
+  --focus: #c2481b;
+
+  --success: #2f7a3d;
+  --success-bg: #e5f2e3;
+  --danger: #b3261e;
+  --danger-bg: #fde4e1;
+  --warning: #8a5300;
+  --warning-bg: #fff0d6;
+
+  --logo-ring: #3d1d12;
+  --logo-stem: #2f8a76;
+  --logo-petal: #e05a3a;
+  --logo-petal-soft: #f29a6e;
+  --logo-spark: #e8941a;
+  --wordmark-a: #3d1d12;
+  --wordmark-b: #c2481b;
+
+  --aurora-1: rgba(232, 148, 26, 0.28);
+  --aurora-2: rgba(194, 72, 27, 0.16);
+  --aurora-3: rgba(224, 90, 58, 0.18);
+  --mandala: rgba(194, 72, 27, 0.08);
+  --shine: rgba(255, 248, 230, 0.8);
+  --shadow: 0 1px 2px rgba(61, 29, 18, 0.06), 0 8px 30px rgba(61, 29, 18, 0.1);
+  --shadow-lg: 0 2px 6px rgba(61, 29, 18, 0.06), 0 24px 60px rgba(61, 29, 18, 0.16);
+}
+
+/* ── Vana · forest ──────────────────────────────────────────────────────────────────────────── */
+[data-theme='vana'] {
+  color-scheme: light;
+  --bg: #f0f5ef;
+  --bg-elevated: #f7faf6;
+  --surface: #ffffff;
+  --surface-muted: #e2ede0;
+  --text: #15322a;
+  --text-muted: #4b6a5f;
+  --text-soft: #7d968c;
+  --border: #d3e2d0;
+  --border-strong: #b5ccb1;
+
+  --primary: #1f7a57;
+  --primary-hover: #176445;
+  --primary-contrast: #ffffff;
+  --accent: #d0607e;
+  --accent-soft: #f6e0e6;
+  --gold: #c99a2e;
+  --focus: #1f7a57;
+
+  --success: #1f7a57;
+  --success-bg: #ddf0e5;
+  --danger: #ad2b3e;
+  --danger-bg: #f9e3e6;
+  --warning: #806000;
+  --warning-bg: #f7efd5;
+
+  --logo-ring: #15322a;
+  --logo-stem: #1f7a57;
+  --logo-petal: #d0607e;
+  --logo-petal-soft: #eba3b4;
+  --logo-spark: #c99a2e;
+  --wordmark-a: #15322a;
+  --wordmark-b: #1f7a57;
+
+  --aurora-1: rgba(31, 122, 87, 0.2);
+  --aurora-2: rgba(201, 154, 46, 0.18);
+  --aurora-3: rgba(208, 96, 126, 0.14);
+  --mandala: rgba(21, 50, 42, 0.07);
+  --shine: rgba(255, 255, 255, 0.75);
+  --shadow: 0 1px 2px rgba(21, 50, 42, 0.06), 0 8px 30px rgba(21, 50, 42, 0.08);
+  --shadow-lg: 0 2px 6px rgba(21, 50, 42, 0.06), 0 24px 60px rgba(21, 50, 42, 0.14);
+}

@@ -46,7 +46,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['vite.config.ts', 'config/**/*.ts', 'eslint.config.js'],
+    // Classic (non-module) browser script loaded in <head>.
+    files: ['public/**/*.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+  },
+  {
+    files: ['vite.config.ts', 'config/**/*.ts', 'eslint.config.js', 'scripts/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
   {

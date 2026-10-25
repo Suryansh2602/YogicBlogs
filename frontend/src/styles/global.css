@@ -1,36 +1,4 @@
-/* Blue lagoon palette. Components use these tokens, never raw colours. */
-:root {
-  --color-lagoon-900: #08434a;
-  --color-lagoon-700: #0e7c86;
-  --color-lagoon-500: #2bb3b1;
-  --color-lagoon-300: #7fd6d0;
-  --color-lagoon-100: #e3f6f4;
-
-  --color-bg: #f7fbfb;
-  --color-surface: #ffffff;
-  --color-text: #1d2b2e;
-  --color-text-muted: #5a6b6e;
-  --color-primary: var(--color-lagoon-700);
-  --color-primary-contrast: #ffffff;
-  --color-border: #d6e6e5;
-
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --radius: 10px;
-  --space: 1rem;
-  --max-width: 72rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0b1a1c;
-    --color-surface: #112629;
-    --color-text: #e6f2f1;
-    --color-text-muted: #9bb3b2;
-    --color-primary: var(--color-lagoon-500);
-    --color-primary-contrast: #06282b;
-    --color-border: #1f3b3e;
-  }
-}
+@import './tokens.css';
 
 *,
 *::before,
@@ -38,19 +6,193 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
+  font-size: 1rem;
   line-height: 1.6;
-  color: var(--color-text);
-  background: var(--color-bg);
+  color: var(--text);
+  background: var(--bg);
+  transition:
+    background-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-3);
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 3.4rem);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.1rem);
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+p {
+  margin: 0 0 var(--space-4);
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--primary);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
 }
 
-img {
+a:hover {
+  color: var(--primary-hover);
+}
+
+img,
+svg {
   max-width: 100%;
-  height: auto;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -3rem;
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+
+.skip-link:focus {
+  top: var(--space-4);
+}
+
+/* Devanagari accents: a small cultural touch beside English text. */
+.deva {
+  font-family: var(--font-deva);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+/* Ornamental divider: a thin line with a lotus-bud diamond in the middle (rangoli-inspired). */
+.ornament {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--gold);
+  margin: var(--space-5) 0;
+}
+
+.ornament::before,
+.ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+
+/* Shared entrance animations. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.rise-in {
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* Smooth cross-fade between routes where the browser supports View Transitions. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: var(--ease-out);
+}
+
+/* Respect the visitor's "reduce motion" setting everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

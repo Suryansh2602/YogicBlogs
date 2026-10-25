@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => {
       include: ['tests/**/*.test.{ts,tsx}'],
       setupFiles: ['./tests/setup.ts'],
       restoreMocks: true,
+      // Page tests type into real forms and load lazy routes; generous, but still catches hangs.
+      testTimeout: 20_000,
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}', 'config/**/*.ts'],

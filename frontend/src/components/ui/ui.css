@@ -1,0 +1,519 @@
+/* ── Buttons ─────────────────────────────────────────────────────────────────────────────────── */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  text-decoration: none;
+  overflow: hidden;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+.btn--md {
+  padding: 0.7rem 1.4rem;
+  font-size: 0.97rem;
+}
+
+.btn--lg {
+  padding: 0.9rem 1.8rem;
+  font-size: 1.05rem;
+}
+
+.btn--sm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn--primary {
+  color: var(--primary-contrast);
+  background: var(--primary);
+  box-shadow: 0 6px 18px -8px var(--primary);
+}
+
+/* A soft sheen sweeps across the primary button on hover. */
+.btn--primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 700ms var(--ease-out);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: 0 10px 26px -10px var(--primary);
+}
+
+.btn--primary:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+
+.btn--secondary {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn--ghost {
+  color: var(--primary);
+  background: transparent;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--surface-muted);
+}
+
+.btn--danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: var(--danger);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+.btn__label {
+  position: relative;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────────────────────────── */
+.spinner {
+  animation: spinner-turn 1.1s linear infinite;
+  flex: none;
+}
+
+@keyframes spinner-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────────────────────────────── */
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: var(--space-4);
+}
+
+.field__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__input {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.field__input::placeholder {
+  color: var(--text-soft);
+}
+
+.field__input:hover {
+  border-color: var(--text-soft);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.field__control:has(.field__trailing) .field__input {
+  padding-right: 4.5rem;
+}
+
+.field__trailing {
+  position: absolute;
+  right: 0.4rem;
+}
+
+.field__reveal {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.field__reveal:hover {
+  background: var(--surface-muted);
+}
+
+.field__hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.field__error {
+  font-size: 0.84rem;
+  color: var(--danger);
+  animation: rise-in var(--dur) var(--ease-out);
+}
+
+.field--invalid .field__input {
+  border-color: var(--danger);
+}
+
+/* Password strength meter */
+.strength {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.strength__bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 9rem;
+}
+
+.strength__seg {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background-color var(--dur) var(--ease-out);
+}
+
+.strength[data-score='1'] .strength__seg--on {
+  background: var(--danger);
+}
+
+.strength[data-score='2'] .strength__seg--on {
+  background: var(--gold);
+}
+
+.strength[data-score='3'] .strength__seg--on,
+.strength[data-score='4'] .strength__seg--on {
+  background: var(--success);
+}
+
+.strength__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ── Checkbox ────────────────────────────────────────────────────────────────────────────────── */
+.check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem var(--space-3);
+  align-items: start;
+  margin-bottom: var(--space-3);
+  font-size: 0.92rem;
+}
+
+.check__input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.check__label {
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.check__error {
+  grid-column: 2;
+}
+
+/* ── Alert ───────────────────────────────────────────────────────────────────────────────────── */
+.alert {
+  display: grid;
+  gap: 0.2rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  margin-bottom: var(--space-4);
+  font-size: 0.93rem;
+  animation: rise-in var(--dur) var(--ease-out);
+}
+
+.alert--info {
+  background: var(--surface-muted);
+  border-color: var(--border);
+}
+
+.alert--success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.alert--danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.alert--warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.alert__body {
+  color: inherit;
+}
+
+.alert__body > :last-child {
+  margin-bottom: 0;
+}
+
+/* ── One-time code ───────────────────────────────────────────────────────────────────────────── */
+.otp {
+  display: flex;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+}
+
+.otp__box {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.otp__box:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+  transform: translateY(-2px);
+}
+
+.otp--invalid .otp__box {
+  border-color: var(--danger);
+  animation: otp-shake 360ms var(--ease-out);
+}
+
+@keyframes otp-shake {
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@media (max-width: 380px) {
+  .otp__box {
+    width: 2.6rem;
+    height: 3.1rem;
+  }
+}
+
+/* ── Theme switcher ──────────────────────────────────────────────────────────────────────────── */
+.theme-switcher {
+  position: relative;
+}
+
+.theme-switcher__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.8rem 0.35rem 0.4rem;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.theme-switcher__toggle:hover {
+  border-color: var(--border-strong);
+}
+
+.theme-swatch {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  transform: rotate(-30deg);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.theme-swatch span {
+  flex: 1;
+}
+
+.theme-swatch--lg {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.theme-switcher__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 50;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 14rem;
+  padding: 0.45rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  animation: rise-in var(--dur) var(--ease-out);
+}
+
+.theme-switcher__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+}
+
+.theme-switcher__option:hover,
+.theme-switcher__option[aria-pressed='true'] {
+  background: var(--surface-muted);
+}
+
+.theme-switcher__text {
+  display: grid;
+  line-height: 1.25;
+}
+
+.theme-switcher__text small {
+  color: var(--text-muted);
+}
+
+@media (max-width: 560px) {
+  .theme-switcher__name {
+    display: none;
+  }
+}
+
+/* ── Page loader ─────────────────────────────────────────────────────────────────────────────── */
+.page-loader {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+}
+
+.page-loader__mark {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+/* ── Badges ──────────────────────────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border-radius: var(--radius-pill);
+}
+
+.badge--ok {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+.badge--danger {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.badge--accent {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
