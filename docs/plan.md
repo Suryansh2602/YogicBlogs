@@ -83,14 +83,19 @@ Foundation first: every later feature reads and writes this schema, so it has to
 | 10 | `feature/frontend-auth` ✅ built | Healthmarg design system (4 themes, in-house animated components, mandala/lotus motifs, Devanagari accents), home, sign-up, sign-in + 2FA step, verify email, forgot/reset password, member dashboard (profile, 2FA, sign out everywhere), `/admin` (sign-in, first-time 2FA enrolment, overview, members, audit log), `/admin/setup`; in-memory session with single-flight refresh; guards; reCAPTCHA hook; bundle budget | Try it; later: reCAPTCHA site key |
 
 ### P2 · Content & dashboards
+
+> **Content phase:** the full design, flowcharts and decisions are in [content.md](content.md) (design panel, 2026-10-26). Translation is free, in the browser (owner decision).
+
 | # | Branch | Delivers | Owner action |
 |---|---|---|---|
-| 11 | `feature/conditions` | Admin CRUD + public cached list | Provide the condition list |
-| 12 | `feature/media-uploads` | multer, magic-byte checks, sharp re-encode to WebP, storage adapter | Brand images |
-| 13 | `feature/articles-api` | Admin CRUD, publish flow, sanitising, optimistic locking, public feed, search, cache invalidation | 3–5 sample articles |
-| 14 | `feature/admin-dashboard` | Admin shell, TipTap editor, media picker, conditions, users, audit viewer, stats | Decide who are admins |
-| 15 | `feature/user-dashboard` | Article reader (DOMPurify), bookmarks, continue reading, account and security settings | — |
-| 16 | `feature/article-audio` | Audio upload, signed streaming with Range, player (speed, resume) | Audio files or a TTS decision |
+| 11 | `feature/conditions` 🔨 | Conditions (what each article is about): admin CRUD, public cached list, admin page | Provide the condition list |
+| 12 | `feature/media-images` | Image pipeline: multer, magic bytes, sharp → WebP (EXIF/GPS stripped), storage adapter, media library | Brand images |
+| 13 | `feature/articles-api` | Drafts/live, autosave, publish checklist, revisions, references, public article API + cache | 3–5 sample articles |
+| 14 | `feature/article-editor` | TipTap 3 editor, blocks, thumbnail designer, references panel, preview, reader page (React renderer, no raw HTML) | — |
+| 14a | `feature/editor-speech` | Dictation + listen back (browser speech, free) | — |
+| 14b | `feature/translations` | Admin translation (browser translator → review → publish) + reader switcher, listening and instant translation | — |
+| 15 | `feature/user-dashboard` | Bookmarks, continue reading, account and security settings | — |
+| 16 | `feature/media-audio-video` | Audio + video upload (ffmpeg remux, GPS stripped), signed streaming with Range, narration recording | **Install ffmpeg** |
 
 ### P3 · Launch readiness
 | # | Branch | Delivers | Owner action |
