@@ -65,6 +65,21 @@ flowchart LR
 - **Vite 8 + React 19 + react-router 8, in strict TypeScript 6** (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, type-aware ESLint). A single-page app built to static files; `npm run build` type-checks first.
 - `services/apiClient.ts` is the **only** way the frontend reaches the backend: JSON, `credentials: 'include'`, typed errors. ESLint blocks importing backend code.
 - `features/<feature>/` holds feature UI (auth, articles, audio, admin). `routes/` holds route guards (signed-in, admin).
+- **Sessions in the browser** (`features/auth/session.ts`):
+  - The 15-minute access token lives **only in memory**, never in `localStorage`, where an injected script could read it.
+  - On page load the app restores the session from the HttpOnly refresh cookie. It only tries when a non-secret "was signed in" hint exists, so new visitors make no API call.
+  - Refresh is **single-flight**: many expired requests trigger one refresh, because parallel refreshes would look like token theft to the server. A `REFRESH_RACE` (another tab refreshed) is retried once; an expired CSRF token is renewed once.
+  - `authed()` attaches the Bearer token and retries a request once after a refresh. Route guards only decide what to show; the API enforces every permission.
+- **Design system** (`styles/tokens.css`):
+  - Four themes as CSS variables, switched with `<html data-theme>`: **Ushas** (dawn, the logo palette, default light), **Ratri** (night, default dark), **Kesar** (saffron) and **Vana** (forest).
+  - `public/theme-init.js` applies the saved theme before first paint. It's an external file, so a strict CSP can still forbid inline scripts.
+  - Fonts: Fraunces (headings), DM Sans (text), Tiro Devanagari Hindi (Sanskrit accents). All use `font-display: swap` and are split by script.
+- **Motion without weight:**
+  - Animated pieces in the style of ReactBits, written in-house as small TypeScript + CSS components: `BlurReveal`, `ShinyText`, `SpotlightCard` (pointer glow via CSS variables, no re-renders), `Aurora` and an SVG `Mandala`. A lotus logo also blooms, and `LotusBloom` marks success.
+  - No animation library, no canvas or WebGL. Everything respects `prefers-reduced-motion`.
+- **Performance budget:**
+  - Every page except home is lazy-loaded, at 1–3 kB gzip each.
+  - `npm run check:bundle` (part of `qa`) fails the build if first-load JS exceeds 115 kB gzip (currently about 101 kB, ~99 kB of it React + router), any page chunk exceeds 25 kB, or all CSS exceeds 16 kB.
 - **Security:**
   - No secrets in the bundle. The build fails if a `VITE_*` variable name looks like a secret.
   - A `Content-Security-Policy` header is set by the static host.

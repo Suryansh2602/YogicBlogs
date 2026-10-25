@@ -25,7 +25,7 @@ flowchart TD
       B3["7 ☐ feature/recaptcha-v3"]
       B4["8 ☐ feature/auth-2fa<br/>TOTP, backup codes, mandatory for admins"]
       B5["9 ☐ feature/google-oauth<br/>PKCE + state + nonce"]
-      B6["10 ☐ feature/frontend-auth<br/>pages, auth context, route guards"]
+      B6["10 ✅ feature/frontend-auth<br/>pages, auth context, route guards, themes"]
     end
     subgraph P2["P2 · Content & dashboards"]
       C1["11 ☐ feature/conditions"]
@@ -80,7 +80,7 @@ Foundation first: every later feature reads and writes this schema, so it has to
 | 7 | `feature/recaptcha-v3` (server side done in #5; frontend hook in #10) | `requireRecaptcha(action, minScore)`, test mode for automated tests | **Create a reCAPTCHA v3 key** (localhost + prod domain) |
 | 8 | `feature/auth-2fa` (TOTP, backup codes, admin enforcement done in #5; session list + disable later) | TOTP (`otpauth`), AES-256-GCM secret, backup codes, login step-up, mandatory for admins, session list | Back up `TWO_FACTOR_ENC_KEY` offline |
 | 9 | `feature/google-oauth` | `openid-client` PKCE flow, safe linking rules | **Create a Google OAuth client** + consent screen |
-| 10 | `feature/frontend-auth` | Login, Register, Verify, Forgot/Reset, 2FA pages; auth context; route guards; reCAPTCHA hook | — |
+| 10 | `feature/frontend-auth` ✅ built | Healthmarg design system (4 themes, in-house animated components, mandala/lotus motifs, Devanagari accents), home, sign-up, sign-in + 2FA step, verify email, forgot/reset password, member dashboard (profile, 2FA, sign out everywhere), `/admin` (sign-in, first-time 2FA enrolment, overview, members, audit log), `/admin/setup`; in-memory session with single-flight refresh; guards; reCAPTCHA hook; bundle budget | Try it; later: reCAPTCHA site key |
 
 ### P2 · Content & dashboards
 | # | Branch | Delivers | Owner action |
