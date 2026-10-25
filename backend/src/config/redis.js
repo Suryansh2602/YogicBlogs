@@ -3,7 +3,7 @@ import { env } from './env.js';
 import { logger } from '../utils/logger.js';
 
 /** All keys live under one namespace so the DB can be shared and scanned safely. See docs/database.md. */
-export const KEY_PREFIX = 'nn:';
+export const KEY_PREFIX = 'hm:';
 export const redisKey = (...parts) => KEY_PREFIX + parts.join(':');
 
 export function createRedisClient() {

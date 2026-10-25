@@ -12,15 +12,15 @@ MySQL 8 holds everything permanent. Redis holds only short-lived, rebuildable da
 
 | Database | Purpose |
 |---|---|
-| `NerveAndNectar` | App data |
-| `NerveAndNectar_audit` | Append-only audit log |
-| `NerveAndNectar_test` | Automated tests (wiped on every `npm run test:db`) |
-| `NerveAndNectar_test_audit` | Test audit log |
+| `healthmarg` | App data |
+| `healthmarg_audit` | Append-only audit log |
+| `healthmarg_test` | Automated tests (wiped on every `npm run test:db`) |
+| `healthmarg_test_audit` | Test audit log |
 
 | MySQL user | Rights | Used by |
 |---|---|---|
-| `nerve_app` | `SELECT, INSERT, UPDATE, DELETE` on app DBs; **`SELECT, INSERT` only** on audit DBs | The running API (two pools: the app DB, and a small one for the audit DB) |
-| `nerve_migrator` | Plus `CREATE, ALTER, DROP, INDEX, REFERENCES` | `npm run db:migrate` and DB tests only |
+| `healthmarg_app` | `SELECT, INSERT, UPDATE, DELETE` on app DBs; **`SELECT, INSERT` only** on audit DBs | The running API (two pools: the app DB, and a small one for the audit DB) |
+| `healthmarg_migrator` | Plus `CREATE, ALTER, DROP, INDEX, REFERENCES` | `npm run db:migrate` and DB tests only |
 | `root` | Everything | Never used by the app. The owner uses it once to run `create-db-users.sql`. |
 
 Setup script: [`backend/src/db/setup/create-db-users.sql`](../backend/src/db/setup/create-db-users.sql).
@@ -236,7 +236,7 @@ erDiagram
 ### Audit (separate database)
 | Table | Purpose | Key rules |
 |---|---|---|
-| `audit_logs` | Security and admin events: logins, 2FA changes, role changes, publishing | `nerve_app` can't UPDATE or DELETE; no FK to `users`, so entries outlive deleted accounts; `metadata` must never contain secrets |
+| `audit_logs` | Security and admin events: logins, 2FA changes, role changes, publishing | `healthmarg_app` can't UPDATE or DELETE; no FK to `users`, so entries outlive deleted accounts; `metadata` must never contain secrets |
 
 ### Planned (not built: see [plan.md](plan.md))
 `plans`, `subscriptions`, `payments`, `webhook_events` (subscriptions); `guidance_requests`, `guidance_routines` (personal guidance); AI-assistant conversation tables. Today's schema already allows them: `access_level` can gain `subscribers`, and `ROLES` can gain `practitioner`.
@@ -247,23 +247,23 @@ erDiagram
 
 Redis is an in-memory key-value store: very fast, but treated as **disposable**. If it's wiped, nothing permanent is lost.
 
-- **Namespace:** every key starts with `nn:` (`redisKey()` in `src/config/redis.js`).
+- **Namespace:** every key starts with `hm:` (`redisKey()` in `src/config/redis.js`).
 - **TTLs:** every key has one.
 - **Eviction:** `maxmemory-policy noeviction`, so security counters are never silently dropped.
 - **Databases:** dev uses DB index `0`, tests use DB `1`.
 
 | Key pattern | TTL | Purpose | Status |
 |---|---|---|---|
-| `nn:rl:api:{ip}` | 15 min window | General rate limit (300 req / 15 min) | ✅ built |
-| `nn:rl:auth:{ip}` | 15 min window | Strict auth rate limit (10 / 15 min) | ✅ built (wired to routes in auth phase) |
-| `nn:cache:conditions:list` | 1 h | Published conditions | helper ✅, used in content phase |
-| `nn:cache:article:{slug}` | 1 h | Published article payload | content phase |
-| `nn:cache:articles:list:{hash}` | 5 min | Article list pages | content phase |
-| `nn:auth:tv:{userId}` | 15 min | Cached `{tokenVersion, role, status}` for JWT checks | auth phase |
-| `nn:auth:mfa:{sha256(ticket)}` | 5 min | Pending 2FA login, 5 attempts, single use | auth phase |
-| `nn:auth:2fa-setup:{userId}` | 10 min | Encrypted secret during 2FA enrolment | auth phase |
-| `nn:oauth:{sha256(state)}` | 10 min | Google OAuth `{codeVerifier, nonce, returnTo}`, single use | auth phase |
-| `nn:lf:{…}` | 15 min – 24 h | Login-failure lockout counters (per IP + account) | auth phase |
+| `hm:rl:api:{ip}` | 15 min window | General rate limit (300 req / 15 min) | ✅ built |
+| `hm:rl:auth:{ip}` | 15 min window | Strict auth rate limit (10 / 15 min) | ✅ built (wired to routes in auth phase) |
+| `hm:cache:conditions:list` | 1 h | Published conditions | helper ✅, used in content phase |
+| `hm:cache:article:{slug}` | 1 h | Published article payload | content phase |
+| `hm:cache:articles:list:{hash}` | 5 min | Article list pages | content phase |
+| `hm:auth:tv:{userId}` | 15 min | Cached `{tokenVersion, role, status}` for JWT checks | auth phase |
+| `hm:auth:mfa:{sha256(ticket)}` | 5 min | Pending 2FA login, 5 attempts, single use | auth phase |
+| `hm:auth:2fa-setup:{userId}` | 10 min | Encrypted secret during 2FA enrolment | auth phase |
+| `hm:oauth:{sha256(state)}` | 10 min | Google OAuth `{codeVerifier, nonce, returnTo}`, single use | auth phase |
+| `hm:lf:{…}` | 15 min – 24 h | Login-failure lockout counters (per IP + account) | auth phase |
 
 ---
 
@@ -271,7 +271,7 @@ Redis is an in-memory key-value store: very fast, but treated as **disposable**.
 
 | Command | What it does |
 |---|---|
-| `npm run db:migrate` | Apply pending migrations (as `nerve_migrator`) |
+| `npm run db:migrate` | Apply pending migrations (as `healthmarg_migrator`) |
 | `npm run db:migrate:status` | List applied and pending migrations |
 | `npm run db:migrate:undo` | Roll back the last migration |
 | `npm run db:seed` | Insert dev sample data (refused in production) |
@@ -280,10 +280,10 @@ Redis is an in-memory key-value store: very fast, but treated as **disposable**.
 | `docker compose down` | Stop Redis (data kept in a Docker volume) |
 
 ### Looking inside
-- **MySQL:** connect MySQL Workbench or the VS Code "MySQL" extension to `localhost:3306` as `nerve_app` (password in `backend/.env`) and open `NerveAndNectar`.
+- **MySQL:** connect MySQL Workbench or the VS Code "MySQL" extension to `localhost:3306` as `healthmarg_app` (password in `backend/.env`) and open `healthmarg`.
 - **Redis:** RedisInsight (free GUI) on `127.0.0.1:6379` with the password from `backend/.env`, or:
   ```bash
-  docker compose exec redis sh -c 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli --scan --pattern "nn:*"'
+  docker compose exec redis sh -c 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli --scan --pattern "hm:*"'
   ```
 
 ---

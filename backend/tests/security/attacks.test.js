@@ -9,7 +9,7 @@ vi.mock('../../src/config/redis.js', () => ({
   pingRedis: vi.fn(),
   isRedisEnabled: vi.fn(() => false),
   redis: {},
-  redisKey: (...parts) => `nn:${parts.join(':')}`,
+  redisKey: (...parts) => `hm:${parts.join(':')}`,
 }));
 
 const { pingDatabase } = await import('../../src/config/db.js');
@@ -103,10 +103,10 @@ describe('attack prevention — request payloads', () => {
   });
 
   it('hides internal error details when a dependency throws', async () => {
-    pingDatabase.mockRejectedValue(new Error("ER_ACCESS_DENIED_ERROR: Access denied for user 'nerve_app'@'10.0.0.5'"));
+    pingDatabase.mockRejectedValue(new Error("ER_ACCESS_DENIED_ERROR: Access denied for user 'healthmarg_app'@'10.0.0.5'"));
     const res = await request(app).get('/api/v1/health');
     expect(res.status).toBe(503);
-    expect(res.text).not.toContain('nerve_app');
+    expect(res.text).not.toContain('healthmarg_app');
     expect(res.text).not.toContain('10.0.0.5');
     expectNoLeak(res);
   });

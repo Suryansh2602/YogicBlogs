@@ -1,4 +1,4 @@
-// The audit log lives in its own database (AUDIT_DB_NAME, e.g. NerveAndNectar_audit) where the
+// The audit log lives in its own database (AUDIT_DB_NAME, e.g. healthmarg_audit) where the
 // runtime app user only has INSERT and SELECT: it can add entries but never edit or delete them.
 // Raw SQL so the cross-database table name is explicit. No foreign key to users on purpose.
 const ident = (name) => {

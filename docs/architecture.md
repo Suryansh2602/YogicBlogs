@@ -1,6 +1,6 @@
 # Architecture & System Design
 
-Nerve and Nector is a yoga and Ayurveda wellness web app. Signed-in users read and listen to articles about conditions (causes and Ayurvedic solutions). Admins write and design articles, upload media and manage users.
+Healthmarg is a yoga and Ayurveda wellness web app. Signed-in users read and listen to articles about conditions (causes and Ayurvedic solutions). Admins write and design articles, upload media and manage users.
 
 > **Scope now:** the `user` and `admin` roles and their dashboards.
 > **Designed for, built later:** paid subscriptions, personal guidance from practitioners, and the AI assistant ("personal 24/7 guide"). See [plan.md](plan.md).
@@ -36,8 +36,8 @@ flowchart LR
       API["Express 5<br/>/api/v1"]
     end
 
-    DB[("MySQL 8<br/>NerveAndNectar")]
-    AUD[("MySQL<br/>NerveAndNectar_audit<br/>append-only")]
+    DB[("MySQL 8<br/>healthmarg")]
+    AUD[("MySQL<br/>healthmarg_audit<br/>append-only")]
     R[("Redis<br/>cache · rate limits ·<br/>short-lived auth state")]
     FS[("Media storage<br/>local disk → S3/R2 later")]
 
@@ -83,8 +83,8 @@ flowchart LR
 ### Data stores
 | Store | Holds | Notes |
 |---|---|---|
-| **MySQL 8** `NerveAndNectar` | All permanent data: users, sessions, 2FA, content, reading progress | Source of truth. Accessed through Sequelize with the least-privilege `nerve_app` user. |
-| **MySQL** `NerveAndNectar_audit` | `audit_logs` | The app user can only `INSERT` and `SELECT`, so even a compromised app can't rewrite history. |
+| **MySQL 8** `healthmarg` | All permanent data: users, sessions, 2FA, content, reading progress | Source of truth. Accessed through Sequelize with the least-privilege `healthmarg_app` user. |
+| **MySQL** `healthmarg_audit` | `audit_logs` | The app user can only `INSERT` and `SELECT`, so even a compromised app can't rewrite history. |
 | **Redis** | Cache, rate-limit counters, short-lived auth state (2FA pending, OAuth state, token-version cache) | Every key has a TTL. Losing Redis never loses data. See [database.md](database.md#redis). |
 | **Media storage** | Uploaded images and audio | Local disk in dev and at launch, S3-compatible (Cloudflare R2) later, behind one storage adapter. |
 
@@ -102,11 +102,11 @@ flowchart TB
 
     subgraph CF["Cloudflare (free)"]
       DNS["DNS + CDN + TLS"]
-      PAGES["Cloudflare Pages<br/>nerveandnectar.com<br/>(frontend static files)"]
+      PAGES["Cloudflare Pages<br/>healthmarg.com<br/>(frontend static files)"]
     end
 
     subgraph VPS["One VPS (e.g. 2 GB, Mumbai region)"]
-      CADDY["Caddy reverse proxy<br/>api.nerveandnectar.com<br/>auto HTTPS"]
+      CADDY["Caddy reverse proxy<br/>api.healthmarg.com<br/>auto HTTPS"]
       NODE["Node API (non-root, Docker)"]
       MYSQL[("MySQL 8")]
       REDIS[("Redis 8<br/>127.0.0.1 only, password")]
@@ -125,7 +125,7 @@ flowchart TB
     MYSQL -.-> BK
 ```
 
-- **Same site, different origins.** The frontend runs on `nerveandnectar.com` and the API on `api.nerveandnectar.com`. Because they're the same site, the refresh cookie can be `SameSite=Strict` and still work. Testing logins on `*.pages.dev` would be cross-site and break cookies, so use the custom domain.
+- **Same site, different origins.** The frontend runs on `healthmarg.com` and the API on `api.healthmarg.com`. Because they're the same site, the refresh cookie can be `SameSite=Strict` and still work. Testing logins on `*.pages.dev` would be cross-site and break cookies, so use the custom domain.
 - MySQL and Redis listen only on localhost or the private network. Only Caddy is exposed (ports 80/443).
 - Dev setup: MySQL as a Windows service, Redis in Docker (`backend/docker-compose.yml`), Vite on `:5173`, the API on `:5000`.
 
@@ -324,7 +324,7 @@ flowchart TD
 
 ## 8. Caching strategy
 
-| What | Key (prefix `nn:`) | TTL | Invalidated when |
+| What | Key (prefix `hm:`) | TTL | Invalidated when |
 |---|---|---|---|
 | Published condition list | `cache:conditions:list` | 1 h | A condition is created, edited or deleted |
 | Published article | `cache:article:{slug}` | 1 h | That article is saved, published or unpublished |

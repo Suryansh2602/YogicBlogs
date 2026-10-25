@@ -11,7 +11,7 @@ vi.mock('../../src/config/redis.js', () => ({
   pingRedis: vi.fn(),
   isRedisEnabled: vi.fn(() => true),
   redis: {},
-  redisKey: (...parts) => `nn:${parts.join(':')}`,
+  redisKey: (...parts) => `hm:${parts.join(':')}`,
 }));
 
 const { pingDatabase } = await import('../../src/config/db.js');

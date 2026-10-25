@@ -2,7 +2,7 @@
 #   Start:  docker compose up -d redis      (from backend/, reads REDIS_PASSWORD from backend/.env)
 #   Stop:   docker compose down             (data is kept in the redis-data volume)
 #   Shell:  docker compose exec redis sh -c 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli'
-name: nerve-nector
+name: healthmarg
 
 services:
   redis:

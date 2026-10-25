@@ -40,7 +40,7 @@ describe('db', () => {
 
   it('places the audit log on its own connection to the separate audit database', () => {
     expect(models.AuditLog.sequelize).toBe(auditSequelize);
-    expect(auditSequelize.config.database).toBe('NerveAndNectar_test_audit');
+    expect(auditSequelize.config.database).toBe('healthmarg_test_audit');
     expect(auditSequelize.options.pool.max).toBe(3);
   });
 

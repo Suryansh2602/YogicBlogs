@@ -20,7 +20,7 @@ describe('cache', () => {
   it('namespaces keys and stores JSON with a TTL', async () => {
     const client = fakeRedis();
     await createCache(client).set('conditions', [{ id: 1 }], 120);
-    expect(client.set).toHaveBeenCalledWith('nn:cache:conditions', '[{"id":1}]', {
+    expect(client.set).toHaveBeenCalledWith('hm:cache:conditions', '[{"id":1}]', {
       expiration: { type: 'EX', value: 120 },
     });
   });
@@ -52,7 +52,7 @@ describe('cache', () => {
 
   it('treats corrupt cached JSON as a miss', async () => {
     const client = fakeRedis();
-    client.store.set('nn:cache:k', '{not json');
+    client.store.set('hm:cache:k', '{not json');
     expect(await createCache(client).get('k')).toBeUndefined();
   });
 
@@ -64,7 +64,7 @@ describe('cache', () => {
     client.store.set('other-app:key', 'keep');
 
     await cache.delPrefix('articles:list');
-    expect([...client.store.keys()]).toEqual(['nn:cache:articles:item:a', 'other-app:key']);
+    expect([...client.store.keys()]).toEqual(['hm:cache:articles:item:a', 'other-app:key']);
 
     await cache.del('articles:item:a');
     expect([...client.store.keys()]).toEqual(['other-app:key']);

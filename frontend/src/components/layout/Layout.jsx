@@ -7,7 +7,7 @@ export default function Layout() {
       <header className="layout__header">
         <Link to="/" className="layout__brand">
           <img src="/lotus.svg" alt="" width="32" height="32" />
-          <span>Nerve and Nector</span>
+          <span>Healthmarg</span>
         </Link>
         <nav aria-label="Main">
           <NavLink to="/" end>
@@ -21,7 +21,7 @@ export default function Layout() {
       </main>
 
       <footer className="layout__footer">
-        <small>© {new Date().getFullYear()} Nerve and Nector</small>
+        <small>© {new Date().getFullYear()} Healthmarg</small>
       </footer>
     </div>
   );

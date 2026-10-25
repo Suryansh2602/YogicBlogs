@@ -9,7 +9,7 @@ export default defineConfig({
     // Test-only values so config/env.js validates without a real .env file.
     env: {
       NODE_ENV: 'test',
-      DB_NAME: 'NerveAndNectar_test',
+      DB_NAME: 'healthmarg_test',
       DB_USER: 'test',
       JWT_ACCESS_SECRET: 'test-access-secret-at-least-32-characters',
       JWT_REFRESH_SECRET: 'test-refresh-secret-at-least-32-characters',

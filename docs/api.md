@@ -2,8 +2,8 @@
 
 REST + JSON API served by `backend/`. The frontend (and Postman) are the only clients.
 
-- **Base URL:** `http://localhost:5000/api/v1` (dev), `https://api.nerveandnectar.com/api/v1` (prod)
-- **Postman:** import `backend/postman/nerve-nector.postman_collection.json` and `backend/postman/local.postman_environment.json`. The collection is updated with every API change.
+- **Base URL:** `http://localhost:5000/api/v1` (dev), `https://api.healthmarg.com/api/v1` (prod)
+- **Postman:** import `backend/postman/healthmarg.postman_collection.json` and `backend/postman/local.postman_environment.json`. The collection is updated with every API change.
 - **Status legend:** ✅ built · 🔜 planned (phase in [plan.md](plan.md))
 
 ---

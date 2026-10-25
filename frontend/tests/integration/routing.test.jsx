@@ -13,7 +13,7 @@ function renderAt(path) {
 describe('app routing', () => {
   it('renders the home page inside the layout', () => {
     renderAt('/');
-    expect(screen.getByRole('heading', { level: 1, name: 'Nerve and Nector' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Healthmarg' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
   });
 
@@ -26,6 +26,6 @@ describe('app routing', () => {
     const router = renderAt('/no-such-page');
     await userEvent.click(screen.getByRole('link', { name: 'Go back home' }));
     expect(router.state.location.pathname).toBe('/');
-    expect(screen.getByRole('heading', { level: 1, name: 'Nerve and Nector' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Healthmarg' })).toBeInTheDocument();
   });
 });

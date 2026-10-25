@@ -1,4 +1,4 @@
-# Nerve and Nector — Frontend
+# Healthmarg — Frontend
 
 React single-page app. Talks to the server only through its REST API.
 

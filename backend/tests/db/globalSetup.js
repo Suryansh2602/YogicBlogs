@@ -5,7 +5,7 @@ export default async function setup() {
   const missing = REQUIRED.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     throw new Error(
-      `DB tests need backend/.env.test (copy .env.example, NODE_ENV=test, DB_NAME=NerveAndNectar_test). Missing: ${missing.join(', ')}`,
+      `DB tests need backend/.env.test (copy .env.example, NODE_ENV=test, DB_NAME=healthmarg_test). Missing: ${missing.join(', ')}`,
     );
   }
   // The suite drops every table: make it impossible to point at a real database.

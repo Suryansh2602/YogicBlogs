@@ -65,9 +65,11 @@ Foundation first: every later feature reads and writes this schema, so it has to
 
 | # | Branch | Delivers | Done when | Owner action |
 |---|---|---|---|---|
-| 1 | `chore/repo-setup` ✅ | `.gitignore`, `.gitattributes`, `.editorconfig`, README, workflow, security docs, PR template | Pushed for review | Review → approve merge |
-| 2 | `chore/frontend-scaffold` ✅ | Existing React app (17 tests, build green) | Pushed for review | Review |
+| 1 | `chore/repo-setup` ✅ merged | `.gitignore`, `.gitattributes`, `.editorconfig`, README, workflow, security docs, PR template | Pushed for review | Review → approve merge |
+| 2 | `chore/frontend-scaffold` ✅ merged | Existing React app (17 tests, build green) | Pushed for review | Review |
 | 3 | `feature/database-setup` 🔨 | Sequelize config + 13 models; 5 migrations (incl. CHECKs, `alive` uniques, separate audit DB); seed; Redis client, cache, Redis rate-limit store; `/health` reports MySQL + Redis; architecture/api/database/plan docs; Postman collection | `npm run qa` green, incl. `test:db` against real MySQL + Redis | Run `create-db-users.sql` as root; start Docker Desktop |
+| 3a | `chore/rename-healthmarg` 🔨 | Project renamed from "Nerve and Nector" to **Healthmarg**: package names, UI text, docs, Postman, databases (`healthmarg`, `healthmarg_audit`, `…_test`) and DB users (`healthmarg_app`, `healthmarg_migrator`) | No old name left outside the history logs | Run the new `create-db-users.local.sql` as root |
+| 3b | `chore/frontend-typescript` | Frontend moved to strict TypeScript (`.tsx`), `tsc --noEmit` in `npm run qa` | Typecheck, lint, tests and build green | — |
 | 4 | `chore/api-hardening` | Explicit CORS (methods, headers, `maxAge`), `X-Request-Id` + pino-http, error `code`s, Sequelize error mapping, remove urlencoded (JSON-only), `requireJson`, `originGuard`, `TRUST_PROXY_HOPS`, CORP `same-site` | Tests for each guard | — |
 
 ### P1 · Authentication & security

@@ -1,6 +1,6 @@
-# Nerve and Nector — Backend
+# Healthmarg — Backend
 
-REST API for the Nerve and Nector app. Node.js + Express + MySQL.
+REST API for the Healthmarg app. Node.js + Express + MySQL.
 
 ## Layout
 

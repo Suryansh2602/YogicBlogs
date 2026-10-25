@@ -11,10 +11,10 @@ const valid = {
 const production = {
   ...valid,
   NODE_ENV: 'production',
-  DB_USER: 'nerve_app',
+  DB_USER: 'healthmarg_app',
   DB_PASSWORD: 'strong-password',
   REDIS_PASSWORD: 'redis-password',
-  CLIENT_ORIGIN: 'https://nervenector.example',
+  CLIENT_ORIGIN: 'https://healthmarg.example',
 };
 
 describe('loadEnv', () => {
@@ -114,7 +114,7 @@ describe('loadEnv', () => {
     });
 
     it('requires https client origins', () => {
-      expect(() => loadEnv({ ...production, CLIENT_ORIGIN: 'http://nervenector.example' })).toThrow(
+      expect(() => loadEnv({ ...production, CLIENT_ORIGIN: 'http://healthmarg.example' })).toThrow(
         /https/,
       );
     });

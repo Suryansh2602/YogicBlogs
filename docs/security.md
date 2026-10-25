@@ -30,9 +30,9 @@ If a secret is ever committed or pasted somewhere: rotate it immediately (genera
 The app connects as its own user with only the rights it needs, never `root`:
 
 ```sql
-CREATE DATABASE NerveAndNectar CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-CREATE USER 'nerve_app'@'localhost' IDENTIFIED BY '<generated password>';
-GRANT SELECT, INSERT, UPDATE, DELETE ON NerveAndNectar.* TO 'nerve_app'@'localhost';
+CREATE DATABASE healthmarg CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER 'healthmarg_app'@'localhost' IDENTIFIED BY '<generated password>';
+GRANT SELECT, INSERT, UPDATE, DELETE ON healthmarg.* TO 'healthmarg_app'@'localhost';
 ```
 
 Migrations run with a separate user that also has `CREATE, ALTER, INDEX, DROP, REFERENCES`.
