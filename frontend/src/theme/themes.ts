@@ -1,6 +1,6 @@
 export const THEMES = [
   { id: 'ushas', name: 'Ushas', meaning: 'Dawn', deva: 'उषस्', swatch: ['#fbf6ef', '#e8728f', '#12807f'] },
-  { id: 'ratri', name: 'Ratri', meaning: 'Night', deva: 'रात्रि', swatch: ['#0d1230', '#f2b85a', '#3cc4c0'] },
+  { id: 'ratri', name: 'Ratri', meaning: 'Night', deva: 'रात्रि', swatch: ['#0e0d0c', '#f2b85a', '#3cc4c0'] },
   { id: 'kesar', name: 'Kesar', meaning: 'Saffron', deva: 'केसर', swatch: ['#fff5e8', '#e8941a', '#c2481b'] },
   { id: 'vana', name: 'Vana', meaning: 'Forest', deva: 'वन', swatch: ['#f0f5ef', '#d0607e', '#1f7a57'] },
 ] as const;

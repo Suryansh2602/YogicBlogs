@@ -2,7 +2,7 @@
  * Healthmarg design tokens. Components use these variables only, never raw colours.
  * Themes are named in Sanskrit and switched with <html data-theme="...">:
  *   ushas  (dawn)    the logo's own palette: cream, navy, lotus pink, teal. Default for light mode.
- *   ratri  (night)   deep indigo with temple-lamp gold. Default for dark mode.
+ *   ratri  (night)   warm near-black with temple-lamp gold. Default for dark mode.
  *   kesar  (saffron) warm marigold and terracotta.
  *   vana   (forest)  tulsi greens and river teal.
  */
@@ -98,31 +98,31 @@
 /* ── Ratri · night ──────────────────────────────────────────────────────────────────────────── */
 [data-theme='ratri'] {
   color-scheme: dark;
-  --bg: #0d1230;
-  --bg-elevated: #121a3f;
-  --surface: #161f4a;
-  --surface-muted: #1c2657;
+  --bg: #0e0d0c;
+  --bg-elevated: #141312;
+  --surface: #191817;
+  --surface-muted: #221f1d;
   --text: #f3ede4;
-  --text-muted: #b8b6cf;
-  --text-soft: #8b8db0;
-  --border: #27316a;
-  --border-strong: #3a4585;
+  --text-muted: #b9b1a6;
+  --text-soft: #8d857b;
+  --border: #2c2926;
+  --border-strong: #423d38;
 
   --primary: #3cc4c0;
   --primary-hover: #5fd6d2;
-  --primary-contrast: #0b1430;
+  --primary-contrast: #0e0d0c;
   --accent: #f3a7b7;
-  --accent-soft: #3a2547;
+  --accent-soft: #34222a;
   --gold: #f2b85a;
   --gold-text: #f2b85a;
   --focus: #f2b85a;
 
   --success: #5fd3a0;
-  --success-bg: #12352f;
+  --success-bg: #13281f;
   --danger: #ff8fa3;
-  --danger-bg: #3d1830;
+  --danger-bg: #331a1e;
   --warning: #f2c46d;
-  --warning-bg: #3a2c12;
+  --warning-bg: #2e2412;
 
   --logo-ring: #f3ede4;
   --logo-stem: #3cc4c0;
@@ -139,8 +139,8 @@
   --star: #f3e2b8;
   --yantra: rgba(242, 184, 90, 0.32);
   --shine: rgba(255, 236, 200, 0.35);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.3), 0 30px 70px rgba(0, 0, 0, 0.5);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.5), 0 30px 70px rgba(0, 0, 0, 0.6);
 }
 
 /* ── Kesar · saffron ────────────────────────────────────────────────────────────────────────── */

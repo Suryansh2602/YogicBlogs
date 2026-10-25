@@ -120,3 +120,12 @@ Results:
 - **Vulnerabilities:** 0.
 - **Bundle:** within budget.
 - **Real browser:** 6 runs in a row, all 18 steps each, no console errors.
+
+## Round 6: owner feedback ("fix that" + "dark mode other than blue, maybe black")
+
+| Source | Finding | Change |
+|---|---|---|
+| API log | The dev API restarted after every backend file change made by my edits and tests (watch mode). The owner could hit it while it was down, which broke admin setup and sign-in | The owner-facing API now runs in normal mode (`node src/server.js`) and is restarted deliberately after backend changes. An orphaned watcher from the old task was found and stopped |
+| Owner | Dark mode (Ratri) was indigo blue; they want black | Ratri is now warm near-black (`#0e0d0c`, surfaces `#191817`). Gold, teal and lotus accents, the stars and the yantra are kept. All 68 contrast checks pass, and the theme swatch and browser theme-colour were updated |
+
+QA: frontend 150 tests, 91.6% coverage, 0 vulnerabilities, bundle within budget.

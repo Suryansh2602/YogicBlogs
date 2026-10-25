@@ -51,7 +51,7 @@ frontend/
 | Theme | Feel | Default |
 |---|---|---|
 | Ushas (dawn) | Cream, navy, lotus pink, teal: the logo's palette | Light-mode devices |
-| Ratri (night) | Deep indigo, temple-lamp gold | Dark-mode devices |
+| Ratri (night) | Warm near-black, temple-lamp gold | Dark-mode devices |
 | Kesar (saffron) | Marigold and terracotta | — |
 | Vana (forest) | Tulsi greens and river teal | — |
 
