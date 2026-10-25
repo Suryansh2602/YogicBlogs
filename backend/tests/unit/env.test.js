@@ -6,6 +6,8 @@ const valid = {
   DB_USER: 'user',
   JWT_ACCESS_SECRET: 'a'.repeat(32),
   JWT_REFRESH_SECRET: 'b'.repeat(32),
+  CSRF_SECRET: 'c'.repeat(32),
+  TWO_FACTOR_ENC_KEY: Buffer.alloc(32, 7).toString('base64url'),
 };
 
 const production = {
@@ -15,6 +17,11 @@ const production = {
   DB_PASSWORD: 'strong-password',
   REDIS_PASSWORD: 'redis-password',
   CLIENT_ORIGIN: 'https://healthmarg.example',
+  APP_URL: 'https://healthmarg.example',
+  RECAPTCHA_MODE: 'live',
+  RECAPTCHA_SECRET: 'recaptcha-secret',
+  MAIL_MODE: 'smtp',
+  SMTP_HOST: 'smtp.example.com',
 };
 
 describe('loadEnv', () => {
@@ -84,6 +91,17 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...valid, REDIS_DB: '16' })).toThrow(/REDIS_DB/);
   });
 
+  it('requires a 32-byte 2FA encryption key and a distinct CSRF secret', () => {
+    expect(() => loadEnv({ ...valid, TWO_FACTOR_ENC_KEY: Buffer.alloc(16).toString('base64url') })).toThrow(/TWO_FACTOR_ENC_KEY/);
+    expect(() => loadEnv({ ...valid, CSRF_SECRET: valid.JWT_ACCESS_SECRET })).toThrow(/CSRF_SECRET/);
+  });
+
+  it('validates durations and needs a reCAPTCHA secret when live', () => {
+    expect(() => loadEnv({ ...valid, JWT_ACCESS_EXPIRES_IN: '15 minutes' })).toThrow(/JWT_ACCESS_EXPIRES_IN/);
+    expect(() => loadEnv({ ...valid, RECAPTCHA_MODE: 'live' })).toThrow(/RECAPTCHA_SECRET/);
+    expect(() => loadEnv({ ...valid, MAIL_MODE: 'smtp' })).toThrow(/SMTP_HOST/);
+  });
+
   it('returns a frozen object', () => {
     expect(Object.isFrozen(loadEnv(valid))).toBe(true);
   });
@@ -111,6 +129,12 @@ describe('loadEnv', () => {
 
     it('refuses SQL logging (it can contain personal data)', () => {
       expect(() => loadEnv({ ...production, DB_LOGGING: 'true' })).toThrow(/DB_LOGGING/);
+    });
+
+    it('requires live reCAPTCHA, real email and an https APP_URL', () => {
+      expect(() => loadEnv({ ...production, RECAPTCHA_MODE: 'off' })).toThrow(/RECAPTCHA_MODE/);
+      expect(() => loadEnv({ ...production, MAIL_MODE: 'outbox' })).toThrow(/MAIL_MODE/);
+      expect(() => loadEnv({ ...production, APP_URL: 'http://healthmarg.example' })).toThrow(/APP_URL/);
     });
 
     it('requires https client origins', () => {

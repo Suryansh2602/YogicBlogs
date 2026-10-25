@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 const secret = z.string().min(32, 'must be at least 32 characters');
+// "15m", "7d", "12h", "30s"
+const duration = z.string().regex(/^\d+[smhd]$/, 'must look like 30s, 15m, 12h or 7d');
+// Exactly 32 random bytes, base64url-encoded (AES-256 key).
+const aesKey = z
+  .string()
+  .refine((v) => Buffer.from(v, 'base64url').length === 32, 'must be 32 bytes, base64url-encoded');
 // Env vars are strings: parse 'true'/'false'. Defaults must be real booleans (Zod 4 does not re-parse defaults).
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 
@@ -41,10 +47,43 @@ const schema = z
     REDIS_DB: z.coerce.number().int().min(0).max(15).default(0),
     REDIS_TLS: bool.default(false),
 
+    // Public URL of the frontend: the only base used for links in emails (never the request's Host header).
+    APP_URL: z.url().default('http://localhost:5173'),
+
     JWT_ACCESS_SECRET: secret,
     JWT_REFRESH_SECRET: secret,
-    JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
-    JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+    JWT_ACCESS_EXPIRES_IN: duration.default('15m'),
+    // Refresh-token lifetimes: idle (each rotation extends it) and absolute (hard session end).
+    JWT_REFRESH_EXPIRES_IN: duration.default('7d'),
+    SESSION_MAX_AGE: duration.default('30d'),
+    // Staff sessions are shorter.
+    ADMIN_REFRESH_EXPIRES_IN: duration.default('1d'),
+    ADMIN_SESSION_MAX_AGE: duration.default('7d'),
+    CSRF_SECRET: secret,
+    // Encrypts TOTP secrets at rest. Losing it means every user must re-enrol 2FA: back it up offline.
+    TWO_FACTOR_ENC_KEY: aesKey,
+    // One-time code for /admin/setup (creating the first admin). If unset, a random one is generated at
+    // startup and printed to the server console while no admin exists.
+    ADMIN_SETUP_CODE: z.string().min(16).optional(),
+
+    // Email: "outbox" writes messages to backend/.local/outbox (development); "smtp" sends them.
+    MAIL_MODE: z.enum(['outbox', 'smtp']).default('outbox'),
+    MAIL_FROM: z.string().min(3).default('Healthmarg <no-reply@healthmarg.local>'),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(587),
+    SMTP_SECURE: bool.default(false),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASSWORD: z.string().optional(),
+
+    // reCAPTCHA v3: "off" only outside production.
+    RECAPTCHA_MODE: z.enum(['off', 'live']).default('off'),
+    RECAPTCHA_SECRET: z.string().optional(),
+    RECAPTCHA_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.5),
+    // Login tolerates lower scores (shared mobile IPs) because lockout also protects it.
+    RECAPTCHA_LOGIN_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.3),
+
+    // Reject passwords found in known breaches (Have I Been Pwned, k-anonymity: only 5 hash chars leave).
+    HIBP_ENABLED: bool.default(true),
 
     UPLOAD_DIR: z.string().default('uploads'),
     MAX_UPLOAD_MB: z.coerce.number().positive().default(5),
@@ -55,6 +94,13 @@ const schema = z
     if (cfg.JWT_ACCESS_SECRET === cfg.JWT_REFRESH_SECRET) {
       fail('JWT_REFRESH_SECRET', 'must differ from JWT_ACCESS_SECRET');
     }
+    if (cfg.CSRF_SECRET === cfg.JWT_ACCESS_SECRET || cfg.CSRF_SECRET === cfg.JWT_REFRESH_SECRET) {
+      fail('CSRF_SECRET', 'must differ from the JWT secrets');
+    }
+    if (cfg.RECAPTCHA_MODE === 'live' && !cfg.RECAPTCHA_SECRET) {
+      fail('RECAPTCHA_SECRET', 'is required when RECAPTCHA_MODE=live');
+    }
+    if (cfg.MAIL_MODE === 'smtp' && !cfg.SMTP_HOST) fail('SMTP_HOST', 'is required when MAIL_MODE=smtp');
 
     if (cfg.NODE_ENV === 'production') {
       if (!cfg.DB_PASSWORD) fail('DB_PASSWORD', 'is required in production');
@@ -65,6 +111,9 @@ const schema = z
       if (cfg.CLIENT_ORIGIN.some((o) => !o.startsWith('https://'))) {
         fail('CLIENT_ORIGIN', 'must use https in production');
       }
+      if (!cfg.APP_URL.startsWith('https://')) fail('APP_URL', 'must use https in production');
+      if (cfg.RECAPTCHA_MODE !== 'live') fail('RECAPTCHA_MODE', 'must be live in production');
+      if (cfg.MAIL_MODE !== 'smtp') fail('MAIL_MODE', 'must be smtp in production');
     }
   });
 

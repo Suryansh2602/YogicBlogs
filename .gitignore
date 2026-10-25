@@ -10,6 +10,7 @@ node_modules/
 frontend/dist/
 backend/dist/
 coverage/
+.vitest-reports/
 
 # Runtime data
 backend/uploads/*

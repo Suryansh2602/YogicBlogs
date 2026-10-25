@@ -13,12 +13,12 @@ export default defineConfig({
       DB_USER: 'test',
       JWT_ACCESS_SECRET: 'test-access-secret-at-least-32-characters',
       JWT_REFRESH_SECRET: 'test-refresh-secret-at-least-32-characters',
+      CSRF_SECRET: 'test-csrf-secret-at-least-32-characters-long',
+      // 32 zero-ish bytes, base64url: test-only key.
+      TWO_FACTOR_ENC_KEY: 'dGVzdC1rZXktMzItYnl0ZXMtZm9yLWFlcy0yNTYtZ2M',
+      HIBP_ENABLED: 'false',
     },
-    coverage: {
-      provider: 'v8',
-      include: ['src/**/*.js'],
-      exclude: ['src/server.js'],
-      thresholds: { lines: 80, functions: 80, branches: 75, statements: 80 },
-    },
+    // Thresholds are enforced on the merged unit + DB coverage: see vitest.coverage.config.js.
+    coverage: { provider: 'v8', include: ['src/**/*.js'], exclude: ['src/server.js', 'src/db/cli.js', 'src/db/seeders/**'] },
   },
 });
