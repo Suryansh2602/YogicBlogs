@@ -145,7 +145,9 @@ Password rules: 12–128 characters, must not contain your email name or display
 - **Two deliberate exceptions, for security:** a failed sign-in never says whether the email or the password was wrong, and sign-up, resend and forgot-password never say whether an account exists.
 - **Waiting times:** `429` answers carry `Retry-After` (exposed to the browser via CORS), so the page can say how long to wait.
 
-**Error codes** the frontend reacts to: `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `ACCOUNT_SUSPENDED`, `LOGIN_LOCKED`, `RATE_LIMITED`, `CAPTCHA_FAILED`, `WEAK_PASSWORD`, `BREACHED_PASSWORD`, `INVALID_TOKEN` (email link), `INVALID_CODE`, `MFA_TICKET_INVALID`, `TOKEN_INVALID` / `TOKEN_REVOKED` / `NO_TOKEN` (sign in again), `NO_SESSION` / `SESSION_EXPIRED` / `SESSION_REVOKED` (refresh failed), `REFRESH_RACE` (another tab refreshed: retry once), `CSRF_FAILED`.
+**Error codes** the frontend reacts to: `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `ACCOUNT_SUSPENDED`, `LOGIN_LOCKED`, `RATE_LIMITED`, `CAPTCHA_FAILED`, `WEAK_PASSWORD`, `BREACHED_PASSWORD`, `INVALID_TOKEN` (email link), `INVALID_CODE`, `MFA_TICKET_INVALID`, `TOKEN_INVALID` / `TOKEN_REVOKED` / `NO_TOKEN` (sign in again), `NO_SESSION` / `SESSION_EXPIRED` / `SESSION_REVOKED` (refresh failed), `CSRF_FAILED`.
+
+**Refresh reuse interval:** a refresh token rotated less than 10 s ago can be exchanged once more for a fresh token in the same session. This covers a page reload or second tab racing the refresh, or a lost reply. It never applies after sign-out, password reset or detected theft. Reuse after 10 s is treated as theft: the session is revoked (`SESSION_REVOKED`). Older API versions answered `409 REFRESH_RACE` here; the frontend still retries once if it sees it.
 
 ---
 

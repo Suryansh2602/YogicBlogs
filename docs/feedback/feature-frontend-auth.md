@@ -98,3 +98,25 @@ Results:
 - **Vulnerabilities:** 0.
 - **Real browser, email off:** 18/18 steps, no console errors.
 - **Dev server:** no more coverage-triggered reloads since the config fix.
+
+## Round 5: owner feedback ("hover text invisible, too glowy; make it engaging, clean, readable" + "a little mystic essence")
+
+| Source | Finding | Change |
+|---|---|---|
+| Owner, reproduced in screenshots | Hovering "Begin free" / "Join free" made the label vanish | Cause: the global `a:hover` colour also applied to link-buttons, turning the text the same colour as the button. Plain-link rules are now `:where(a:not(.btn))`, and button text colour is set for every state |
+| Owner | Too glowy | Removed the button glow and sheen (now a clean lift plus a sliding arrow). Aurora at about half strength, quieter mandala, card hover is a lift with a tinted edge (no wash), the sutra card has a crisp gold edge (no haze). The hidden skip-link's shadow, which had smudged the top-left corner, is gone |
+| New test | WCAG contrast had never been checked | `themeContrast.test.ts` checks 17 text pairs × 4 themes. It found 5 failures on its first run (links 4.42:1, pink/saffron accents 2.9/2.4:1, two success greens); all fixed |
+| Visual review panel (3 reviewers + judge, 8 kept) | Gold small text 1.9:1 on light themes; cards never lifted (the entrance animation pinned `transform`); disabled buttons washed out; OTP boxes overflowed the card (clipped at 390px); sutra-card haze; mobile sign-in floated mid-screen; unstyled Ratri checkbox; faded "Soon" link and a stranded stat card | All fixed: `--gold-text` per theme (≥ 5:1), `backwards` animation fill, readable disabled states, shrinking OTP boxes, gold top edge, top-aligned mobile form, a styled checkbox, a 5-across stat grid. Also fixed: pressed-button feedback was being overridden |
+| Owner | "A little mystic essence" | **Nakshatra** (64 tiny stars twinkling by opacity), **Yantra** (shatkona in a circle with a bindu, turning slowly and breathing about 6 times a minute) behind the lotus, an **ॐ** watermark behind the sutra band, and **॥ … ॥** danda marks. Fine lines and slow motion only: no glow, and nothing over text |
+| Browser runs (intermittent) | Opening a page right after another sometimes **signed the user out** | Measured with request logs: an aborted page load made the session restore reject, which erased the "was signed in" hint, so the next page didn't even try. Only a definite 401 now forgets the session; network errors and aborts keep it |
+| Browser runs | A reload during a refresh could leave the browser holding a just-rotated token (the reply was lost) | A 10 s **refresh reuse interval**: the just-rotated token is exchanged once more for a sibling token in the same session, never after sign-out, password reset or theft. Tested, including "a signed-out session is never revived" |
+| Browser runs | Turning on 2FA sometimes failed with a wrong code | Two `POST /2fa/setup` fired at once (effects run twice); the second secret replaced the QR's. The panel now requests setup once per opening. Page tests render in StrictMode like the app, so effects that aren't safe to repeat get caught |
+
+Every fix above was mutation-checked: removing it makes its test fail.
+
+Results:
+- **Backend QA:** 202 tests, 94.3% coverage.
+- **Frontend QA:** 150 tests, 91.6% coverage.
+- **Vulnerabilities:** 0.
+- **Bundle:** within budget.
+- **Real browser:** 6 runs in a row, all 18 steps each, no console errors.
