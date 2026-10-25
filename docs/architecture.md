@@ -16,7 +16,7 @@ Diagrams use [Mermaid](https://mermaid.js.org). They render on GitHub and in VS 
 | **Secure by default** | Defence in depth: TLS, CORS allow-list, rate limits, reCAPTCHA v3, argon2id passwords, short JWTs with rotating refresh tokens, mandatory 2FA for admins, RBAC, input validation (zod), parameterised SQL (Sequelize), sanitised rich text, an append-only audit log, least-privilege DB users. |
 | **Low running cost** | One small VPS runs the API, MySQL and Redis. The frontend is static files on a free CDN. No paid managed services are needed at launch. |
 | **Separate frontend and backend** | Two independent apps (`frontend/`, `backend/`) with their own dependencies, tests and deploys. They share no code and talk only over HTTPS + JSON. |
-| **Maintainable by a small team** | Plain JavaScript (ESM), one module per feature, every change goes Developer → Reviewer → Tester → owner review ([workflow.md](workflow.md)). |
+| **Maintainable by a small team** | Strict TypeScript in the frontend, plain JavaScript (ESM) with zod-validated inputs in the backend, one module per feature, every change goes Developer → Reviewer → Tester → owner review ([workflow.md](workflow.md)). |
 | **Room to grow** | Roles and access levels are extensible values. Content access goes through a single check that subscriptions can plug into later. Redis-backed state allows more than one API instance. |
 
 ---
@@ -62,8 +62,8 @@ flowchart LR
 ## 3. Components
 
 ### Frontend (`frontend/`)
-- **Vite 8 + React 19 + react-router 8.** A single-page app built to static files.
-- `services/apiClient.js` is the **only** way the frontend reaches the backend: JSON, `credentials: 'include'`, typed errors. ESLint blocks importing backend code.
+- **Vite 8 + React 19 + react-router 8, in strict TypeScript 6** (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, type-aware ESLint). A single-page app built to static files; `npm run build` type-checks first.
+- `services/apiClient.ts` is the **only** way the frontend reaches the backend: JSON, `credentials: 'include'`, typed errors. ESLint blocks importing backend code.
 - `features/<feature>/` holds feature UI (auth, articles, audio, admin). `routes/` holds route guards (signed-in, admin).
 - **Security:**
   - No secrets in the bundle. The build fails if a `VITE_*` variable name looks like a secret.
@@ -373,5 +373,5 @@ flowchart TD
 | JWT | `jose` (planned) | ESM, explicit algorithm pinning |
 | Google sign-in | `openid-client` (planned) | Certified OIDC; handles PKCE, state, nonce and ID-token checks |
 | 2FA | `otpauth` + `qrcode` (planned) | ESM, no dependencies, maintained |
-| Frontend | Vite 8, React 19, react-router 8 | Fast builds, small bundle, data loaders without extra libraries |
+| Frontend | Vite 8, React 19, react-router 8, TypeScript 6 | Fast builds, small bundle, data loaders without extra libraries; types catch API-shape and null mistakes before they ship |
 | Tests | Vitest 5, supertest, Testing Library | One runner for both apps |

@@ -1,18 +1,20 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 
-export default [
+export default tseslint.config(
   { ignores: ['dist/', 'coverage/', 'node_modules/'] },
   js.configs.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{ts,tsx}'],
+    extends: [tseslint.configs.strictTypeChecked, tseslint.configs.stylisticTypeChecked],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: globals.browser,
-      parserOptions: { ecmaFeatures: { jsx: true } },
+      parserOptions: { project: ['./tsconfig.json', './tsconfig.node.json'], tsconfigRootDir: import.meta.dirname },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -21,10 +23,13 @@ export default [
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^[A-Z_]' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       eqeqeq: ['error', 'always'],
       'no-eval': 'error',
-      'no-implied-eval': 'error',
+      'no-implied-eval': 'off',
+      '@typescript-eslint/no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-restricted-syntax': [
         'error',
@@ -41,11 +46,11 @@ export default [
     },
   },
   {
-    files: ['*.config.js', 'config/**/*.js'],
+    files: ['vite.config.ts', 'config/**/*.ts', 'eslint.config.js'],
     languageOptions: { globals: globals.node },
   },
   {
-    files: ['tests/**/*.{js,jsx}'],
+    files: ['tests/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
-];
+);

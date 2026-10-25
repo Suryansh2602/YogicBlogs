@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { routes } from '../../src/routes/routes.jsx';
+import { routes } from '../../src/routes/routes';
 
-function renderAt(path) {
+function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(<RouterProvider router={router} />);
   return router;

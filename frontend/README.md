@@ -1,6 +1,8 @@
 # Healthmarg — Frontend
 
-React single-page app. Talks to the server only through its REST API.
+React single-page app in strict TypeScript. Talks to the backend only through its REST API.
+
+
 
 ## Layout
 
