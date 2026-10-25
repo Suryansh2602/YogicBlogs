@@ -11,6 +11,9 @@
 //   stress-1000       same at 1000 concurrent connections: must not error or time out
 //   capacity-health   every request pings MySQL through the pool (skipped if MySQL is unreachable)
 //   flood (1 IP)      real rate limit: one IP floods with 1000 connections; must hold and answer 429
+//   login flood       one IP brute-forces POST /auth/login with 1000 connections: at most 30 password
+//                     checks (argon2 is deliberately slow), everything else 429, no errors
+//   forged tokens     GET /users/me with an invalid JWT at full speed: all 401, no errors or timeouts
 //
 // Tunables (env): LOAD_DURATION (s, default 8), LOAD_CONNECTIONS (default 1000),
 //                 LOAD_MIN_RATIO (min share of baseline rps, default 0.5), LOAD_P99_MS (default 3000).
@@ -61,9 +64,9 @@ async function startBaseline() {
   };
 }
 
-async function measure(url, path, connections, { warmup = true } = {}) {
-  if (warmup) await autocannon({ url: url + path, connections: 50, duration: 2 });
-  return autocannon({ url: url + path, connections, duration: DURATION, timeout: 10 });
+async function measure(url, path, connections, { warmup = true, request = {} } = {}) {
+  if (warmup) await autocannon({ url: url + path, connections: 50, duration: 2, ...request });
+  return autocannon({ url: url + path, connections, duration: DURATION, timeout: 10, ...request });
 }
 
 const codes = (r) => Object.fromEntries(Object.entries(r.statusCodeStats ?? {}).map(([k, v]) => [k, v.count]));
@@ -152,6 +155,55 @@ const baselineRps = baseline.requests.average;
       { name: `p99 < ${P99_MS} ms`, ok: r.latency.p99 < P99_MS },
       { name: 'limit held (≤ 300 through)', ok: (c['404'] ?? 0) <= 300 },
       { name: 'answered with 429', ok: (c['429'] ?? 0) > 0 },
+    ]),
+  );
+  await api.stop();
+}
+
+// Brute force on sign-in: the strict credential limit (30 / 15 min per IP) must hold under a flood,
+// so an attacker can't burn CPU on password hashing or try more than a handful of passwords.
+{
+  const login = {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'victim@example.com', password: 'guess-guess-guess' }),
+  };
+  // Exact count first: a 200-request burst on a fresh server. (autocannon's tally can miss the few slow
+  // argon2 answers among thousands of instant 429s, so it alone can't prove the handler was reached.)
+  const fresh = await startApi({ redisRateLimit: false });
+  const burst = await Promise.all(Array.from({ length: 200 }, () => fetch(`${fresh.url}/api/v1/auth/login`, login).then((res) => res.status)));
+  await fresh.stop();
+  const reached = burst.filter((status) => status === 401).length;
+
+  const api = await startApi({ redisRateLimit: false });
+  const r = await measure(api.url, '/api/v1/auth/login', CONNECTIONS, {
+    warmup: false,
+    request: login,
+  });
+  const c = codes(r);
+  const checked = Object.entries(c).filter(([code]) => code !== '429').reduce((n, [, v]) => n + v, 0);
+  rows.push(
+    row('login flood (1 IP)', r, [
+      ...clean(r),
+      { name: `p99 < ${P99_MS} ms`, ok: r.latency.p99 < P99_MS },
+      { name: 'at most 30 password checks', ok: checked <= 30 },
+      { name: `burst: exactly 30 of 200 reached the check (got ${reached})`, ok: reached === 30 && burst.every((st) => st === 401 || st === 429) },
+      { name: 'answered with 429', ok: (c['429'] ?? 0) > 0 },
+    ]),
+  );
+  await api.stop();
+}
+
+// Token spam: invalid JWTs on a protected route are rejected cheaply, before any database work.
+{
+  const api = await startApi({ redisRateLimit: false, apiRateLimit: 1e9 });
+  const forged = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4Iiwicm9sZSI6ImFkbWluIn0.c2lnbmF0dXJlLXRoYXQtZG9lcy1ub3QtbWF0Y2g';
+  const r = await measure(api.url, '/api/v1/users/me', 100, { request: { headers: { authorization: `Bearer ${forged}` } } });
+  rows.push(
+    row('forged tokens', r, [
+      ...clean(r),
+      { name: `p99 < ${P99_MS} ms`, ok: r.latency.p99 < P99_MS },
+      { name: 'only 401s', ok: Object.keys(codes(r)).every((code) => code === '401') },
     ]),
   );
   await api.stop();

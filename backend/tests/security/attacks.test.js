@@ -15,6 +15,9 @@ vi.mock('../../src/config/redis.js', () => ({
 const { pingDatabase } = await import('../../src/config/db.js');
 const { createApp } = await import('../../src/app.js');
 const { createHttpServer } = await import('../../src/httpServer.js');
+const { SignJWT } = await import('jose');
+const { env } = await import('../../src/config/env.js');
+const { JWT_AUDIENCE, JWT_ISSUER } = await import('../../src/modules/auth/token.service.js');
 
 const SECRET_MARKERS = [/at \w+ \(/, /node_modules/, /\bSELECT\b/i, /ER_[A-Z_]+/, /\\src\\|\/src\//];
 const expectNoLeak = (res) => {
@@ -196,5 +199,76 @@ describe('attack prevention — connection level', () => {
       socket.on('error', () => resolve(data));
     });
     expect(reply).toMatch(/^HTTP\/1\.1 400/);
+  });
+});
+
+describe('attack prevention — authentication', () => {
+  let app;
+  const forge = (key, { alg = 'HS256', audience = JWT_AUDIENCE, expiresIn = '5m', role = 'admin' } = {}) =>
+    new SignJWT({ role, tv: 0, sid: 'x', amr: ['pwd', 'otp'] })
+      .setProtectedHeader({ alg })
+      .setSubject('00000000-0000-7000-8000-000000000000')
+      .setIssuer(JWT_ISSUER)
+      .setAudience(audience)
+      .setIssuedAt()
+      .setExpirationTime(expiresIn)
+      .sign(new TextEncoder().encode(key));
+  const b64 = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+
+  beforeEach(() => {
+    app = createApp();
+  });
+
+  it('requires a token on protected routes', async () => {
+    const res = await request(app).get('/api/v1/users/me');
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('NO_TOKEN');
+  });
+
+  it.each([
+    ['signed with a guessed key', () => forge('a-guessed-secret-that-is-at-least-32-chars')],
+    ['using HS512 (algorithm swap)', () => forge(env.JWT_ACCESS_SECRET, { alg: 'HS512' })],
+    ['for another audience', () => forge(env.JWT_ACCESS_SECRET, { audience: 'some-other-app' })],
+    ['already expired', () => forge(env.JWT_ACCESS_SECRET, { expiresIn: '-1m' })],
+    ['with alg "none"', async () => `${b64({ alg: 'none', typ: 'JWT' })}.${b64({ sub: 'x', role: 'admin', iss: JWT_ISSUER, aud: JWT_AUDIENCE })}.`],
+  ])('rejects a token %s', async (_label, make) => {
+    const res = await request(app).get('/api/v1/admin/stats').set('Authorization', `Bearer ${await make()}`);
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('TOKEN_INVALID');
+  });
+
+  it('refuses cookie routes (refresh/logout) from a foreign origin, even with a CSRF header', async () => {
+    for (const path of ['/api/v1/auth/refresh', '/api/v1/auth/logout']) {
+      const res = await request(app).post(path).set('Origin', 'https://evil.example').set('X-CSRF-Token', 'guess');
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('CSRF_FAILED');
+    }
+  });
+
+  it('refuses cookie routes without the CSRF token, from our own origin', async () => {
+    const res = await request(app).post('/api/v1/auth/refresh').set('Origin', env.CLIENT_ORIGIN[0]);
+    expect(res.status).toBe(403);
+  });
+
+  it('rejects privilege fields smuggled into sign-up', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ email: 'x@example.com', password: 'a-long-password-1', displayName: 'X', acceptTerms: true, acceptPrivacy: true, role: 'admin' });
+    expect(res.status).toBe(400);
+  });
+
+  it('throttles brute force on credential endpoints with 429', async () => {
+    const statuses = [];
+    for (let i = 0; i < 32; i += 1) {
+      statuses.push((await request(app).post('/api/v1/auth/password/reset').send({ token: 'x', password: 'y' })).status);
+    }
+    expect(statuses.slice(0, 30).every((s) => s === 400)).toBe(true);
+    expect(statuses.slice(30)).toEqual([429, 429]);
+  });
+
+  it('does not throttle page-load routes with the strict limit', async () => {
+    for (let i = 0; i < 35; i += 1) {
+      expect((await request(app).get('/api/v1/auth/csrf')).status).toBe(200);
+    }
   });
 });

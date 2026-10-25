@@ -1,11 +1,12 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { isRedisEnabled } from './config/redis.js';
-import { createApiLimiter, createRedisStore } from './middlewares/rateLimiter.js';
+import { createApiLimiter, createAuthLimiter, createRedisStore } from './middlewares/rateLimiter.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
-import routes from './routes.js';
+import { createRoutes } from './routes.js';
 
 /**
  * @param {object} [options]
@@ -44,10 +45,13 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
       );
     }),
   );
+  // JSON only: no urlencoded/multipart parsers, so classic HTML-form CSRF payloads are never parsed.
   app.use(express.json({ limit: '100kb' }));
-  app.use(express.urlencoded({ extended: false, limit: '100kb' }));
+  // Only the auth cookies (HttpOnly, Path=/api/v1/auth) are read; they're signed/hashed server-side.
+  app.use(cookieParser());
 
-  app.use('/api/v1', routes);
+  const strictLimiter = createAuthLimiter(redisRateLimit ? createRedisStore('auth') : undefined);
+  app.use('/api/v1', createRoutes({ strictLimiter }));
 
   app.use(notFound);
   app.use(errorHandler);

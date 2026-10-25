@@ -20,6 +20,7 @@ export function errorHandler(err, req, res, _next) {
   }
 
   if (err instanceof ApiError) {
+    if (err.retryAfter) res.set('Retry-After', String(err.retryAfter));
     return send(res, err.statusCode, err.message, { code: err.code, details: err.details });
   }
 

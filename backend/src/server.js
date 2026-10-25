@@ -4,6 +4,7 @@ import { env } from './config/env.js';
 import { closeDatabase, pingDatabase } from './config/db.js';
 import { closeRedis, connectRedis, isRedisEnabled } from './config/redis.js';
 import { logger } from './utils/logger.js';
+import { announceAdminSetup } from './modules/admin/admin.service.js';
 
 // Crash loudly instead of silently: log, then let the process manager restart us.
 process.on('unhandledRejection', (reason) => {
@@ -33,6 +34,7 @@ async function start() {
 
   const server = createHttpServer(createApp()).listen(env.PORT, () => {
     logger.info(`API listening on http://localhost:${env.PORT}/api/v1`);
+    announceAdminSetup().catch((err) => logger.error({ err }, 'Could not check for an admin account'));
   });
 
   let shuttingDown = false;
