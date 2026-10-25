@@ -255,15 +255,15 @@ Redis is an in-memory key-value store: very fast, but treated as **disposable**.
 | Key pattern | TTL | Purpose | Status |
 |---|---|---|---|
 | `hm:rl:api:{ip}` | 15 min window | General rate limit (300 req / 15 min) | ✅ built |
-| `hm:rl:auth:{ip}` | 15 min window | Strict auth rate limit (10 / 15 min) | ✅ built (wired to routes in auth phase) |
+| `hm:rl:auth:{ip}` | 15 min window | Strict limit on credential endpoints (30 / 15 min, shared) | ✅ |
 | `hm:cache:conditions:list` | 1 h | Published conditions | helper ✅, used in content phase |
 | `hm:cache:article:{slug}` | 1 h | Published article payload | content phase |
 | `hm:cache:articles:list:{hash}` | 5 min | Article list pages | content phase |
-| `hm:auth:tv:{userId}` | 15 min | Cached `{tokenVersion, role, status}` for JWT checks | auth phase |
-| `hm:auth:mfa:{sha256(ticket)}` | 5 min | Pending 2FA login, 5 attempts, single use | auth phase |
-| `hm:auth:2fa-setup:{userId}` | 10 min | Encrypted secret during 2FA enrolment | auth phase |
+| `hm:auth:tv:{userId}` | 15 min | Cached `{tokenVersion, role, status}` for JWT checks | ✅ |
+| `hm:auth:sid-revoked:{familyId}` | 15 min | Signed-out session: its access tokens stop working at once | ✅ |
+| `hm:auth:mfa:{sha256(ticket)}` | 5 min | Pending 2FA login or admin enrolment `{userId, mode, attempts}`, 5 attempts, single use | ✅ |
 | `hm:oauth:{sha256(state)}` | 10 min | Google OAuth `{codeVerifier, nonce, returnTo}`, single use | auth phase |
-| `hm:lf:{…}` | 15 min – 24 h | Login-failure lockout counters (per IP + account) | auth phase |
+| `hm:lf:ipacct:{sha256}` / `hm:lf:acct:{sha256}` | 15 min / 1 h | Login-failure lockout counters (IP + account: 5; account: 20). Hashed, so no emails in Redis | ✅ |
 
 ---
 
