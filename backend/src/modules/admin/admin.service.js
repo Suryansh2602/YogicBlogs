@@ -131,5 +131,17 @@ export async function listAuditLogs({ page, pageSize, action }) {
     limit: pageSize,
     offset: (page - 1) * pageSize,
   });
-  return { items: rows.map((r) => r.toJSON()), page, pageSize, total: count };
+  // The audit log lives in another database (no join), so look the actors up in one extra query.
+  // Deleted accounts are included: the log must still say who did something.
+  const actorIds = [...new Set(rows.map((r) => r.actorId).filter(Boolean))];
+  const actors = actorIds.length
+    ? await models.User.findAll({ where: { id: actorIds }, attributes: ['id', 'email'], paranoid: false })
+    : [];
+  const emailById = new Map(actors.map((u) => [u.id, u.email]));
+  return {
+    items: rows.map((r) => ({ ...r.toJSON(), actorEmail: emailById.get(r.actorId) ?? null })),
+    page,
+    pageSize,
+    total: count,
+  };
 }

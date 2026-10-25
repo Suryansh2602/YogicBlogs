@@ -309,6 +309,9 @@ describe('auth flows (real database)', () => {
       expect(users.body).toMatchObject({ total: 1, items: [{ email: 'meera@example.com', role: 'user' }] });
       const logs = await request(app).get('/api/v1/admin/audit-logs?action=admin.').set('Authorization', auth).expect(200);
       expect(logs.body.items.map((l) => l.action)).toEqual(expect.arrayContaining(['admin.setup.created', 'admin.setup.failure']));
+      // Each entry names the acting account; anonymous events (a wrong setup code) have none.
+      expect(logs.body.items.find((l) => l.action === 'admin.setup.created').actorEmail).toBe(email);
+      expect(logs.body.items.find((l) => l.action === 'admin.setup.failure').actorEmail).toBeNull();
     });
 
     it('accepts each backup code only once', async () => {
