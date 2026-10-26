@@ -1,10 +1,11 @@
 import { createApp } from './app.js';
-import { createHttpServer } from './httpServer.js';
+import { createHttpServer, requestTimeoutFor } from './httpServer.js';
 import { env } from './config/env.js';
 import { closeDatabase, pingDatabase } from './config/db.js';
 import { closeRedis, connectRedis, isRedisEnabled } from './config/redis.js';
 import { logger } from './utils/logger.js';
 import { announceAdminSetup } from './modules/admin/admin.service.js';
+import { cleanupStaleUploads } from './modules/media/media.upload.js';
 
 // Crash loudly instead of silently: log, then let the process manager restart us.
 process.on('unhandledRejection', (reason) => {
@@ -32,7 +33,15 @@ async function start() {
     process.exit(1);
   }
 
-  const server = createHttpServer(createApp()).listen(env.PORT, () => {
+  // Uploads interrupted by a crash or restart leave temp files behind: clear them now and every hour.
+  const sweepUploads = () =>
+    cleanupStaleUploads()
+      .then((removed) => removed && logger.info({ removed }, 'Removed leftover upload files'))
+      .catch((err) => logger.warn({ err }, 'Could not clean up leftover upload files'));
+  void sweepUploads();
+  setInterval(sweepUploads, 60 * 60 * 1000).unref();
+
+  const server = createHttpServer(createApp(), { requestTimeout: requestTimeoutFor(env.MAX_IMAGE_MB) }).listen(env.PORT, () => {
     logger.info(`API listening on http://localhost:${env.PORT}/api/v1`);
     announceAdminSetup().catch((err) => logger.error({ err }, 'Could not check for an admin account'));
   });

@@ -7,15 +7,15 @@ import { publicConditionsRouter } from './modules/conditions/conditions.routes.j
 
 /**
  * Mount each feature module here as it is built, e.g. router.use('/articles', articleRoutes).
- * @param {{ strictLimiter: import('express').RequestHandler }} deps
+ * @param {{ strictLimiter: import('express').RequestHandler, uploadLimiter: import('express').RequestHandler }} deps
  */
-export function createRoutes({ strictLimiter }) {
+export function createRoutes({ strictLimiter, uploadLimiter }) {
   const router = Router();
 
   router.use('/health', healthRoutes);
   router.use('/auth', createAuthRouter(strictLimiter));
   router.use('/users', userRoutes);
-  router.use('/admin', createAdminRouter(strictLimiter));
+  router.use('/admin', createAdminRouter(strictLimiter, { uploadLimiter }));
   router.use('/conditions', publicConditionsRouter);
 
   return router;
