@@ -49,5 +49,6 @@ export async function preloadPages() {
     import('../../src/pages/admin/AdminUsers'),
     import('../../src/pages/admin/AdminAudit'),
     import('../../src/pages/admin/AdminConditions'),
+    import('../../src/pages/admin/AdminMedia'),
   ]);
 }

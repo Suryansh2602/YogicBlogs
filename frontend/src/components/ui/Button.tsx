@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { Spinner } from './Spinner';
 import './ui.css';
 
@@ -8,6 +8,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   block?: boolean;
   children: ReactNode;
+  /** React 19: a plain prop, passed on to the <button> (e.g. to move focus back to it). */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({

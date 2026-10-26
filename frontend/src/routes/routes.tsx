@@ -8,6 +8,7 @@ import { EmailOnly } from '../features/auth/EmailOnly';
 import {
   AdminAudit,
   AdminConditions,
+  AdminMedia,
   AdminGate,
   AdminOverview,
   AdminSetupPage,
@@ -57,6 +58,7 @@ export const routes: RouteObject[] = [
           { path: 'users', element: <AdminUsers /> },
           { path: 'audit', element: <AdminAudit /> },
           { path: 'conditions', element: <AdminConditions /> },
+          { path: 'media', element: <AdminMedia /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },
