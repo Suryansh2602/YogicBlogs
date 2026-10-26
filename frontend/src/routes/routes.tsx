@@ -7,6 +7,7 @@ import { GuestOnly, RequireAuth } from '../features/auth/guards';
 import { EmailOnly } from '../features/auth/EmailOnly';
 import {
   AdminAudit,
+  AdminConditions,
   AdminGate,
   AdminOverview,
   AdminSetupPage,
@@ -55,6 +56,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <AdminOverview /> },
           { path: 'users', element: <AdminUsers /> },
           { path: 'audit', element: <AdminAudit /> },
+          { path: 'conditions', element: <AdminConditions /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

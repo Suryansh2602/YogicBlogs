@@ -14,3 +14,4 @@ export const AdminSetupPage = lazy(() => import('../pages/admin/AdminSetupPage')
 export const AdminOverview = lazy(() => import('../pages/admin/AdminOverview'));
 export const AdminUsers = lazy(() => import('../pages/admin/AdminUsers'));
 export const AdminAudit = lazy(() => import('../pages/admin/AdminAudit'));
+export const AdminConditions = lazy(() => import('../pages/admin/AdminConditions'));
