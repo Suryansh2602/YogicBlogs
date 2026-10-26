@@ -12,6 +12,7 @@ REST + JSON API served by `backend/`. The frontend (and Postman) are the only cl
 
 ### Requests
 - `Content-Type: application/json` for every body (planned: other types get `415`). Max body is 100 kB (admin article saves will allow 1 MB).
+- Exception: media uploads are `multipart/form-data` (only on `POST /admin/media/images`). No other route parses multipart, so HTML-form CSRF payloads are never read.
 - Unknown fields are rejected (`zod .strict()`), so mass-assignment such as sending `"role": "admin"` fails with `400`.
 - IDs are UUID v7 strings. Public URLs use slugs.
 
@@ -40,9 +41,12 @@ Messages are safe to show users. Internals (SQL, stack traces, hosts) are never 
 | 403 | Signed in but not allowed (wrong role, 2FA required, CSRF failed) |
 | 404 | Not found, also used instead of 403 when revealing existence would leak information |
 | 409 | Conflict (duplicate slug, stale `version` on save) |
-| 413 / 415 | Body too large / wrong content type |
+| 411 | Upload without a `Content-Length` (`LENGTH_REQUIRED`; browsers always send one) |
+| 413 / 415 | Body too large / wrong content type (uploads: `FILE_TOO_LARGE` / `UNSUPPORTED_FILE_TYPE`) |
+| 422 | Upload understood but unusable (`IMAGE_TOO_LARGE` in pixels, `IMAGE_TOO_COMPLEX` over the 30 s processing limit, `IMAGE_UNREADABLE`) |
+| 507 | Server storage almost full: uploads paused (`STORAGE_FULL`) |
 | 429 | Rate limited (`RateLimit` + `Retry-After` headers) |
-| 503 | A dependency (MySQL/Redis) is unavailable |
+| 503 | A dependency (MySQL/Redis) is unavailable, or the image processor is busy (`BUSY` + `Retry-After`) |
 
 ### Pagination 🔜
 Cursor-based: `?limit=20&cursor=<opaque>` returns `{ "data": [...], "page": { "nextCursor": "..." | null } }`. `limit` is capped at 50.
@@ -54,6 +58,8 @@ Cursor-based: `?limit=20&cursor=<opaque>` returns `{ "data": [...], "page": { "n
 | Credential endpoints, per IP (login, register, 2FA, reset, verify, admin setup) | 30 / 15 min, shared | Redis (fails closed) |
 | Login failures, per IP + account ✅ | 5 / 15 min → locked 15 min (`429 LOGIN_LOCKED`) | Redis |
 | Login failures, per account ✅ | 20 / hour → locked 1 h | Redis |
+| Image uploads, per admin ✅ | 60 / hour (`429 UPLOAD_LIMIT`) | Redis (fails closed) |
+| Public images, per IP ✅ | 1500 / 15 min, instead of the general limit | Redis (fails open) |
 
 Rate-limited answers are `429` with `code: "RATE_LIMITED"`. `/auth/csrf`, `/auth/refresh` and `/auth/logout` run on page loads, so only the general limit applies to them.
 
@@ -172,6 +178,7 @@ Password rules: 12–128 characters, must not contain your email name or display
 |---|---|---|---|
 | GET | `/conditions` ✅ | — | `{ items: [{ id, name, slug, summary }] }`, published only, sorted; cached 1 h on the server (cleared on any admin change), `Cache-Control: public, max-age=300` |
 | GET | `/conditions/:slug` | — | One condition + its published articles |
+| GET | `/media/i/:id/:width` ✅ | — | A stored WebP rendition (`width` = 480, 960, 1600, or the original width of a smaller image). `Cache-Control: public, max-age=31536000, immutable`, `ETag` (→ `304`), `Cross-Origin-Resource-Policy: same-site`, `Content-Security-Policy: default-src 'none'; sandbox`. `If-None-Match` handles weak and listed ETags. Anything else is a plain `404 Image not found` with `Cache-Control: no-store` |
 | GET | `/articles?condition=&q=&cursor=` | — | Published article list; `q` uses full-text search |
 | GET | `/articles/:slug` | optional | Full content if allowed, otherwise `{ locked: true }` teaser |
 | GET | `/articles/:slug/audio` | Bearer | Short-lived signed URL for the audio file |
@@ -210,9 +217,10 @@ Every other admin endpoint requires: `Bearer` → role `admin` → **2FA used fo
 | POST | `/admin/articles/:id/unpublish` | Back to draft |
 | POST | `/admin/articles/:id/archive` | Archive |
 | DELETE | `/admin/articles/:id` | Soft delete |
-| POST | `/admin/media/images` | Upload image (multipart; re-encoded to WebP) |
+| POST | `/admin/media/images` ✅ | Multipart: one `file` (JPEG/PNG/WebP; an animated PNG uses its first frame; ≤ `MAX_IMAGE_MB`, default 15) + optional `altText` (≤ 255). The type is read from the bytes, never the name. Re-encoded to WebP at 480/960/1600 px (never upscaled) without EXIF/GPS, plus a blurred placeholder → `201 { media, deduplicated: false }`; the same file again → `200 { media, deduplicated: true }` (its `altText` fills in a missing one, never replaces one; still audited). Errors: `400 NO_FILE / UPLOAD_INVALID / UPLOAD_ABORTED / VALIDATION_FAILED`, `411 LENGTH_REQUIRED`, `413 FILE_TOO_LARGE` (checked from `Content-Length` before reading; the connection is then closed), `415 UNSUPPORTED_FILE_TYPE` (names the real type), `422 IMAGE_TOO_LARGE` (over 10 000 px a side or 40 MP) / `IMAGE_TOO_COMPLEX` / `IMAGE_UNREADABLE`, `429 UPLOAD_LIMIT`, `503 BUSY`, `507 STORAGE_FULL` |
 | POST | `/admin/media/audio` | Upload audio (multipart) |
-| GET / PATCH / DELETE | `/admin/media[/:id]` | List / edit alt text / delete (`409` if in use) |
+| GET | `/admin/media?kind=&page=&pageSize=` ✅ | Newest first → `{ items, page, pageSize, total, limits: { maxImageMb } }` (the admin page checks files against `limits`); each item: `{ id, kind, status, altText, width, height, sizeBytes, originalName, placeholder, variants: [{ width, height, url }], createdAt }` (`url` is relative to `/api/v1`) |
+| PATCH / DELETE | `/admin/media/:id` ✅ | `{ altText }` → `{ media }` / soft delete + files removed (`409 MEDIA_IN_USE` with `details: { articles, conditions }` while an article cover/audio or condition hero uses it). Use inside article bodies is checked from branch 3 |
 | GET | `/admin/users?page=&pageSize=&search=&role=` ✅ | Search by email or name → `{ items, page, pageSize, total }` |
 | GET | `/admin/users/:id` | User detail + sessions |
 | PATCH | `/admin/users/:id` | `{ status }`: suspend or reactivate (revokes sessions) |
