@@ -88,7 +88,7 @@ Foundation first: every later feature reads and writes this schema, so it has to
 
 | # | Branch | Delivers | Owner action |
 |---|---|---|---|
-| 11 | `feature/conditions` 🔨 | Conditions (what each article is about): admin CRUD, public cached list, admin page | Provide the condition list |
+| 11 | `feature/conditions` ✅ built | Conditions (what each article is about): admin CRUD, public cached list, admin page | Provide the condition list |
 | 12 | `feature/media-images` | Image pipeline: multer, magic bytes, sharp → WebP (EXIF/GPS stripped), storage adapter, media library | Brand images |
 | 13 | `feature/articles-api` | Drafts/live, autosave, publish checklist, revisions, references, public article API + cache | 3–5 sample articles |
 | 14 | `feature/article-editor` | TipTap 3 editor, blocks, thumbnail designer, references panel, preview, reader page (React renderer, no raw HTML) | — |
