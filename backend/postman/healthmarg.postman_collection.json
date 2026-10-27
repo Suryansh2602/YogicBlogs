@@ -1938,6 +1938,960 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Articles (public)",
+      "description": "Published articles only. A members article shows in full only with a signed-in Authorization header; otherwise a teaser (locked: true).",
+      "item": [
+        {
+          "name": "List published articles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles?limit=12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "articles"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "12"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with items', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search articles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles?q=breathing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "articles"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "breathing"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read an article (anonymous)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles/{{articleSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "articles",
+                "{{articleSlug}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 (or redirect for an old address)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read an article (signed in)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles/{{articleSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "articles",
+                "{{articleSlug}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with the body', () => pm.expect(pm.response.json().article.locked).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: draft or made-up address",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles/not-published-anywhere",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "articles",
+                "not-published-anywhere"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin · Articles",
+      "description": "Needs an admin session that passed 2FA, a conditionId (Admin · Conditions → Create) and a mediaId (Admin · Media → Upload). Run in order: Create → Save draft → Checklist → Publish. Every save sends the draftVersion it started from (saved automatically into the environment); a stale one gets 409 STALE_VERSION.",
+      "item": [
+        {
+          "name": "Create article",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Calming migraine with breath\",\n  \"conditionId\": \"{{conditionId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('articleId', pm.response.json().article.id);",
+                  "if (true) pm.environment.set('draftVersion', String(pm.response.json().draftVersion ?? pm.response.json().article.draftVersion));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List articles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles?q=migraine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "migraine"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with items', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get article (draft, checklist, links)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.environment.set('draftVersion', String(pm.response.json().draftVersion ?? pm.response.json().article.draftVersion));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save draft (autosave)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": {{draftVersion}},\n  \"draft\": {\n    \"title\": \"Calming migraine with breath\",\n    \"slug\": \"calming-migraine-with-breath\",\n    \"summary\": \"A gentle breathing routine that can ease the build-up of a migraine.\",\n    \"conditionId\": \"{{conditionId}}\",\n    \"accessLevel\": \"public\",\n    \"lang\": \"en\",\n    \"accent\": \"teal\",\n    \"cover\": {\n      \"mediaId\": \"{{mediaId}}\",\n      \"alt\": \"Woman breathing slowly by a window\",\n      \"focalX\": 50,\n      \"focalY\": 35\n    },\n    \"relatedIds\": [],\n    \"seoTitle\": \"\",\n    \"seoDescription\": \"\",\n    \"body\": {\n      \"type\": \"doc\",\n      \"content\": [\n        {\n          \"type\": \"heading\",\n          \"attrs\": {\n            \"level\": 2\n          },\n          \"content\": [\n            {\n              \"type\": \"text\",\n              \"text\": \"Why breath helps\"\n            }\n          ]\n        },\n        {\n          \"type\": \"paragraph\",\n          \"content\": [\n            {\n              \"type\": \"text\",\n              \"text\": \"Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine.\"\n            }\n          ]\n        },\n        {\n          \"type\": \"callout\",\n          \"attrs\": {\n            \"tone\": \"doctor\"\n          },\n          \"content\": [\n            {\n              \"type\": \"paragraph\",\n              \"content\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"See a doctor if the pain is sudden and severe.\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "draft"
+              ]
+            },
+            "description": "The whole draft every time (up to 1 MB). The same draft again writes nothing and returns the same version."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.environment.set('draftVersion', String(pm.response.json().draftVersion ?? pm.response.json().article.draftVersion));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publish checklist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/checklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "checklist"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preview as a reader",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "preview"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publish",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": {{draftVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "publish"
+              ]
+            },
+            "description": "422 PUBLISH_CHECKLIST lists every problem when something is missing."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 or 422 checklist', () => pm.expect(pm.response.code).to.be.oneOf([200, 422]));",
+                  "if (pm.response.code === 200) pm.environment.set('articleSlug', pm.response.json().article.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save a manual revision",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/revisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "revisions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List revisions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/revisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "revisions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Discard unpublished changes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": {{draftVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/discard-draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "discard-draft"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 or 409 (never published)', () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));",
+                  "if (pm.response.code === 200) pm.environment.set('draftVersion', String(pm.response.json().draftVersion ?? pm.response.json().article.draftVersion));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unpublish",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/unpublish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "unpublish"
+              ]
+            },
+            "description": "409 HAS_INBOUND_LINKS when published articles link here; send confirm: true to go ahead."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200, or 409 asking to confirm', () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Archive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/archive",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "archive"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 or 409 (not published)', () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete article",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": {{draftVersion}},\n  \"confirm\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: javascript: link in the body",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": {{draftVersion}},\n  \"draft\": {\"title\":\"Calming migraine with breath\",\"slug\":\"calming-migraine-with-breath\",\"summary\":\"A gentle breathing routine that can ease the build-up of a migraine.\",\"conditionId\":\"{{conditionId}}\",\"accessLevel\":\"public\",\"lang\":\"en\",\"accent\":\"teal\",\"cover\":{\"mediaId\":\"{{mediaId}}\",\"alt\":\"Woman breathing slowly by a window\",\"focalX\":50,\"focalY\":35},\"relatedIds\":[],\"seoTitle\":\"\",\"seoDescription\":\"\",\"body\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"click\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"javascript:alert(document.cookie)\"}}]}]}]}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "draft"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 INVALID_DOCUMENT', () => { pm.response.to.have.status(400); pm.expect(pm.response.json().error.code).to.eql('INVALID_DOCUMENT'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: raw HTML block",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": {{draftVersion}},\n  \"draft\": {\"title\":\"Calming migraine with breath\",\"slug\":\"calming-migraine-with-breath\",\"summary\":\"A gentle breathing routine that can ease the build-up of a migraine.\",\"conditionId\":\"{{conditionId}}\",\"accessLevel\":\"public\",\"lang\":\"en\",\"accent\":\"teal\",\"cover\":{\"mediaId\":\"{{mediaId}}\",\"alt\":\"Woman breathing slowly by a window\",\"focalX\":50,\"focalY\":35},\"relatedIds\":[],\"seoTitle\":\"\",\"seoDescription\":\"\",\"body\":{\"type\":\"doc\",\"content\":[{\"type\":\"html\",\"content\":[{\"type\":\"text\",\"text\":\"<script>alert(1)</script>\"}]}]}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "draft"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: save over someone else’s version",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draftVersion\": 1,\n  \"draft\": {\n    \"title\": \"Calming migraine with breath\",\n    \"slug\": \"calming-migraine-with-breath\",\n    \"summary\": \"A gentle breathing routine that can ease the build-up of a migraine.\",\n    \"conditionId\": \"{{conditionId}}\",\n    \"accessLevel\": \"public\",\n    \"lang\": \"en\",\n    \"accent\": \"teal\",\n    \"cover\": {\n      \"mediaId\": \"{{mediaId}}\",\n      \"alt\": \"Woman breathing slowly by a window\",\n      \"focalX\": 50,\n      \"focalY\": 35\n    },\n    \"relatedIds\": [],\n    \"seoTitle\": \"\",\n    \"seoDescription\": \"\",\n    \"body\": {\n      \"type\": \"doc\",\n      \"content\": [\n        {\n          \"type\": \"heading\",\n          \"attrs\": {\n            \"level\": 2\n          },\n          \"content\": [\n            {\n              \"type\": \"text\",\n              \"text\": \"Why breath helps\"\n            }\n          ]\n        },\n        {\n          \"type\": \"paragraph\",\n          \"content\": [\n            {\n              \"type\": \"text\",\n              \"text\": \"Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine. Slow steady breathing calms the nervous system and eases the tension that so often sits behind a migraine.\"\n            }\n          ]\n        },\n        {\n          \"type\": \"callout\",\n          \"attrs\": {\n            \"tone\": \"doctor\"\n          },\n          \"content\": [\n            {\n              \"type\": \"paragraph\",\n              \"content\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"See a doctor if the pain is sudden and severe.\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/articles/{{articleId}}/draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "articles",
+                "{{articleId}}",
+                "draft"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 STALE_VERSION (after any earlier save)', () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": []

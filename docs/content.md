@@ -199,7 +199,7 @@ The link tables use **RESTRICT** foreign keys. Articles and media are soft-delet
 |---|---|---|---|
 | 1 | `feature/conditions` | Conditions (what each article is about): admin create/edit/delete, public list, admin page | Real-DB, attack and load tests; Postman |
 | 2 | `feature/media-images` ✅ built | Image upload pipeline (sharp → WebP, EXIF/GPS stripped), media library page | Attack suite: SVG, polyglots, pixel bombs, spoofed types, GPS photo comes out clean |
-| 3 | `feature/articles-api` | Article drafts, autosave, publish checklist, revisions, references, public article API with caching | Real-DB + attack tests (hostile JSON, links, 1 MB limit, draft never public); load test |
+| 3 | `feature/articles-api` ✅ built | Article drafts, autosave, publish checklist, revisions, references, public article API with caching | Real-DB + attack tests (hostile JSON, links, 1 MB limit, draft never public); load test |
 | 4 | `feature/article-editor` | The editor (TipTap 3), all blocks, thumbnail designer, references panel, preview, reader page | Contract test (editor ⇄ API schema), contrast test for new tones, bundle budgets, end-to-end publish |
 | 5 | `feature/editor-speech` | Dictation + listen back in the editor | Mocked speech tests; Chrome/Edge manual check; Firefox fallback |
 | 6 | `feature/translations` | Translations for admins (draft in browser → review → publish) and readers (switcher, listen, instant translate) | Real-DB tests (no unreviewed publish, stale marking), browser checks with and without the Translator API |

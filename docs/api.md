@@ -172,15 +172,15 @@ Password rules: 12–128 characters, must not contain your email name or display
 
 ---
 
-## 5. Content (public + members) 🔜 (P2)
+## 5. Content (public + members) (✅ articles, conditions, images · 🔜 audio, progress, bookmarks)
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/conditions` ✅ | — | `{ items: [{ id, name, slug, summary }] }`, published only, sorted; cached 1 h on the server (cleared on any admin change), `Cache-Control: public, max-age=300` |
 | GET | `/conditions/:slug` | — | One condition + its published articles |
 | GET | `/media/i/:id/:width` ✅ | — | A stored WebP rendition (`width` = 480, 960, 1600, or the original width of a smaller image). `Cache-Control: public, max-age=31536000, immutable`, `ETag` (→ `304`), `Cross-Origin-Resource-Policy: same-site`, `Content-Security-Policy: default-src 'none'; sandbox`. `If-None-Match` handles weak and listed ETags. Anything else is a plain `404 Image not found` with `Cache-Control: no-store` |
-| GET | `/articles?condition=&q=&cursor=` | — | Published article list; `q` uses full-text search |
-| GET | `/articles/:slug` | optional | Full content if allowed, otherwise `{ locked: true }` teaser |
+| GET | `/articles?condition=&q=&cursor=&limit=` ✅ | — | Published cards, newest first → `{ items, nextCursor }` (cursor paging, `limit` ≤ 30, full-text search over title, summary and text). `public, max-age=60`. Details: [articles.md](articles.md) §5 |
+| GET | `/articles/:slug` ✅ | optional | `{ article }`: full when public, or members and signed in; otherwise a teaser (`locked: true, reason: SIGN_IN_REQUIRED`). An old address answers `{ redirect: "<slug>" }`. Links to unpublished articles are plain text, never named. An invalid token is `401` |
 | GET | `/articles/:slug/audio` | Bearer | Short-lived signed URL for the audio file |
 | PUT | `/articles/:slug/progress` | Bearer | `{ progressPercent, audioPositionSeconds }` |
 | PUT | `/articles/:slug/bookmark` | Bearer | Save |
@@ -194,7 +194,7 @@ Password rules: 12–128 characters, must not contain your email name or display
 
 ---
 
-## 6. Admin dashboard (✅ setup, stats, users, audit · 🔜 content)
+## 6. Admin dashboard (✅ setup, stats, users, audit, conditions, media, articles)
 
 **First admin (bootstrap).** There is no public admin sign-up. While no admin exists:
 
@@ -211,12 +211,15 @@ Every other admin endpoint requires: `Bearer` → role `admin` → **2FA used fo
 |---|---|---|
 | GET / POST | `/admin/conditions` ✅ | List all with `articleCount` / create `{ name, slug?, summary?, description?, sortOrder?, isPublished? }`. The slug is made from the name when omitted (`400 SLUG_REQUIRED` for names with no English letters). Duplicates → `409 NAME_TAKEN` / `SLUG_TAKEN` with `details[0].path` |
 | PATCH / DELETE | `/admin/conditions/:id` ✅ | Edit any field / soft delete (`409 CONDITION_IN_USE` with the count while articles use it). A deleted condition's name and slug can be reused |
-| GET / POST | `/admin/articles` | List with filters / create draft |
-| GET / PATCH | `/admin/articles/:id` | Read / save (send `version`; `409` if stale) |
-| POST | `/admin/articles/:id/publish` | Publish (sets `published_at`, clears cache) |
-| POST | `/admin/articles/:id/unpublish` | Back to draft |
-| POST | `/admin/articles/:id/archive` | Archive |
-| DELETE | `/admin/articles/:id` | Soft delete |
+| GET / POST | `/admin/articles` ✅ | List (`status`, `conditionId`, `q` over draft titles) / create `{ title, conditionId, accessLevel?, lang? }` |
+| GET | `/admin/articles/:id` ✅ | Draft, `draftVersion`, live state, outbound links with each target's state, inbound count, checklist |
+| PUT | `/admin/articles/:id/draft` ✅ | Autosave `{ draftVersion, draft }` (up to 1 MB; 600 per 15 min per admin) → `409 STALE_VERSION`, `410 ARTICLE_DELETED`, `400 INVALID_DOCUMENT` |
+| GET | `/admin/articles/:id/checklist` · `/preview` ✅ | Publish checklist / the draft as readers would see it |
+| POST | `/admin/articles/:id/publish` ✅ | `{ draftVersion }` → live = draft (`422 PUBLISH_CHECKLIST` lists every problem) |
+| POST | `/admin/articles/:id/unpublish` · `/archive` ✅ | `{ confirm? }` (`409 HAS_INBOUND_LINKS` while published articles link here) |
+| POST | `/admin/articles/:id/discard-draft` ✅ | `{ draftVersion }`: back to the published copy |
+| DELETE | `/admin/articles/:id` ✅ | `{ draftVersion, confirm? }`: soft delete |
+| GET / POST | `/admin/articles/:id/revisions[/:revisionId[/restore]]` ✅ | List (no snapshots) / one snapshot / save one / restore `{ draftVersion }` |
 | POST | `/admin/media/images` ✅ | Multipart: one `file` (JPEG/PNG/WebP; an animated PNG uses its first frame; ≤ `MAX_IMAGE_MB`, default 15) + optional `altText` (≤ 255). The type is read from the bytes, never the name. Re-encoded to WebP at 480/960/1600 px (never upscaled) without EXIF/GPS, plus a blurred placeholder → `201 { media, deduplicated: false }`; the same file again → `200 { media, deduplicated: true }` (its `altText` fills in a missing one, never replaces one; still audited). Errors: `400 NO_FILE / UPLOAD_INVALID / UPLOAD_ABORTED / VALIDATION_FAILED`, `411 LENGTH_REQUIRED`, `413 FILE_TOO_LARGE` (checked from `Content-Length` before reading; the connection is then closed), `415 UNSUPPORTED_FILE_TYPE` (names the real type), `422 IMAGE_TOO_LARGE` (over 10 000 px a side or 40 MP) / `IMAGE_TOO_COMPLEX` / `IMAGE_UNREADABLE`, `429 UPLOAD_LIMIT`, `503 BUSY`, `507 STORAGE_FULL` |
 | POST | `/admin/media/audio` | Upload audio (multipart) |
 | GET | `/admin/media?kind=&page=&pageSize=` ✅ | Newest first → `{ items, page, pageSize, total, limits: { maxImageMb } }` (the admin page checks files against `limits`); each item: `{ id, kind, status, altText, width, height, sizeBytes, originalName, placeholder, variants: [{ width, height, url }], createdAt }` (`url` is relative to `/api/v1`) |
