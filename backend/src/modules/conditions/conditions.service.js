@@ -1,7 +1,8 @@
 // Conditions: what each article is about (e.g. Migraine). Admins manage them; members browse the
 // published ones. Articles must belong to one, so a condition in use can't be deleted.
-import { fn, col, UniqueConstraintError } from 'sequelize';
-import { models } from '../../config/db.js';
+import { fn, col, QueryTypes, UniqueConstraintError } from 'sequelize';
+import { models, sequelize } from '../../config/db.js';
+import { ARTICLE_STATUS, CACHE_GENERATION } from '../../config/constants.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { cache } from '../../utils/cache.js';
 import { audit } from '../../services/audit.js';
@@ -116,19 +117,53 @@ export async function create(data, req) {
   return { condition: toAdmin(condition) };
 }
 
+/** Published articles filed under a condition (they'd be orphaned if it were hidden). */
+const publishedArticles = (conditionId, transaction) =>
+  models.Article.count({ where: { conditionId, status: ARTICLE_STATUS.PUBLISHED }, transaction });
+
+// Article pages show the condition's name: any change here must reach cached articles too.
+const refreshCaches = () => Promise.all([cache.del(PUBLIC_LIST_KEY), cache.bumpGeneration(CACHE_GENERATION.ARTICLES)]);
+
 export async function update(id, data, req) {
   const condition = await findOr404(id);
+  if (data.isPublished === false && condition.isPublished) await hideCondition(id);
   await assertUnique({ name: data.name, slug: data.slug }, id);
   await saveUnique(() => condition.update(data), { name: data.name ?? condition.name, slug: data.slug ?? condition.slug });
-  await cache.del(PUBLIC_LIST_KEY);
+  await refreshCaches();
   await audit('condition.updated', { req, actorId: req.auth.userId, entityType: 'condition', entityId: id, metadata: { fields: Object.keys(data) } });
   const counts = await articleCounts();
   return { condition: toAdmin(condition, counts.get(id) ?? 0) };
 }
 
+/**
+ * Hide a condition only if no published article is filed under it. The row is locked first, and
+ * publishing takes a share lock on it, so a publish can't slip in between the check and the change.
+ */
+async function hideCondition(id) {
+  await sequelize.transaction(async (transaction) => {
+    await models.Condition.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
+    const live = await publishedArticles(id, transaction);
+    if (live > 0) {
+      throw new ApiError(
+        409,
+        `${live} published article${live === 1 ? ' is' : 's are'} filed under this condition. Unpublish ${live === 1 ? 'it' : 'them'} or move ${live === 1 ? 'it' : 'them'} to another condition first.`,
+        [{ path: 'isPublished', message: String(live) }],
+        'CONDITION_HAS_PUBLISHED_ARTICLES',
+      );
+    }
+    await models.Condition.update({ isPublished: false }, { where: { id }, transaction });
+  });
+}
+
 export async function remove(id, req) {
   const condition = await findOr404(id);
-  const inUse = await models.Article.count({ where: { conditionId: id } });
+  // Live copies and drafts both count: a draft filed here would be left pointing at nothing.
+  const [{ n: inDrafts }] = await sequelize.query(
+    `SELECT COUNT(*) AS n FROM article_drafts d JOIN articles a ON a.id = d.article_id
+      WHERE a.deleted_at IS NULL AND a.condition_id <> :id AND JSON_UNQUOTE(JSON_EXTRACT(d.draft_json, '$.conditionId')) = :id`,
+    { replacements: { id }, type: QueryTypes.SELECT },
+  );
+  const inUse = (await models.Article.count({ where: { conditionId: id } })) + Number(inDrafts);
   if (inUse > 0) {
     throw new ApiError(
       409,
@@ -138,6 +173,6 @@ export async function remove(id, req) {
     );
   }
   await condition.destroy();
-  await cache.del(PUBLIC_LIST_KEY);
+  await refreshCaches();
   await audit('condition.deleted', { req, actorId: req.auth.userId, entityType: 'condition', entityId: id });
 }

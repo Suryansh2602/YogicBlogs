@@ -243,11 +243,13 @@ export function collectReferences(doc) {
 /**
  * The body as a reader may see it: links to articles that aren't published lose their link (the text
  * stays), and cards for them disappear, so nothing about a hidden article (not even its id) is sent.
- * Returns a new document; the input is not changed.
+ * Images whose file is gone (deleted, not ready) are dropped too. Returns a new document; the input is
+ * not changed.
  */
-export function readerBody(doc, isVisibleArticle) {
+export function readerBody(doc, isVisibleArticle, isVisibleImage = () => true) {
   const clean = (node) => {
     if (node.type === 'articleCard') return isVisibleArticle(node.attrs.articleId.toLowerCase()) ? { ...node } : null;
+    if (node.type === 'image') return isVisibleImage(node.attrs.mediaId.toLowerCase()) ? { ...node } : null;
     if (node.type === 'text') {
       const marks = (node.marks ?? []).filter((m) => m.type !== 'articleLink' || isVisibleArticle(m.attrs.articleId.toLowerCase()));
       return marks.length ? { ...node, marks } : { type: 'text', text: node.text };

@@ -154,4 +154,10 @@ describe('text, words and references', () => {
     expect(JSON.stringify(hidden)).not.toMatch(new RegExp(`${A}|${B}`));
     expect(JSON.stringify(GOOD)).toContain(A); // the stored document is untouched
   });
+
+  it('drops images whose file is gone', () => {
+    const withImage = JSON.stringify(readerBody(GOOD, () => true, () => true));
+    expect(withImage).toContain(IMG);
+    expect(JSON.stringify(readerBody(GOOD, () => true, () => false))).not.toContain(IMG);
+  });
 });
