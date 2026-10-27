@@ -23,6 +23,11 @@ describe('db', () => {
       [
         'Article',
         'ArticleBookmark',
+        'ArticleDraft',
+        'ArticleMedia',
+        'ArticleReference',
+        'ArticleRevision',
+        'ArticleSlugRedirect',
         'AuditLog',
         'AuthToken',
         'Condition',

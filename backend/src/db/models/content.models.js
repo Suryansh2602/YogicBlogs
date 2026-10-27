@@ -1,7 +1,22 @@
-// Content tables: conditions, articles, media, and per-user reading data for the user dashboard.
+// Content tables: conditions, articles (live copy, drafts, references, media usage, revisions, old slugs),
+// media, and per-user reading data for the user dashboard.
 import { DataTypes, Model } from 'sequelize';
 import { v7 as uuidv7 } from 'uuid';
-import { ACCESS_LEVEL, ARTICLE_STATUS, MEDIA_KIND, MEDIA_STATUS, MEDIA_VISIBILITY, SLUG_PATTERN, STORAGE_BACKEND } from '../../config/constants.js';
+import {
+  ACCESS_LEVEL,
+  ARTICLE_LANGS,
+  ARTICLE_MEDIA_ROLE,
+  ARTICLE_STATUS,
+  CARD_ACCENTS,
+  CONTENT_SCOPE,
+  MEDIA_KIND,
+  MEDIA_STATUS,
+  MEDIA_VISIBILITY,
+  REFERENCE_KIND,
+  REVISION_REASON,
+  SLUG_PATTERN,
+  STORAGE_BACKEND,
+} from '../../config/constants.js';
 
 const uuidPk = () => ({ type: DataTypes.UUID, primaryKey: true, defaultValue: () => uuidv7() });
 // Uniqueness is enforced in MySQL among non-deleted rows only (generated `alive` column),
@@ -23,6 +38,11 @@ export class Article extends Model {
     return this.status === ARTICLE_STATUS.PUBLISHED && this.publishedAt !== null && this.publishedAt <= new Date();
   }
 }
+export class ArticleDraft extends Model {}
+export class ArticleReference extends Model {}
+export class ArticleMedia extends Model {}
+export class ArticleRevision extends Model {}
+export class ArticleSlugRedirect extends Model {}
 export class ArticleBookmark extends Model {}
 export class ReadingProgress extends Model {}
 
@@ -95,14 +115,27 @@ export function initContentModels(sequelize) {
       id: uuidPk(),
       conditionId: { type: DataTypes.UUID, allowNull: false },
       authorId: { type: DataTypes.UUID, allowNull: true },
+      // Everything below is the LIVE copy: written only when publishing (the draft is in article_drafts).
       title: { type: DataTypes.STRING(200), allowNull: false, validate: { len: [3, 200] } },
-      slug: slug(220),
+      // Set when first published; old addresses go to article_slug_redirects.
+      slug: { ...slug(220), allowNull: true },
       summary: { type: DataTypes.STRING(500), allowNull: true },
-      // Editor document (source of truth for editing) and its server-sanitised HTML (for rendering).
+      // The live body (allow-listed editor JSON, no HTML anywhere) and its plain text (search, reading time).
       contentJson: { type: DataTypes.JSON, allowNull: true },
-      contentHtml: { type: DataTypes.TEXT('medium'), allowNull: true },
+      contentText: { type: DataTypes.TEXT('medium'), allowNull: true },
+      lang: { type: DataTypes.STRING(8), allowNull: false, defaultValue: 'en', validate: { isIn: [ARTICLE_LANGS] } },
+      cardAccent: { type: DataTypes.STRING(12), allowNull: false, defaultValue: 'saffron', validate: { isIn: [CARD_ACCENTS] } },
       coverImageId: { type: DataTypes.UUID, allowNull: true },
+      coverAlt: { type: DataTypes.STRING(255), allowNull: true },
+      coverFocalX: { type: DataTypes.TINYINT.UNSIGNED, allowNull: false, defaultValue: 50, validate: { max: 100 } },
+      coverFocalY: { type: DataTypes.TINYINT.UNSIGNED, allowNull: false, defaultValue: 50, validate: { max: 100 } },
+      relatedIds: { type: DataTypes.JSON, allowNull: true },
       audioId: { type: DataTypes.UUID, allowNull: true },
+      liveHash: { type: DataTypes.CHAR(64), allowNull: true },
+      // Bumped on every publish: part of the cache key, and what translations will record as their source.
+      liveVersion: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0 },
+      // First publish is publishedAt; every later publish sets this ("Updated on").
+      contentUpdatedAt: { type: DataTypes.DATE, allowNull: true },
       status: {
         type: DataTypes.STRING(16),
         allowNull: false,
@@ -126,15 +159,79 @@ export function initContentModels(sequelize) {
       paranoid: true,
       // Optimistic locking: saving a stale copy (another admin saved in between) throws OptimisticLockError.
       version: true,
-      indexes: [{ fields: ['status', 'published_at'] }, { fields: ['condition_id', 'status'] }, { fields: ['author_id'] }],
+      indexes: [{ fields: ['status', 'published_at', 'id'] }, { fields: ['condition_id', 'status'] }, { fields: ['author_id'] }],
       validate: {
         publishedNeedsDate() {
           if (this.status === ARTICLE_STATUS.PUBLISHED && !this.publishedAt) {
             throw new Error('publishedAt is required when status is published');
           }
         },
+        liveNeedsSlug() {
+          if (this.status !== ARTICLE_STATUS.DRAFT && !this.slug) throw new Error('slug is required once an article has been published');
+        },
       },
     },
+  );
+
+  ArticleDraft.init(
+    {
+      articleId: { type: DataTypes.UUID, primaryKey: true },
+      // Its own optimistic lock: only draft saves, publish, discard and restore bump it.
+      draftVersion: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, defaultValue: 1 },
+      draftJson: { type: DataTypes.JSON, allowNull: false },
+      draftHash: { type: DataTypes.CHAR(64), allowNull: false },
+      // Copied out of draftJson so the admin list can search and sort it with an index.
+      draftTitle: { type: DataTypes.STRING(200), allowNull: false },
+      updatedById: { type: DataTypes.UUID, allowNull: true },
+    },
+    { sequelize, modelName: 'ArticleDraft', tableName: 'article_drafts' },
+  );
+
+  const scoped = {
+    lang: { type: DataTypes.STRING(8), primaryKey: true, validate: { isIn: [ARTICLE_LANGS] } },
+    scope: { type: DataTypes.STRING(8), primaryKey: true, validate: { isIn: [Object.values(CONTENT_SCOPE)] } },
+  };
+
+  ArticleReference.init(
+    {
+      sourceArticleId: { type: DataTypes.UUID, primaryKey: true },
+      ...scoped,
+      kind: { type: DataTypes.STRING(8), primaryKey: true, validate: { isIn: [Object.values(REFERENCE_KIND)] } },
+      // No foreign key: articles are only soft-deleted, and targets are resolved when a page is read.
+      targetArticleId: { type: DataTypes.UUID, primaryKey: true },
+    },
+    { sequelize, modelName: 'ArticleReference', tableName: 'article_references', timestamps: false },
+  );
+
+  ArticleMedia.init(
+    {
+      articleId: { type: DataTypes.UUID, primaryKey: true },
+      ...scoped,
+      role: { type: DataTypes.STRING(10), primaryKey: true, validate: { isIn: [Object.values(ARTICLE_MEDIA_ROLE)] } },
+      mediaId: { type: DataTypes.UUID, primaryKey: true },
+    },
+    { sequelize, modelName: 'ArticleMedia', tableName: 'article_media', timestamps: false },
+  );
+
+  ArticleRevision.init(
+    {
+      id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
+      articleId: { type: DataTypes.UUID, allowNull: false },
+      reason: { type: DataTypes.STRING(10), allowNull: false, validate: { isIn: [Object.values(REVISION_REASON)] } },
+      snapshot: { type: DataTypes.JSON, allowNull: false },
+      snapshotHash: { type: DataTypes.CHAR(64), allowNull: false },
+      sizeBytes: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+      createdById: { type: DataTypes.UUID, allowNull: true },
+    },
+    { sequelize, modelName: 'ArticleRevision', tableName: 'article_revisions', updatedAt: false },
+  );
+
+  ArticleSlugRedirect.init(
+    {
+      slug: { type: DataTypes.STRING(220), primaryKey: true, validate: { is: SLUG_PATTERN } },
+      articleId: { type: DataTypes.UUID, allowNull: false },
+    },
+    { sequelize, modelName: 'ArticleSlugRedirect', tableName: 'article_slug_redirects', updatedAt: false },
   );
 
   ArticleBookmark.init(
@@ -167,5 +264,5 @@ export function initContentModels(sequelize) {
     },
   );
 
-  return { Condition, Media, Article, ArticleBookmark, ReadingProgress };
+  return { Condition, Media, Article, ArticleDraft, ArticleReference, ArticleMedia, ArticleRevision, ArticleSlugRedirect, ArticleBookmark, ReadingProgress };
 }
