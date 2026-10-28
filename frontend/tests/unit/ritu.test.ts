@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { rituOn, sandhiOn } from '../../src/features/ritu/calendar';
 import { dateIn, formatTime, NEW_DELHI, sunTimes } from '../../src/features/ritu/sun';
+import { capitalize, MEDICAL_NOTE_HI, RITUS, RITUS_HI, RITUSANDHI_HI, rituById, SOURCES } from '../../src/features/ritu/ritucharya';
+import { RITU_NAMES } from '../../src/features/ritu/names';
 
 describe('ritu calendar', () => {
   it.each([
@@ -53,5 +55,44 @@ describe('sunrise and sunset', () => {
   it('reads the calendar date in a time zone', () => {
     // 20:00 UTC on 28 Oct is already 29 Oct in India.
     expect(dateIn('Asia/Kolkata', new Date('2026-10-28T20:00:00Z'))).toEqual({ year: 2026, month: 10, day: 29 });
+  });
+});
+
+describe('Ritucharya content', () => {
+  it('has all six ritus in calendar order, and rituById finds each one', () => {
+    expect(RITUS.map((r) => r.id)).toEqual(['shishira', 'vasanta', 'grishma', 'varsha', 'sharad', 'hemanta']);
+    for (const r of RITUS) expect(rituById(r.id)).toBe(r);
+    expect(() => rituById('monsoon' as never)).toThrow();
+  });
+
+  it('keeps the home page names identical to the full guide', () => {
+    for (const r of RITUS) expect(RITU_NAMES[r.id]).toEqual({ name: r.name, deva: r.deva, english: r.english });
+  });
+
+  it('has the full Hindi guide for every ritu, written in Devanagari', () => {
+    const devanagari = /[ऀ-ॿ]/;
+    for (const r of RITUS) {
+      const hi = RITUS_HI[r.id];
+      for (const text of [hi.name, hi.english, hi.samay, hi.intro, hi.avoid, ...hi.eat, ...hi.lifestyle]) {
+        expect(text.trim().length).toBeGreaterThan(0);
+        expect(text).toMatch(devanagari);
+      }
+      expect(hi.eat.length).toBeGreaterThan(0);
+      expect(hi.lifestyle.length).toBeGreaterThan(0);
+    }
+    expect(RITUSANDHI_HI).toMatch(devanagari);
+    expect(MEDICAL_NOTE_HI).toMatch(devanagari);
+  });
+
+  it('cites only sources that are listed', () => {
+    for (const r of RITUS) {
+      expect(r.sources.length).toBeGreaterThan(0);
+      for (const id of [...r.sources, ...r.protect.flatMap((p) => (p.source ? [p.source] : []))]) expect(SOURCES[id]).toBeDefined();
+    }
+  });
+
+  it('capitalizes a word for headings', () => {
+    expect(capitalize('vata')).toBe('Vata');
+    expect(capitalize('')).toBe('');
   });
 });

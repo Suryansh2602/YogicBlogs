@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { rituOn, sandhiOn } from './calendar';
 import { RituArt } from './RituArt';
-import { rituById } from './ritucharya';
+import { RITU_NAMES } from './names';
 import { dateIn, formatTime, NEW_DELHI, sunTimes, type Place } from './sun';
 import './ritu.css';
 
@@ -42,7 +42,8 @@ export function TodayPanel() {
   }, []);
 
   const { year, month, day } = dateIn(place.timeZone, now);
-  const ritu = rituById(rituOn(month, day));
+  const rituId = rituOn(month, day);
+  const ritu = { id: rituId, ...RITU_NAMES[rituId] };
   const sandhi = sandhiOn(month, day);
   const sun = sunTimes(year, month, day, place);
   const dateText = now.toLocaleDateString('en-IN', { timeZone: place.timeZone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -111,7 +112,7 @@ export function TodayPanel() {
       </Link>
       {sandhi && (
         <p className="today__sandhi">
-          <strong>Ritusandhi:</strong> {rituById(sandhi.from).name} is giving way to {rituById(sandhi.to).name}. Change food and habits gradually.
+          <strong>Ritusandhi:</strong> {RITU_NAMES[sandhi.from].name} is giving way to {RITU_NAMES[sandhi.to].name}. Change food and habits gradually.
         </p>
       )}
 

@@ -113,3 +113,21 @@ describe('Ritucharya page', () => {
     expect(await screen.findByRole('tab', { name: /Grishma/ })).toHaveAttribute('aria-selected', 'true');
   });
 });
+
+describe('Ritucharya in Hindi', () => {
+  it('switches to the Hindi guide and keeps the choice in the address', async () => {
+    mockApi({});
+    const router = renderApp('/ritucharya?ritu=sharad');
+    await userEvent.click(await screen.findByRole('button', { name: 'हिन्दी' }));
+    expect(router.state.location.search).toBe('?ritu=sharad&lang=hi');
+    const panel = screen.getByRole('tabpanel');
+    expect(within(panel).getByRole('heading', { level: 2, name: 'शरद ऋतु' })).toBeInTheDocument();
+    expect(within(panel).getByRole('heading', { name: 'क्या खाएं?' })).toBeInTheDocument();
+    expect(within(panel).getByText(/दही, खट्टा अचार/)).toBeInTheDocument();
+    expect(screen.getByText(/ऋतु संधि \(सुनहरा नियम\)/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: /ग्रीष्म ऋतु/ }));
+    expect(router.state.location.search).toBe('?ritu=grishma&lang=hi');
+    await userEvent.click(screen.getByRole('button', { name: 'English' }));
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Summer');
+  });
+});
