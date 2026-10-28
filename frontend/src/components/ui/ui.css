@@ -575,3 +575,28 @@
   color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* ── Text area ───────────────────────────────────────────────────────────────────────────────── */
+.field__textarea {
+  resize: vertical;
+  min-height: 5.5rem;
+  line-height: 1.5;
+}
+
+.field__note {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 0.82rem;
+}
+
+.field__count {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.field__count--over {
+  color: var(--danger);
+  font-weight: 600;
+}

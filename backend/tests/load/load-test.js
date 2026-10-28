@@ -138,6 +138,16 @@ const baselineRps = baseline.requests.average;
         { name: 'all 200', ok: non200 === 0 },
       ]),
     );
+    // Public conditions list: a real query per request when Redis is off (the cache only helps in prod).
+    const list = await measure(api.url, '/api/v1/conditions', conns);
+    const listNon200 = Object.entries(codes(list)).filter(([c]) => c !== '200').reduce((n, [, v]) => n + v, 0);
+    rows.push(
+      row('conditions list (MySQL)', list, [
+        ...clean(list),
+        { name: `p99 < ${P99_MS} ms`, ok: list.latency.p99 < P99_MS },
+        { name: 'all 200', ok: listNon200 === 0 },
+      ]),
+    );
     await api.stop();
   } else {
     rows.push({ scenario: 'capacity-health (MySQL)', result: 'SKIPPED: MySQL unreachable (run create-db-users.sql first)' });

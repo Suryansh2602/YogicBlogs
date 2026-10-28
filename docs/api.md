@@ -170,7 +170,7 @@ Password rules: 12–128 characters, must not contain your email name or display
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| GET | `/conditions` | — | Published conditions (cached) |
+| GET | `/conditions` ✅ | — | `{ items: [{ id, name, slug, summary }] }`, published only, sorted; cached 1 h on the server (cleared on any admin change), `Cache-Control: public, max-age=300` |
 | GET | `/conditions/:slug` | — | One condition + its published articles |
 | GET | `/articles?condition=&q=&cursor=` | — | Published article list; `q` uses full-text search |
 | GET | `/articles/:slug` | optional | Full content if allowed, otherwise `{ locked: true }` teaser |
@@ -202,8 +202,8 @@ Every other admin endpoint requires: `Bearer` → role `admin` → **2FA used fo
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET / POST | `/admin/conditions` | List (incl. drafts) / create |
-| GET / PATCH / DELETE | `/admin/conditions/:id` | Read / edit / soft delete (refused while articles exist) |
+| GET / POST | `/admin/conditions` ✅ | List all with `articleCount` / create `{ name, slug?, summary?, description?, sortOrder?, isPublished? }`. The slug is made from the name when omitted (`400 SLUG_REQUIRED` for names with no English letters). Duplicates → `409 NAME_TAKEN` / `SLUG_TAKEN` with `details[0].path` |
+| PATCH / DELETE | `/admin/conditions/:id` ✅ | Edit any field / soft delete (`409 CONDITION_IN_USE` with the count while articles use it). A deleted condition's name and slug can be reused |
 | GET / POST | `/admin/articles` | List with filters / create draft |
 | GET / PATCH | `/admin/articles/:id` | Read / save (send `version`; `409` if stale) |
 | POST | `/admin/articles/:id/publish` | Publish (sets `published_at`, clears cache) |

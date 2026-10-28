@@ -3,6 +3,7 @@ import healthRoutes from './modules/health/health.routes.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createAdminRouter } from './modules/admin/admin.routes.js';
 import userRoutes from './modules/users/users.routes.js';
+import { publicConditionsRouter } from './modules/conditions/conditions.routes.js';
 
 /**
  * Mount each feature module here as it is built, e.g. router.use('/articles', articleRoutes).
@@ -15,6 +16,7 @@ export function createRoutes({ strictLimiter }) {
   router.use('/auth', createAuthRouter(strictLimiter));
   router.use('/users', userRoutes);
   router.use('/admin', createAdminRouter(strictLimiter));
+  router.use('/conditions', publicConditionsRouter);
 
   return router;
 }
