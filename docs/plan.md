@@ -67,20 +67,20 @@ Foundation first: every later feature reads and writes this schema, so it has to
 |---|---|---|---|---|
 | 1 | `chore/repo-setup` ✅ merged | `.gitignore`, `.gitattributes`, `.editorconfig`, README, workflow, security docs, PR template | Pushed for review | Review → approve merge |
 | 2 | `chore/frontend-scaffold` ✅ merged | Existing React app (17 tests, build green) | Pushed for review | Review |
-| 3 | `feature/database-setup` 🔨 | Sequelize config + 13 models; 5 migrations (incl. CHECKs, `alive` uniques, separate audit DB); seed; Redis client, cache, Redis rate-limit store; `/health` reports MySQL + Redis; architecture/api/database/plan docs; Postman collection | `npm run qa` green, incl. `test:db` against real MySQL + Redis | Run `create-db-users.sql` as root; start Docker Desktop |
-| 3a | `chore/rename-healthmarg` 🔨 | Project renamed from "Nerve and Nector" to **Healthmarg**: package names, UI text, docs, Postman, databases (`healthmarg`, `healthmarg_audit`, `…_test`) and DB users (`healthmarg_app`, `healthmarg_migrator`) | No old name left outside the history logs | Run the new `create-db-users.local.sql` as root |
-| 3b | `chore/frontend-typescript` | Frontend moved to strict TypeScript (`.tsx`), `tsc --noEmit` in `npm run qa` | Typecheck, lint, tests and build green | — |
+| 3 | `feature/database-setup` ✅ merged | Sequelize config + 13 models; 5 migrations (incl. CHECKs, `alive` uniques, separate audit DB); seed; Redis client, cache, Redis rate-limit store; `/health` reports MySQL + Redis; architecture/api/database/plan docs; Postman collection | `npm run qa` green, incl. `test:db` against real MySQL + Redis | Run `create-db-users.sql` as root; start Docker Desktop |
+| 3a | `chore/rename-healthmarg` ✅ merged | Project renamed from "Nerve and Nector" to **Healthmarg**: package names, UI text, docs, Postman, databases (`healthmarg`, `healthmarg_audit`, `…_test`) and DB users (`healthmarg_app`, `healthmarg_migrator`) | No old name left outside the history logs | Run the new `create-db-users.local.sql` as root |
+| 3b | `chore/frontend-typescript` ✅ merged | Frontend moved to strict TypeScript (`.tsx`), `tsc --noEmit` in `npm run qa` | Typecheck, lint, tests and build green | — |
 | 4 | `chore/api-hardening` | Explicit CORS (methods, headers, `maxAge`), `X-Request-Id` + pino-http, error `code`s, Sequelize error mapping, remove urlencoded (JSON-only), `requireJson`, `originGuard`, `TRUST_PROXY_HOPS`, CORP `same-site` | Tests for each guard | — |
 
 ### P1 · Authentication & security
 | # | Branch | Delivers | Owner action |
 |---|---|---|---|
-| 5 | `feature/auth-core` ✅ built | Also absorbed steps 6–8 (email flows, reCAPTCHA v3, 2FA): argon2id + HIBP, `jose` access JWT (15 min, `token_version`), refresh rotation + reuse detection (HttpOnly cookie + CSRF), lockout, `authenticate` / `requireRole` / `requireMfa`, audit service, email verification + reset (dev outbox), TOTP 2FA with backup codes (mandatory for admins), `/users/me`, admin bootstrap (`/admin/setup` + setup code), admin stats/users/audit API. 188 tests, 94.7% merged coverage, load + attack suites | Later: reCAPTCHA keys, SMTP |
+| 5 | `feature/auth-core` ✅ merged | Also absorbed steps 6–8 (email flows, reCAPTCHA v3, 2FA): argon2id + HIBP, `jose` access JWT (15 min, `token_version`), refresh rotation + reuse detection (HttpOnly cookie + CSRF), lockout, `authenticate` / `requireRole` / `requireMfa`, audit service, email verification + reset (dev outbox), TOTP 2FA with backup codes (mandatory for admins), `/users/me`, admin bootstrap (`/admin/setup` + setup code), admin stats/users/audit API. 188 tests, 94.7% merged coverage, load + attack suites | Later: reCAPTCHA keys, SMTP |
 | 6 | ~~`feature/auth-email-flows`~~ done in #5 | nodemailer + templates, email verification, forgot/reset password, breached-password check | — |
 | 7 | `feature/recaptcha-v3` (server side done in #5; frontend hook in #10) | `requireRecaptcha(action, minScore)`, test mode for automated tests | **Create a reCAPTCHA v3 key** (localhost + prod domain) |
 | 8 | `feature/auth-2fa` (TOTP, backup codes, admin enforcement done in #5; session list + disable later) | TOTP (`otpauth`), AES-256-GCM secret, backup codes, login step-up, mandatory for admins, session list | Back up `TWO_FACTOR_ENC_KEY` offline |
 | 9 | `feature/google-oauth` | `openid-client` PKCE flow, safe linking rules | **Create a Google OAuth client** + consent screen |
-| 10 | `feature/frontend-auth` ✅ built | Healthmarg design system (4 themes, in-house animated components, mandala/lotus motifs, Devanagari accents), home, sign-up, sign-in + 2FA step, verify email, forgot/reset password, member dashboard (profile, 2FA, sign out everywhere), `/admin` (sign-in, first-time 2FA enrolment, overview, members, audit log), `/admin/setup`; in-memory session with single-flight refresh; guards; reCAPTCHA hook; bundle budget | Try it; later: reCAPTCHA site key |
+| 10 | `feature/frontend-auth` ✅ merged | Healthmarg design system (4 themes, in-house animated components, mandala/lotus motifs, Devanagari accents), home, sign-up, sign-in + 2FA step, verify email, forgot/reset password, member dashboard (profile, 2FA, sign out everywhere), `/admin` (sign-in, first-time 2FA enrolment, overview, members, audit log), `/admin/setup`; in-memory session with single-flight refresh; guards; reCAPTCHA hook; bundle budget | Try it; later: reCAPTCHA site key |
 
 ### P2 · Content & dashboards
 
@@ -88,10 +88,11 @@ Foundation first: every later feature reads and writes this schema, so it has to
 
 | # | Branch | Delivers | Owner action |
 |---|---|---|---|
-| 11 | `feature/conditions` ✅ built | Conditions (what each article is about): admin CRUD, public cached list, admin page | Provide the condition list |
-| 12 | `feature/media-images` ✅ built | Image pipeline: multer, magic bytes, sharp → WebP (EXIF/GPS stripped), storage adapter, media library | Brand images |
-| 13 | `feature/articles-api` ✅ built | Drafts/live, autosave, publish checklist, revisions, references, public article API + cache | 3–5 sample articles |
-| 14 | `feature/article-editor` | TipTap 3 editor, blocks, thumbnail designer, references panel, preview, reader page (React renderer, no raw HTML) | — |
+| 11 | `feature/conditions` ✅ merged | Conditions (what each article is about): admin CRUD, public cached list, admin page | Provide the condition list |
+| 12 | `feature/media-images` ✅ merged | Image pipeline: multer, magic bytes, sharp → WebP (EXIF/GPS stripped), storage adapter, media library | Brand images |
+| 13 | `feature/articles-api` ✅ merged | Drafts/live, autosave, publish checklist, revisions, references, public article API + cache | 3–5 sample articles |
+| 13a | `feature/ritucharya` ✅ merged | Home page Today panel (ritu, date, sunrise/sunset) and the six-ritu guide ([ritucharya.md](ritucharya.md)) | Practitioner review of the content |
+| 14 | `feature/article-editor` ✅ merged | TipTap 3 editor, blocks, thumbnail designer, preview, history, autosave with conflict handling, reader pages (React renderer, no raw HTML), Ritucharya in Hindi ([feedback](feedback/feature-article-editor.md)) | Write the first articles |
 | 14a | `feature/editor-speech` | Dictation + listen back (browser speech, free) | — |
 | 14b | `feature/translations` | Admin translation (browser translator → review → publish) + reader switcher, listening and instant translation | — |
 | 15 | `feature/user-dashboard` | Bookmarks, continue reading, account and security settings | — |
