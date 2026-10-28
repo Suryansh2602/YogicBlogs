@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Pre-commit credential check. Run from the repo root before every commit/push:
-//   node scripts/check-staged-secrets.mjs
+//   node scripts/check-staged-secrets.js
 // Fails (exit 1) if staged changes contain env files, local secret files, private keys,
 // or any real secret value from the local .env files. Prints names only, never values.
 import { execFileSync } from 'node:child_process';
