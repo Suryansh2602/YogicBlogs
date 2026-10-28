@@ -58,6 +58,9 @@ export default function Layout() {
             <NavLink to="/" end className="header__link header__link--hide-sm">
               Home
             </NavLink>
+            <NavLink to="/ritucharya" className="header__link header__link--hide-sm">
+              Ritucharya
+            </NavLink>
             <ThemeSwitcher />
             <AccountLinks />
           </nav>

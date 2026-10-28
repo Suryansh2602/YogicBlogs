@@ -16,3 +16,4 @@ export const AdminUsers = lazy(() => import('../pages/admin/AdminUsers'));
 export const AdminAudit = lazy(() => import('../pages/admin/AdminAudit'));
 export const AdminConditions = lazy(() => import('../pages/admin/AdminConditions'));
 export const AdminMedia = lazy(() => import('../pages/admin/AdminMedia'));
+export const RitucharyaPage = lazy(() => import('../pages/RitucharyaPage'));

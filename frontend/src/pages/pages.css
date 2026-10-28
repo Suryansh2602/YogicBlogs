@@ -18,6 +18,34 @@
   opacity: 0.8;
 }
 
+/* Today panel on the left of the hero on wide screens; below the hero's message on narrow ones. */
+.hero__split {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .hero__split {
+    grid-template-columns: 19rem minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .hero__split > .today {
+    order: 2;
+    justify-self: center;
+  }
+}
+
+.pillar__link {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-weight: 600;
+}
+
 .hero__inner {
   position: relative;
   z-index: 1;

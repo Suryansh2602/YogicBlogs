@@ -9,6 +9,7 @@ import {
   AdminAudit,
   AdminConditions,
   AdminMedia,
+  RitucharyaPage,
   AdminGate,
   AdminOverview,
   AdminSetupPage,
@@ -49,6 +50,7 @@ export const routes: RouteObject[] = [
       },
       { path: 'terms', element: <LegalPage doc="terms" /> },
       { path: 'privacy', element: <LegalPage doc="privacy" /> },
+      { path: 'ritucharya', element: <RitucharyaPage /> },
       { path: 'admin/setup', element: <AdminSetupPage /> },
       {
         path: 'admin',
