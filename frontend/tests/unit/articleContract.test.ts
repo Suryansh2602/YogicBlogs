@@ -2,8 +2,12 @@
 // (backend/src/modules/articles/document.js is imported directly), so the two can never drift apart.
 import { describe, expect, it } from 'vitest';
 import { safeHref, toServerDoc } from '../../src/features/articles/sanitize';
+// The one deliberate exception to 'frontend talks to the server only through the API client': this test
+// compares against the server's own validator, so the two can never drift apart.
+/* eslint-disable no-restricted-imports */
 // @ts-expect-error: plain JS module from the backend, used only by this test
 import { documentProblems } from '../../../backend/src/modules/articles/document.js';
+/* eslint-enable no-restricted-imports */
 
 const problems = documentProblems as (doc: unknown) => { path: string; message: string }[];
 

@@ -5,9 +5,16 @@ import type { AdminArticle, AdminArticleListItem, ArticleDraft, ArticleListItem,
 
 const enc = encodeURIComponent;
 
+/** Query string from optional parameters (empty and missing ones left out). */
+function toQuery(params: Record<string, string | number | undefined>) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== '') query.set(key, String(value));
+  return query;
+}
+
 export const readerApi = {
   list: (params: { condition?: string; q?: string; cursor?: string; limit?: number } = {}, options?: RequestOptions) => {
-    const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
+    const query = toQuery(params);
     return apiClient.get<{ items: ArticleListItem[]; nextCursor: string | null }>(`/articles${query.size ? `?${query.toString()}` : ''}`, options);
   },
   /**
@@ -28,7 +35,7 @@ export interface SaveResult {
 
 export const adminArticlesApi = {
   list: (params: { page?: number; pageSize?: number; status?: ArticleStatus; conditionId?: string; q?: string } = {}) => {
-    const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]));
+    const query = toQuery(params);
     return authed((o) => apiClient.get<{ items: AdminArticleListItem[]; page: number; pageSize: number; total: number }>(`/admin/articles?${query.toString()}`, o));
   },
   create: (input: { title: string; conditionId: string; accessLevel?: 'public' | 'members'; lang?: 'en' | 'hi' }) =>

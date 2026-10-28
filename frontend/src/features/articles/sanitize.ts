@@ -4,7 +4,15 @@
 // too (with their content), so a stray paste can never block saving.
 import type { ArticleDoc } from './types';
 
-type Json = Record<string, unknown>;
+// The fields read below are named, so strict TypeScript allows dot access; anything else is unknown.
+interface Json {
+  type?: unknown;
+  attrs?: unknown;
+  text?: unknown;
+  marks?: unknown;
+  content?: unknown;
+  [key: string]: unknown;
+}
 
 const NODE_ATTRS: Record<string, readonly string[]> = {
   doc: [],
@@ -70,7 +78,7 @@ function cleanNode(node: unknown): Json | null {
 /** The body as the server accepts it. */
 export function toServerDoc(doc: unknown): ArticleDoc {
   const cleaned = cleanNode(doc);
-  if (!cleaned || cleaned.type !== 'doc') return { type: 'doc', content: [] };
+  if (cleaned?.type !== 'doc') return { type: 'doc', content: [] };
   return cleaned as unknown as ArticleDoc;
 }
 
