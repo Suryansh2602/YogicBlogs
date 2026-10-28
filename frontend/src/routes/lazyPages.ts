@@ -17,3 +17,8 @@ export const AdminAudit = lazy(() => import('../pages/admin/AdminAudit'));
 export const AdminConditions = lazy(() => import('../pages/admin/AdminConditions'));
 export const AdminMedia = lazy(() => import('../pages/admin/AdminMedia'));
 export const RitucharyaPage = lazy(() => import('../pages/RitucharyaPage'));
+export const ArticlesPage = lazy(() => import('../pages/articles/ArticlesPage'));
+export const ArticlePage = lazy(() => import('../pages/articles/ArticlePage'));
+export const AdminArticles = lazy(() => import('../pages/admin/AdminArticles'));
+// The editor (TipTap) is its own chunk: only admins who open an article ever download it.
+export const AdminArticleEditor = lazy(() => import('../pages/admin/AdminArticleEditor'));

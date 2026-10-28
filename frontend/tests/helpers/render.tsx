@@ -51,5 +51,9 @@ export async function preloadPages() {
     import('../../src/pages/admin/AdminConditions'),
     import('../../src/pages/admin/AdminMedia'),
     import('../../src/pages/RitucharyaPage'),
+    import('../../src/pages/articles/ArticlesPage'),
+    import('../../src/pages/articles/ArticlePage'),
+    import('../../src/pages/admin/AdminArticles'),
+    import('../../src/pages/admin/AdminArticleEditor'),
   ]);
 }

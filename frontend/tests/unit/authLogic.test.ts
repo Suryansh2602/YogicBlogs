@@ -151,4 +151,14 @@ describe('session handling', () => {
     await expect(signOutSession()).rejects.toBeInstanceOf(ApiRequestError);
     expect(getAccessToken()).toBeNull();
   });
+
+  it('forgets unsaved article drafts kept in this browser on sign-out (shared computers)', async () => {
+    setSession({ accessToken: 't', user: makeUser() });
+    localStorage.setItem('hm-draft-a1', '{"draft":{}}');
+    localStorage.setItem('hm-theme', 'dark');
+    mockApi({ 'GET /auth/csrf': csrf, 'POST /auth/logout': { status: 204 } });
+    await signOutSession();
+    expect(localStorage.getItem('hm-draft-a1')).toBeNull();
+    expect(localStorage.getItem('hm-theme')).toBe('dark'); // other settings stay
+  });
 });

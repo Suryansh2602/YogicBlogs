@@ -1,0 +1,476 @@
+/* Article cards, reader images and the article body. Theme tokens only (tokens.css), so all four themes work. */
+
+/* ── Accent presets (the card's thin stripe) ─────────────────────────────────────────────────── */
+.accent--saffron {
+  --card-accent: var(--brand-saffron);
+}
+
+.accent--teal {
+  --card-accent: var(--brand-teal);
+}
+
+.accent--lotus {
+  --card-accent: var(--brand-lotus);
+}
+
+.accent--gold {
+  --card-accent: var(--gold);
+}
+
+/* ── Reader image: blurred placeholder underneath until the real file has loaded ────────────── */
+.reader-img {
+  background-color: var(--surface-muted);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.reader-img img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────────────────────────── */
+.article-card {
+  --card-accent: var(--gold);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition:
+    transform var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+/* The accent stripe: a fine line along the top edge. */
+.article-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 3px;
+  background: var(--card-accent);
+}
+
+.article-card:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.article-card:focus-visible {
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+.article-card__cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  color: var(--card-accent);
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--card-accent) 10%, transparent), transparent 70%),
+    var(--surface-muted);
+}
+
+.article-card__cover .reader-img {
+  position: absolute;
+  inset: 0;
+}
+
+.article-card__cover .reader-img img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.article-card:hover .article-card__cover .reader-img img {
+  transform: scale(1.03);
+}
+
+.article-card__motif {
+  width: 46%;
+  max-width: 7rem;
+  opacity: 0.7;
+}
+
+.article-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.article-card__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.article-card__title {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.article-card__summary {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.members-badge {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-radius: var(--radius-pill);
+}
+
+/* Row layout: a small thumbnail beside the text ("Also read" inside an article). */
+.article-card--row {
+  flex-direction: row;
+  height: auto;
+}
+
+.article-card--row::before {
+  inset: 0 auto 0 0;
+  width: 3px;
+  height: auto;
+}
+
+.article-card--row .article-card__cover {
+  flex: 0 0 clamp(5.5rem, 28%, 8rem);
+  aspect-ratio: auto;
+  min-height: 6rem;
+}
+
+.article-card--row .article-card__body {
+  padding: var(--space-3) var(--space-4);
+  gap: var(--space-1);
+}
+
+.article-card--row .article-card__title {
+  font-size: 1.05rem;
+}
+
+.article-card--row .article-card__summary {
+  font-size: 0.9rem;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.article-card--row .members-badge {
+  margin-top: var(--space-1);
+}
+
+/* ── Article body ────────────────────────────────────────────────────────────────────────────── */
+/*
+ * A breakout grid: text keeps a comfortable ~42rem measure, "wide" images reach ~58rem and "full"
+ * images the whole width. On a phone every column collapses to the screen less a 1rem gutter.
+ */
+.article-body {
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(1rem, 1fr)
+    [wide-start] minmax(0, 8rem)
+    [content-start] min(42rem, 100% - 2rem)
+    [content-end] minmax(0, 8rem)
+    [wide-end] minmax(1rem, 1fr)
+    [full-end];
+  font-size: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.article-body > * {
+  grid-column: content;
+  min-width: 0;
+  margin: 0 0 var(--space-5);
+  overflow-wrap: break-word;
+}
+
+.article-body > h2,
+.article-body > h3 {
+  margin: var(--space-6) 0 var(--space-3);
+  line-height: 1.25;
+}
+
+.article-body > h2 {
+  font-size: clamp(1.45rem, 1.25rem + 0.8vw, 1.85rem);
+}
+
+.article-body > h3 {
+  font-size: clamp(1.2rem, 1.1rem + 0.4vw, 1.4rem);
+}
+
+.article-body a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.article-body strong {
+  font-weight: 700;
+}
+
+.article-body ul,
+.article-body ol {
+  padding-left: 1.4em;
+}
+
+.article-body li {
+  margin-bottom: var(--space-2);
+}
+
+.article-body li > p {
+  margin: 0;
+}
+
+.article-body li > ul,
+.article-body li > ol {
+  margin: var(--space-2) 0 0;
+}
+
+.article-body li::marker {
+  color: var(--gold-text);
+}
+
+.article-body > blockquote {
+  padding: var(--space-1) 0 var(--space-1) var(--space-5);
+  font-family: var(--font-serif);
+  font-size: 1.12em;
+  font-style: italic;
+  color: var(--text-muted);
+  border-left: 2px solid var(--border-strong);
+}
+
+.article-body > blockquote p:last-child,
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* Callouts: the tone colour is on the fine border, icon and label; the text stays the body colour. */
+.callout {
+  --tone: var(--primary);
+  --tone-bg: var(--surface);
+  padding: var(--space-4) var(--space-5);
+  background: var(--tone-bg);
+  border: 1px solid color-mix(in srgb, var(--tone) 30%, transparent);
+  border-left: 3px solid var(--tone);
+  border-radius: var(--radius-sm);
+}
+
+.callout--tip {
+  --tone: var(--success);
+  --tone-bg: var(--success-bg);
+}
+
+.callout--caution {
+  --tone: var(--warning);
+  --tone-bg: var(--warning-bg);
+}
+
+.callout--doctor {
+  --tone: var(--danger);
+  --tone-bg: var(--danger-bg);
+}
+
+.callout__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tone);
+}
+
+.callout__label svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Sanskrit verse: the Devanagari large, framed by fine lines and a ॥ ornament. */
+.verse {
+  position: relative;
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  text-align: center;
+  border-block: 1px solid var(--border-strong);
+}
+
+.verse__ornament {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  padding: 0 var(--space-3);
+  font-family: var(--font-deva);
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--gold-text);
+  background: var(--bg);
+  transform: translate(-50%, -55%);
+}
+
+.verse__lines {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.verse__deva {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-deva);
+  font-size: clamp(1.35rem, 1.15rem + 0.9vw, 1.75rem);
+  line-height: 1.7;
+  white-space: pre-line;
+  color: var(--text);
+}
+
+.verse__translit {
+  margin: 0 0 var(--space-3);
+  font-style: italic;
+  white-space: pre-line;
+  color: var(--text-muted);
+}
+
+.verse__meaning {
+  max-width: 34rem;
+  margin: 0 auto var(--space-3);
+  white-space: pre-line;
+}
+
+.verse__source {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.verse__source cite {
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.verse__source cite::before {
+  content: '— ';
+}
+
+/* Dividers: a fine line, a line-drawn lotus, or a double danda. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-6);
+  color: var(--gold-text);
+}
+
+hr.divider--line {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+
+.divider--lotus::before,
+.divider--lotus::after,
+.divider--danda::before,
+.divider--danda::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong));
+}
+
+.divider--lotus::after,
+.divider--danda::after {
+  background: linear-gradient(90deg, var(--border-strong), transparent);
+}
+
+.divider--lotus svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.divider--danda span {
+  font-family: var(--font-deva);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+/* Images in the text. */
+.article-figure .reader-img {
+  border-radius: var(--radius);
+}
+
+.article-body > .article-figure--wide {
+  grid-column: wide;
+}
+
+.article-body > .article-figure--full {
+  grid-column: full;
+}
+
+.article-figure--full .reader-img {
+  border-radius: 0;
+}
+
+.article-figure figcaption {
+  margin-top: var(--space-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.article-figure--wide figcaption,
+.article-figure--full figcaption {
+  width: min(42rem, 100% - 2rem);
+  margin-inline: auto;
+}
+
+/* "Also read": a quiet label above a small card. */
+.also-read__label {
+  margin: 0 0 var(--space-2);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-card:hover,
+  .article-card:hover .article-card__cover .reader-img img {
+    transform: none;
+  }
+}

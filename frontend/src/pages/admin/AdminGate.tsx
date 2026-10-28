@@ -9,6 +9,7 @@ const AdminSignIn = lazy(() => import('./AdminSignIn'));
 
 const NAV = [
   { to: '/admin', label: 'Overview', deva: 'अवलोकन', end: true },
+  { to: '/admin/articles', label: 'Articles', deva: 'लेख', end: false },
   { to: '/admin/conditions', label: 'Conditions', deva: 'रोग', end: false },
   { to: '/admin/media', label: 'Media', deva: 'चित्र', end: false },
   { to: '/admin/users', label: 'Members', deva: 'सदस्य', end: false },
@@ -48,10 +49,6 @@ export default function AdminGate() {
               </span>
             </NavLink>
           ))}
-          <span className="admin__link admin__link--soon" aria-disabled="true">
-            <span>Articles</span>
-            <span className="badge">Soon</span>
-          </span>
         </nav>
       </aside>
       <section className="admin__main">

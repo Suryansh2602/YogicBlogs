@@ -517,3 +517,17 @@
   outline-offset: 4px;
   border-radius: 4px;
 }
+
+.ritucharya__lang {
+  justify-content: center;
+  margin-block: var(--space-3);
+}
+
+.ritucharya__sandhi-hi {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+}

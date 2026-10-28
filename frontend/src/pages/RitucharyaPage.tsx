@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { BlurReveal } from '../components/motion/BlurReveal';
 import { RITU_ORDER, rituOn, type RituId } from '../features/ritu/calendar';
 import { RituArt } from '../features/ritu/RituArt';
-import { capitalize, MEDICAL_NOTE, PRANAYAMA_CAUTION, RITUS, rituById, SOURCES, type DoshaState, type Ritu, type SourceId } from '../features/ritu/ritucharya';
+import { capitalize, MEDICAL_NOTE, MEDICAL_NOTE_HI, PRANAYAMA_CAUTION, RITUS, RITUS_HI, RITUSANDHI_HI, rituById, SOURCES, type DoshaState, type Ritu, type SourceId } from '../features/ritu/ritucharya';
 import { dateIn } from '../features/ritu/sun';
 import '../features/ritu/ritu.css';
 
@@ -173,12 +173,46 @@ function RituDetail({ ritu }: { ritu: Ritu }) {
   );
 }
 
+/** The owner's Hindi guide for one ritu. */
+function RituDetailHindi({ ritu }: { ritu: Ritu }) {
+  const hi = RITUS_HI[ritu.id];
+  return (
+    <div className={`ritu-detail ritu-detail--${ritu.id}`} lang="hi">
+      <header className="ritu-detail__header">
+        <RituArt ritu={ritu.id} className="ritu-detail__art" />
+        <div className="ritu-detail__heading">
+          <h2>{hi.name}</h2>
+          <p className="ritu-detail__english">
+            {hi.english} · {hi.samay}
+          </p>
+          <p>{hi.intro}</p>
+        </div>
+      </header>
+      <div className="ritu-columns ritu-columns--two">
+        <section className="ritu-box ritu-box--yes" aria-labelledby={`${ritu.id}-hi-eat`}>
+          <h3 id={`${ritu.id}-hi-eat`}>क्या खाएं?</h3>
+          <List items={hi.eat} />
+        </section>
+        <section aria-labelledby={`${ritu.id}-hi-life`}>
+          <h3 id={`${ritu.id}-hi-life`}>लाइफस्टाइल</h3>
+          <List items={hi.lifestyle} />
+        </section>
+      </div>
+      <section className="ritu-box ritu-box--no" aria-labelledby={`${ritu.id}-hi-avoid`}>
+        <h3 id={`${ritu.id}-hi-avoid`}>क्या न करें</h3>
+        <p>{hi.avoid}</p>
+      </section>
+    </div>
+  );
+}
+
 export default function RitucharyaPage() {
   const [params, setParams] = useSearchParams();
   const today = dateIn('Asia/Kolkata');
   const current = rituOn(today.month, today.day);
   const requested = params.get('ritu');
   const selected: RituId = isRitu(requested) ? requested : current;
+  const hindi = params.get('lang') === 'hi';
   const tabRefs = useRef<Partial<Record<RituId, HTMLButtonElement | null>>>({});
 
   useEffect(() => {
@@ -186,7 +220,7 @@ export default function RitucharyaPage() {
   }, []);
 
   const select = (id: RituId, focus = false) => {
-    setParams({ ritu: id }, { replace: true, preventScrollReset: true });
+    setParams(hindi ? { ritu: id, lang: 'hi' } : { ritu: id }, { replace: true, preventScrollReset: true });
     if (focus) tabRefs.current[id]?.focus();
   };
 
@@ -231,6 +265,34 @@ export default function RitucharyaPage() {
             <strong>Ritusandhi</strong>: the last week of one ritu and the first of the next. Change habits gradually, not overnight. <SourceMark id="ashtanga" />
           </p>
         </div>
+        <div className="chips ritucharya__lang" role="group" aria-label="Language / भाषा">
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={!hindi}
+            onClick={() => {
+              setParams({ ritu: selected }, { replace: true, preventScrollReset: true });
+            }}
+          >
+            English
+          </button>
+          <button
+            type="button"
+            className="chip"
+            lang="hi"
+            aria-pressed={hindi}
+            onClick={() => {
+              setParams({ ritu: selected, lang: 'hi' }, { replace: true, preventScrollReset: true });
+            }}
+          >
+            हिन्दी
+          </button>
+        </div>
+        {hindi && (
+          <p className="ritucharya__sandhi-hi" lang="hi">
+            <strong>💡 ऋतु संधि (सुनहरा नियम):</strong> {RITUSANDHI_HI}
+          </p>
+        )}
         <p className="ritucharya__now">
           Now: <strong>{rituById(current).name}</strong> ({rituById(current).english}). Choose any season below.
         </p>
@@ -260,9 +322,9 @@ export default function RitucharyaPage() {
                 <RituArt ritu={r.id} className="ritu-tab__art" />
                 <span className="ritu-tab__text">
                   <span className="ritu-tab__name">
-                    {r.name} <span className="deva">{r.deva}</span>
+                    {hindi ? RITUS_HI[r.id].name : r.name} {!hindi && <span className="deva">{r.deva}</span>}
                   </span>
-                  <span className="ritu-tab__english">{r.english}</span>
+                  <span className="ritu-tab__english">{hindi ? RITUS_HI[r.id].english : r.english}</span>
                   {r.id === current && <span className="badge badge--accent ritu-tab__now">Now</span>}
                 </span>
               </button>
@@ -270,7 +332,7 @@ export default function RitucharyaPage() {
           })}
         </div>
         <div role="tabpanel" id={`panel-${ritu.id}`} aria-labelledby={`tab-${ritu.id}`} tabIndex={0} className="ritu-panel">
-          <RituDetail ritu={ritu} />
+          {hindi ? <RituDetailHindi ritu={ritu} /> : <RituDetail ritu={ritu} />}
         </div>
       </section>
 
@@ -334,6 +396,11 @@ export default function RitucharyaPage() {
         <p className="ritu-medical" role="note">
           {MEDICAL_NOTE}
         </p>
+        {hindi && (
+          <p className="ritu-medical" role="note" lang="hi">
+            {MEDICAL_NOTE_HI}
+          </p>
+        )}
         <p>
           <Link to="/">← Back home</Link>
         </p>

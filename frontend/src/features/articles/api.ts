@@ -1,5 +1,5 @@
 // Typed calls for articles: the public reader API and the admin editor API (docs/articles.md §5).
-import { apiClient, type RequestOptions } from '../../services/apiClient';
+import { apiClient, ApiRequestError, type RequestOptions } from '../../services/apiClient';
 import { authed, mightHaveSession } from '../auth/session';
 import type { AdminArticle, AdminArticleListItem, ArticleDraft, ArticleListItem, ArticleStatus, ReaderArticle, RevisionSummary } from './types';
 
@@ -13,7 +13,7 @@ function toQuery(params: Record<string, string | number | undefined>) {
 }
 
 export const readerApi = {
-  list: (params: { condition?: string; q?: string; cursor?: string; limit?: number } = {}, options?: RequestOptions) => {
+  list: (params: { condition?: string | undefined; q?: string | undefined; cursor?: string | undefined; limit?: number | undefined } = {}, options?: RequestOptions) => {
     const query = toQuery(params);
     return apiClient.get<{ items: ArticleListItem[]; nextCursor: string | null }>(`/articles${query.size ? `?${query.toString()}` : ''}`, options);
   },
@@ -23,7 +23,12 @@ export const readerApi = {
    */
   get: (slug: string, options?: RequestOptions) => {
     const call = (o?: RequestOptions) => apiClient.get<{ article: ReaderArticle } | { redirect: string }>(`/articles/${enc(slug)}`, o);
-    return mightHaveSession() ? authed(call, options).catch(() => call(options)) : call(options);
+    if (!mightHaveSession()) return call(options);
+    // Only a missing or expired session falls back to the anonymous view; other failures are shown as errors.
+    return authed(call, options).catch((err: unknown) => {
+      if (err instanceof ApiRequestError && err.status === 401) return call(options);
+      throw err;
+    });
   },
 };
 
@@ -34,7 +39,7 @@ export interface SaveResult {
 }
 
 export const adminArticlesApi = {
-  list: (params: { page?: number; pageSize?: number; status?: ArticleStatus; conditionId?: string; q?: string } = {}) => {
+  list: (params: { page?: number | undefined; pageSize?: number | undefined; status?: ArticleStatus | undefined; conditionId?: string | undefined; q?: string | undefined } = {}) => {
     const query = toQuery(params);
     return authed((o) => apiClient.get<{ items: AdminArticleListItem[]; page: number; pageSize: number; total: number }>(`/admin/articles?${query.toString()}`, o));
   },
