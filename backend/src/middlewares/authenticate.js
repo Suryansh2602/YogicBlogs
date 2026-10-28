@@ -48,6 +48,16 @@ export async function authenticate(req, _res, next) {
   }
 }
 
+/**
+ * For pages anyone may open but signed-in people see more of (members articles). No Authorization header:
+ * an anonymous visitor (req.auth stays undefined). A header that fails is still a 401, so the site
+ * refreshes its token and asks again instead of quietly showing the anonymous version.
+ */
+export function optionalAuthenticate(req, res, next) {
+  if (!req.get('authorization')) return next();
+  return authenticate(req, res, next);
+}
+
 /** Role check. Use after `authenticate`. */
 export const requireRole =
   (...roles) =>

@@ -5,6 +5,11 @@ import { connectAsApp, connectAsMigrator } from './helpers.js';
 
 const APP_TABLES = [
   'article_bookmarks',
+  'article_drafts',
+  'article_media',
+  'article_references',
+  'article_revisions',
+  'article_slug_redirects',
   'articles',
   'auth_tokens',
   'conditions',
@@ -68,7 +73,9 @@ describe('schema (migrations)', () => {
     expect(await tablesIn(migrator, env.AUDIT_DB_NAME)).toEqual([]);
     await umzug.up();
     expect((await umzug.executed()).length).toBe(executed.length);
-  });
+    // Every migration down and up again: schema changes on articles rebuild tables and the full-text
+    // index, which takes well over the default 20 s on a modest machine.
+  }, 300_000);
 
   it('models match the migrated columns (no drift)', async () => {
     const app = connectAsApp();

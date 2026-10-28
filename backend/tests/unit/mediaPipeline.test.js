@@ -30,7 +30,8 @@ afterAll(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
-describe('image pipeline', () => {
+// Image work is CPU-heavy: under a full parallel test run it can pass the default 5 s.
+describe('image pipeline', { timeout: 30_000 }, () => {
   it('makes WebP renditions at 480/960/1600 px (never upscaled) and a tiny placeholder', async () => {
     await sharp({ create: { width: 3000, height: 2000, channels: 3, background: '#e8728f' } }).jpeg().toFile(file('big.jpg'));
     const out = await processImage(file('big.jpg'));

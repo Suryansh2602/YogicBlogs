@@ -22,6 +22,11 @@ export function connectAsMigrator() {
 const TABLES_CHILD_FIRST = [
   'reading_progress',
   'article_bookmarks',
+  'article_slug_redirects',
+  'article_revisions',
+  'article_media',
+  'article_references',
+  'article_drafts',
   'articles',
   'conditions',
   'media',

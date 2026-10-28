@@ -5,12 +5,14 @@ export const TABLE_OPTIONS = { engine: 'InnoDB', charset: 'utf8mb4', collate: 'u
 
 export const uuidPk = (Sequelize) => ({ type: Sequelize.UUID, allowNull: false, primaryKey: true });
 
-export const fk = (Sequelize, table, { allowNull = false, onDelete = 'CASCADE', primaryKey = false } = {}) => ({
+// onUpdate defaults to CASCADE (what earlier migrations used). UUID keys never change, so new tables pass
+// RESTRICT: it also keeps CHECK constraints legal on neighbouring columns (MySQL error 3823).
+export const fk = (Sequelize, table, { allowNull = false, onDelete = 'CASCADE', onUpdate = 'CASCADE', primaryKey = false } = {}) => ({
   type: Sequelize.UUID,
   allowNull,
   primaryKey,
   references: { model: table, key: 'id' },
-  onUpdate: 'CASCADE',
+  onUpdate,
   onDelete,
 });
 

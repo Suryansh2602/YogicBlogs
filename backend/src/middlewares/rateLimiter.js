@@ -16,10 +16,11 @@ export function createRedisStore(name, client = redis) {
 }
 
 /** General limit for every request. Fails open if Redis is down so a cache outage isn't a site outage. */
-export function createApiLimiter(store, limit = 300) {
+export function createApiLimiter(store, limit = 300, { skip } = {}) {
   return rateLimit({
     windowMs: FIFTEEN_MINUTES,
     limit,
+    ...(skip && { skip }),
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     store,
@@ -60,6 +61,39 @@ export function createUploadLimiter(store, limit = 60) {
     store,
     passOnStoreError: false,
     message: { error: { message: `You've uploaded ${limit} files in the last hour, the most allowed. Please wait a while and try again.`, code: 'UPLOAD_LIMIT' } },
+  });
+}
+
+/**
+ * Draft autosaves per admin: the editor saves 3 s after typing stops, so even non-stop typing stays
+ * near 300 per 15 minutes. Twice that leaves room, and stops a runaway tab or script. Fails closed.
+ */
+export function createAutosaveLimiter(store, limit = 600) {
+  return rateLimit({
+    windowMs: FIFTEEN_MINUTES,
+    limit,
+    keyGenerator: (req) => `user:${req.auth.userId}`,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    store,
+    passOnStoreError: false,
+    message: { error: { message: 'Saving too often: is the article open in many tabs? Close the extra tabs; saving resumes in a few minutes.', code: 'AUTOSAVE_LIMIT' } },
+  });
+}
+
+/**
+ * A separate per-IP budget for one area of the API (article pages for readers, the article editor for
+ * admins), so busy readers or an admin writing all morning don't use up the general limit. Fails open.
+ */
+export function createAreaLimiter(store, limit) {
+  return rateLimit({
+    windowMs: FIFTEEN_MINUTES,
+    limit,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    store,
+    passOnStoreError: true,
+    message: { error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' } },
   });
 }
 

@@ -58,7 +58,36 @@ export function createCache(client = defaultClient) {
     }
   }
 
-  return { get, set, getOrSet, del, delPrefix };
+  /**
+   * A counter that is part of cache keys (e.g. "articles:g42:…"). Bumping it makes every older entry
+   * unreachable at once, without finding and deleting them; they simply expire. null when Redis is
+   * unavailable: callers then skip the cache, so a Redis hiccup can never serve stale content.
+   */
+  async function generation(name) {
+    if (!client.isReady) return null;
+    try {
+      const key = fullKey(`gen:${name}`);
+      const value = await client.get(key);
+      if (value !== null) return Number(value);
+      await client.set(key, '1', { condition: 'NX' });
+      return Number(await client.get(key));
+    } catch (err) {
+      logger.warn({ err, name }, 'Cache generation read failed');
+      return null;
+    }
+  }
+
+  async function bumpGeneration(name) {
+    if (!client.isReady) return;
+    try {
+      await client.incr(fullKey(`gen:${name}`));
+    } catch (err) {
+      // Entries under the old generation could now be served until they expire: say so loudly.
+      logger.error({ err, name }, 'Cache generation bump failed');
+    }
+  }
+
+  return { get, set, getOrSet, del, delPrefix, generation, bumpGeneration };
 }
 
 export const cache = createCache();

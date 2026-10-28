@@ -16,6 +16,7 @@
 //   forged tokens     GET /users/me with an invalid JWT at full speed: all 401, no errors or timeouts
 //   image serving     GET /media/i/:id/480 (cached lookup + file from disk), image limit lifted
 //   image flood       one IP floods the image route from cold (cache stampede); the limit (1500/15 min) holds
+//   article page/list public article page and list built from MySQL per request (no Redis): worst case
 //
 // Tunables (env): LOAD_DURATION (s, default 8), LOAD_CONNECTIONS (default 1000),
 //                 LOAD_MIN_RATIO (min share of baseline rps, default 0.5), LOAD_P99_MS (default 3000).
@@ -87,6 +88,8 @@ const row = (scenario, r, checks) => {
   };
 };
 const clean = (r) => [
+  // A scenario that got no answers at all must never count as a pass.
+  { name: 'got answers', ok: (r.requests?.total ?? 0) > 0 },
   { name: 'no errors', ok: r.errors === 0 },
   { name: 'no timeouts', ok: r.timeouts === 0 },
 ];
@@ -202,6 +205,40 @@ const baselineRps = baseline.requests.average;
         ]),
       );
       await floodApi.stop();
+
+      // Public article page and list: built from MySQL on every request here (no Redis locally), so
+      // this is the uncached worst case. One temporary condition + published article, removed after.
+      const condition = await models.Condition.create({ name: `Load test ${id}`, slug: `load-test-${id.slice(-12)}`, isPublished: true });
+      const words = 'Slow steady breathing calms the nervous system and eases tension. '.repeat(40);
+      const article = await models.Article.create({
+        conditionId: condition.id,
+        title: 'Load test article',
+        slug: `load-test-${id.slice(-12)}`,
+        summary: 'A temporary article used by the load test.',
+        status: 'published',
+        accessLevel: 'public',
+        publishedAt: new Date(),
+        contentJson: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: words.trim() }] }] },
+        contentText: words,
+        coverImageId: id,
+        readingMinutes: 2,
+        liveVersion: 1,
+      });
+      try {
+        const articleApi = await startApi({ redisRateLimit: false, apiRateLimit: 1e9 });
+        for (const [label, path] of [
+          ['article page (MySQL, uncached)', `/api/v1/articles/${article.slug}`],
+          ['article list (MySQL, uncached)', '/api/v1/articles?limit=12'],
+        ]) {
+          const r = await measure(articleApi.url, path, conns);
+          const bad = Object.entries(codes(r)).filter(([c]) => c !== '200').reduce((n, [, v]) => n + v, 0);
+          rows.push(row(label, r, [...clean(r), { name: `p99 < ${P99_MS} ms`, ok: r.latency.p99 < P99_MS }, { name: 'all 200', ok: bad === 0 }]));
+        }
+        await articleApi.stop();
+      } finally {
+        await models.Article.destroy({ where: { id: article.id }, force: true }).catch(() => {});
+        await models.Condition.destroy({ where: { id: condition.id }, force: true }).catch(() => {});
+      }
     } finally {
       await models.Media.destroy({ where: { id }, force: true }).catch(() => {});
       await storage.remove(key).catch(() => {});

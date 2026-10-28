@@ -14,7 +14,7 @@ export function initModels(sequelize, { auditSequelize = sequelize } = {}) {
   const AuditLog = initAuditLog(auditSequelize);
 
   const { OAuthAccount, RefreshToken, UserTwoFactor, TwoFactorBackupCode, AuthToken, UserConsent } = auth;
-  const { Condition, Media, Article, ArticleBookmark, ReadingProgress } = content;
+  const { Condition, Media, Article, ArticleDraft, ArticleReference, ArticleMedia, ArticleRevision, ArticleSlugRedirect, ArticleBookmark, ReadingProgress } = content;
 
   // Auth: owned by the user, removed with it.
   const owned = { foreignKey: 'userId', onDelete: 'CASCADE' };
@@ -39,6 +39,15 @@ export function initModels(sequelize, { auditSequelize = sequelize } = {}) {
   Article.belongsTo(Media, { as: 'coverImage', foreignKey: 'coverImageId', onDelete: 'SET NULL' });
   Article.belongsTo(Media, { as: 'audio', foreignKey: 'audioId', onDelete: 'SET NULL' });
   Condition.belongsTo(Media, { as: 'heroImage', foreignKey: 'heroImageId', onDelete: 'SET NULL' });
+  Article.hasOne(ArticleDraft, { as: 'draft', foreignKey: 'articleId', onDelete: 'RESTRICT' });
+  ArticleDraft.belongsTo(Article, { as: 'article', foreignKey: 'articleId' });
+  ArticleDraft.belongsTo(User, { as: 'updatedBy', foreignKey: 'updatedById' });
+  Article.hasMany(ArticleReference, { as: 'outboundReferences', foreignKey: 'sourceArticleId', onDelete: 'RESTRICT' });
+  Article.hasMany(ArticleMedia, { as: 'mediaUses', foreignKey: 'articleId', onDelete: 'RESTRICT' });
+  Media.hasMany(ArticleMedia, { as: 'articleUses', foreignKey: 'mediaId', onDelete: 'RESTRICT' });
+  Article.hasMany(ArticleRevision, { as: 'revisions', foreignKey: 'articleId', onDelete: 'RESTRICT' });
+  ArticleRevision.belongsTo(User, { as: 'createdBy', foreignKey: 'createdById' });
+  Article.hasMany(ArticleSlugRedirect, { as: 'oldSlugs', foreignKey: 'articleId', onDelete: 'RESTRICT' });
   User.hasMany(Media, { as: 'uploads', foreignKey: 'uploadedById', onDelete: 'SET NULL' });
   Media.belongsTo(User, { as: 'uploadedBy', foreignKey: 'uploadedById' });
 

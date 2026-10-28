@@ -5,8 +5,8 @@ import { createReadStream } from 'node:fs';
 import { open, rm } from 'node:fs/promises';
 import { fileTypeFromFile } from 'file-type';
 import { v7 as uuidv7 } from 'uuid';
-import { Op } from 'sequelize';
-import { models } from '../../config/db.js';
+import { Op, QueryTypes, Transaction } from 'sequelize';
+import { models, sequelize } from '../../config/db.js';
 import { MEDIA_KIND, MEDIA_STATUS, MEDIA_VISIBILITY, STORAGE_BACKEND } from '../../config/constants.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { createWorkQueue } from '../../utils/workQueue.js';
@@ -233,24 +233,40 @@ export async function update(id, { altText }, req) {
 }
 
 /** Where a media file is used, e.g. { articles: 2, conditions: 1 }. */
-async function usage(id) {
-  const [articles, conditions] = await Promise.all([
-    models.Article.count({ where: { [Op.or]: [{ coverImageId: id }, { audioId: id }] } }),
-    models.Condition.count({ where: { heroImageId: id } }),
+/**
+ * Where a media file is used: articles (live copy or draft: cover, images in the text, narration) and
+ * condition pages. Deleted articles don't count (their usage rows are removed with them).
+ */
+async function usage(id, transaction) {
+  const [[{ n }], conditions] = await Promise.all([
+    sequelize.query(
+      `SELECT COUNT(DISTINCT u.article_id) AS n FROM article_media u JOIN articles a ON a.id = u.article_id
+        WHERE u.media_id = :id AND a.deleted_at IS NULL`,
+      { replacements: { id }, type: QueryTypes.SELECT, transaction },
+    ),
+    models.Condition.count({ where: { heroImageId: id }, transaction }),
   ]);
-  return { articles, conditions };
+  // Older rows written before usage tracking (live cover/audio columns) still count.
+  const legacy = await models.Article.count({ where: { [Op.or]: [{ coverImageId: id }, { audioId: id }] }, transaction });
+  return { articles: Math.max(Number(n), legacy), conditions };
 }
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export async function remove(id, req, { storage = defaultStorage } = {}) {
-  const media = await findOr404(id);
-  const used = await usage(id);
-  if (used.articles || used.conditions) {
-    const where = [used.articles && plural(used.articles, 'article'), used.conditions && plural(used.conditions, 'condition')].filter(Boolean).join(' and ');
-    throw new ApiError(409, `This file is used by ${where}. Remove it from ${used.articles + used.conditions === 1 ? 'there' : 'them'} first.`, used, 'MEDIA_IN_USE');
-  }
-  await media.destroy();
+  // The media row is locked first: an article save or publish that wants to use it waits until this
+  // decision is made (recording a use needs that row), so the check and the delete can't be split.
+  const media = await sequelize.transaction(async (transaction) => {
+    const row = await models.Media.findByPk(id, { transaction, lock: Transaction.LOCK.UPDATE });
+    if (!row) throw ApiError.notFound('This file no longer exists. It may have been deleted.');
+    const used = await usage(row.id, transaction);
+    if (used.articles || used.conditions) {
+      const where = [used.articles && plural(used.articles, 'article'), used.conditions && plural(used.conditions, 'condition')].filter(Boolean).join(' and ');
+      throw new ApiError(409, `This file is used by ${where}. Remove it from ${used.articles + used.conditions === 1 ? 'there' : 'them'} first.`, used, 'MEDIA_IN_USE');
+    }
+    await row.destroy({ transaction });
+    return row;
+  });
   forgetImageLookup(id);
   // The row is kept (soft delete) for the audit trail; the files go.
   const keys = Object.values(media.variants ?? {}).map((v) => v.key);
