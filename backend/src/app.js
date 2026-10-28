@@ -39,6 +39,8 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
               credentials: true,
               methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
               allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+              // Lets the frontend read how long to wait after a lockout or rate limit.
+              exposedHeaders: ['Retry-After'],
               maxAge: 600,
             }
           : { origin: false },

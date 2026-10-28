@@ -1,0 +1,176 @@
+/* ── Home: hero ──────────────────────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(3.5rem, 8vw, 7rem) 0 clamp(3rem, 7vw, 6rem);
+  text-align: center;
+}
+
+.hero__mandala {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(720px, 120vw);
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  opacity: 0.8;
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+}
+
+.hero__emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 190px;
+  height: 190px;
+  margin-bottom: calc(-1 * var(--space-5));
+}
+
+.hero__yantra {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__mark {
+  position: relative;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.06));
+}
+
+.hero__title {
+  max-width: 15ch;
+  margin: 0;
+  font-size: clamp(2.5rem, 1.5rem + 4.5vw, 4.8rem);
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+}
+
+.hero__shine {
+  display: inline-block;
+  font-style: italic;
+  /* Room for the italic overhang, so the clipped sheen doesn't cut the last letter. */
+  padding-right: 0.08em;
+}
+
+.hero__lead {
+  max-width: 38rem;
+  margin: 0;
+  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+  color: var(--text-muted);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.hero__tagline {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+}
+
+/* ── Home: pillars ───────────────────────────────────────────────────────────────────────────── */
+.section-title {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.pillars {
+  padding-block: var(--space-7);
+}
+
+.pillars__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-5);
+}
+
+.pillar {
+  padding: var(--space-6) var(--space-5);
+}
+
+.pillar:nth-child(2) {
+  --delay: 120ms;
+}
+
+.pillar:nth-child(3) {
+  --delay: 240ms;
+}
+
+.pillar__num {
+  position: absolute;
+  right: var(--space-5);
+  top: var(--space-3);
+  font-family: var(--font-deva);
+  font-size: 3.2rem;
+  line-height: 1;
+  color: var(--surface-muted);
+  z-index: -1;
+}
+
+.pillar__deva {
+  display: block;
+  font-size: 1.05rem;
+  color: var(--accent);
+  margin-bottom: var(--space-2);
+}
+
+/* ── Home: sutra band ────────────────────────────────────────────────────────────────────────── */
+.sutra-band {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--space-7);
+  text-align: center;
+  background:
+    radial-gradient(ellipse at top, color-mix(in srgb, var(--gold) 14%, transparent), transparent 60%),
+    var(--surface-muted);
+  border-block: 1px solid var(--border);
+}
+
+.sutra-band__inner {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.sutra-band__sanskrit {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+}
+
+.sutra-band__translit {
+  margin: 0;
+  font-style: italic;
+  color: var(--primary);
+}
+
+.sutra-band__meaning {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* ── Simple content pages (not found, legal) ────────────────────────────────────────────────── */
+.simple-page {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+}

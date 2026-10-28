@@ -12,8 +12,8 @@ export const JWT_ISSUER = 'healthmarg-api';
 export const JWT_AUDIENCE = 'healthmarg-web';
 const accessKey = new TextEncoder().encode(env.JWT_ACCESS_SECRET);
 
-// Two browser tabs refreshing at the same moment: the loser presents a token rotated a moment ago.
-// Within this window that's a race (409, nothing revoked), not theft.
+// Reuse interval: a token rotated less than this long ago may be exchanged again (a reload or a second tab
+// raced the refresh, or its reply was lost). Older reuse is treated as theft. See rotateRefreshToken.
 export const REFRESH_RACE_WINDOW_MS = 10_000;
 
 export function sessionLifetimes(role) {
@@ -91,8 +91,15 @@ export async function revokeAllForUser(userId, reason, transaction) {
 
 /**
  * Rotate a refresh token: the presented token is revoked and replaced by a new one in the same family.
- * Presenting an already-rotated token (outside the race window) means it was stolen: the whole
- * family (session) is revoked and `reused: true` is reported so the caller can alert the user.
+ *
+ * Reuse interval: a token rotated less than REFRESH_RACE_WINDOW_MS ago is exchanged once more for a
+ * fresh sibling token. The reply carrying its replacement may never have reached the browser (a reload or
+ * navigation mid-refresh, a closed tab, two tabs at once). Failing there would sign the person out, and
+ * later look like theft. This applies only while the session is still alive: after sign-out, a password
+ * reset or detected theft, there's no live token in the family and the old one gets nothing.
+ *
+ * Presenting a rotated token after the window means it was stolen: the whole family (session) is revoked
+ * and `reused: true` is reported so the caller can alert the user.
  */
 export async function rotateRefreshToken(raw, req) {
   if (!raw) throw ApiError.unauthorized('Please sign in', 'NO_SESSION');
@@ -104,19 +111,24 @@ export async function rotateRefreshToken(raw, req) {
     });
     if (!current) throw ApiError.unauthorized('Please sign in', 'NO_SESSION');
 
+    let graceReuse = false;
     if (current.revokedAt) {
       const rotatedRecently =
         current.revokedReason === 'rotated' && Date.now() - current.revokedAt.getTime() < REFRESH_RACE_WINDOW_MS;
-      if (rotatedRecently) throw ApiError.conflict('Session refresh already in progress', 'REFRESH_RACE');
-      if (current.revokedReason === 'rotated') {
+      if (rotatedRecently) {
+        const sessionAlive = await models.RefreshToken.count({ where: { familyId: current.familyId, revokedAt: null }, transaction });
+        if (!sessionAlive) throw ApiError.unauthorized('Please sign in', 'NO_SESSION');
+        graceReuse = true;
+      } else if (current.revokedReason === 'rotated') {
         await revokeFamily(current.familyId, 'reuse_detected', transaction);
         return { reused: true, userId: current.userId, familyId: current.familyId };
+      } else {
+        throw ApiError.unauthorized('Please sign in', 'NO_SESSION');
       }
-      throw ApiError.unauthorized('Please sign in', 'NO_SESSION');
     }
 
     const now = new Date();
-    if (current.expiresAt <= now || current.familyExpiresAt <= now) {
+    if (current.familyExpiresAt <= now || (!graceReuse && current.expiresAt <= now)) {
       throw ApiError.unauthorized('Your session has expired. Please sign in again.', 'SESSION_EXPIRED');
     }
 
@@ -133,7 +145,8 @@ export async function rotateRefreshToken(raw, req) {
       req,
       transaction,
     });
-    await current.update({ revokedAt: now, revokedReason: 'rotated', replacedById: next.id }, { transaction });
+    // A grace reuse leaves the earlier rotation record as it is; the new token is a sibling.
+    if (!graceReuse) await current.update({ revokedAt: now, revokedReason: 'rotated', replacedById: next.id }, { transaction });
     return { reused: false, user, raw: nextRaw, expiresAt: next.expiresAt, familyId: current.familyId, amr: next.amr.split('+') };
   });
 }

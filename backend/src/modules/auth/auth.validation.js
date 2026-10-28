@@ -1,13 +1,33 @@
 import { z } from 'zod';
 
+/** Says what is wrong with an email address (the frontend mirrors this in features/auth/validation.ts). */
+export function emailProblem(raw) {
+  const value = String(raw ?? '').trim();
+  if (!value) return 'Enter your email address.';
+  if (/\s/.test(value)) return 'Your email address contains a space. Remove it.';
+  const at = value.split('@').length - 1;
+  if (at === 0) return 'Your email address is missing the “@”, like name@gmail.com.';
+  if (at > 1) return 'Your email address has more than one “@”. Use only one.';
+  const [local, domain] = value.split('@');
+  if (!local) return 'Add your name before the “@”, like name@gmail.com.';
+  if (!domain) return 'Add the domain after the “@”, like name@gmail.com.';
+  if (!domain.includes('.') || domain.endsWith('.') || domain.startsWith('.')) {
+    return `“${domain}” isn’t a complete domain. It needs an ending like .com or .in.`;
+  }
+  return 'This doesn’t look like a valid email address. Check it for typos.';
+}
+
 // .strict(): unknown fields are rejected, so e.g. {"role":"admin"} can't be smuggled into sign-up.
 export const email = z
   .string()
   .trim()
   .toLowerCase()
-  .max(254)
-  .pipe(z.email('Enter a valid email address'));
-export const password = z.string().min(12, 'Use at least 12 characters').max(128, 'Use at most 128 characters');
+  .max(254, 'Your email address is longer than 254 characters, which no real address is.')
+  .pipe(z.email({ error: (issue) => emailProblem(issue.input) }));
+export const password = z
+  .string()
+  .min(12, { error: (issue) => `Your password has ${String(issue.input).length} characters. Use at least 12.` })
+  .max(128, { error: (issue) => `Your password has ${String(issue.input).length} characters. The limit is 128.` });
 export const displayName = z.string().trim().min(1, 'Enter your name').max(80, 'Use at most 80 characters');
 const captchaToken = z.string().max(4000).optional();
 const urlToken = z.string().min(20).max(200).regex(/^[A-Za-z0-9_-]+$/, 'Invalid link');

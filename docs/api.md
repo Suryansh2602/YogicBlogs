@@ -81,6 +81,13 @@ Public. Reports whether dependencies are reachable, and never reveals versions, 
 
 Credential endpoints use the strict rate limit. Steps marked 🤖 require a reCAPTCHA v3 token (`captchaToken` in the body) when `RECAPTCHA_MODE=live` (always in production; `off` locally).
 
+> **Email features are switched off for now** (`EMAIL_ENABLED=false` on the API, `VITE_FEATURE_EMAIL=false` on the frontend; owner decision 2026-10-25). While off:
+> - `POST /auth/register` answers **`201` with a session** (signed in at once, refresh cookie set), or **`409 EMAIL_TAKEN`** (`details[0].path = "email"`) for a registered email.
+> - Login does not require a confirmed email.
+> - `/auth/verify-email`, `/auth/verify-email/resend`, `/auth/password/forgot` and `/auth/password/reset` are **not mounted (404)**, and no emails are sent.
+>
+> Trade-off while off: sign-up reveals whether an email is registered (rate limits slow down probing). Turning both flags on restores everything below, including the silent `202`.
+
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/auth/csrf` | — | Issue a CSRF token for the cookie endpoints |
@@ -129,12 +136,18 @@ Credential endpoints use the strict rate limit. Steps marked 🤖 require a reCA
 // 403 — correct password but email not confirmed
 { "error": { "message": "Please confirm your email first. We can send the link again.", "code": "EMAIL_NOT_VERIFIED" } }
 // 401 — same message for unknown email and wrong password
-{ "error": { "message": "Invalid email or password", "code": "INVALID_CREDENTIALS" } }
+{ "error": { "message": "The email or password is incorrect. Check both and try again.", "code": "INVALID_CREDENTIALS" } }
 ```
 
 Password rules: 12–128 characters, must not contain your email name or display name, must not be one repeated character, checked against known-breached passwords (HIBP k-anonymity), hashed with argon2id.
 
-**Error codes** the frontend reacts to: `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `ACCOUNT_SUSPENDED`, `LOGIN_LOCKED`, `RATE_LIMITED`, `CAPTCHA_FAILED`, `WEAK_PASSWORD`, `BREACHED_PASSWORD`, `INVALID_TOKEN` (email link), `INVALID_CODE`, `MFA_TICKET_INVALID`, `TOKEN_INVALID` / `TOKEN_REVOKED` / `NO_TOKEN` (sign in again), `NO_SESSION` / `SESSION_EXPIRED` / `SESSION_REVOKED` (refresh failed), `REFRESH_RACE` (another tab refreshed: retry once), `CSRF_FAILED`.
+**Error messages say exactly what is wrong.** Examples: `Your password has 8 characters. Use at least 12.`, `“gmail” isn’t a complete domain. It needs an ending like .com or .in.`, `This password has appeared 21,613 times in leaked password lists…`, `That code didn’t match… 3 tries left.` Field problems come in `details[{ path, message }]`, and `message` repeats the first one.
+- **Two deliberate exceptions, for security:** a failed sign-in never says whether the email or the password was wrong, and sign-up, resend and forgot-password never say whether an account exists.
+- **Waiting times:** `429` answers carry `Retry-After` (exposed to the browser via CORS), so the page can say how long to wait.
+
+**Error codes** the frontend reacts to: `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `ACCOUNT_SUSPENDED`, `LOGIN_LOCKED`, `RATE_LIMITED`, `CAPTCHA_FAILED`, `WEAK_PASSWORD`, `BREACHED_PASSWORD`, `INVALID_TOKEN` (email link), `INVALID_CODE`, `MFA_TICKET_INVALID`, `TOKEN_INVALID` / `TOKEN_REVOKED` / `NO_TOKEN` (sign in again), `NO_SESSION` / `SESSION_EXPIRED` / `SESSION_REVOKED` (refresh failed), `CSRF_FAILED`.
+
+**Refresh reuse interval:** a refresh token rotated less than 10 s ago can be exchanged once more for a fresh token in the same session. This covers a page reload or second tab racing the refresh, or a lost reply. It never applies after sign-out, password reset or detected theft. Reuse after 10 s is treated as theft: the session is revoked (`SESSION_REVOKED`). Older API versions answered `409 REFRESH_RACE` here; the frontend still retries once if it sees it.
 
 ---
 

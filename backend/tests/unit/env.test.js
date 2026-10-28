@@ -131,9 +131,10 @@ describe('loadEnv', () => {
       expect(() => loadEnv({ ...production, DB_LOGGING: 'true' })).toThrow(/DB_LOGGING/);
     });
 
-    it('requires live reCAPTCHA, real email and an https APP_URL', () => {
+    it('requires live reCAPTCHA, real email (when email is on) and an https APP_URL', () => {
       expect(() => loadEnv({ ...production, RECAPTCHA_MODE: 'off' })).toThrow(/RECAPTCHA_MODE/);
-      expect(() => loadEnv({ ...production, MAIL_MODE: 'outbox' })).toThrow(/MAIL_MODE/);
+      expect(() => loadEnv({ ...production, EMAIL_ENABLED: 'true', MAIL_MODE: 'outbox' })).toThrow(/MAIL_MODE/);
+      expect(() => loadEnv({ ...production, EMAIL_ENABLED: 'false', MAIL_MODE: 'outbox' })).not.toThrow();
       expect(() => loadEnv({ ...production, APP_URL: 'http://healthmarg.example' })).toThrow(/APP_URL/);
     });
 

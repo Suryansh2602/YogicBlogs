@@ -131,13 +131,24 @@ describe('auth flows (real database)', () => {
       await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: current }).expect(401);
     });
 
-    it('answers a token rotated a moment ago as a two-tab race (409) without revoking anything', async () => {
+    it('re-issues for a token rotated a moment ago (lost reply / reload mid-refresh), and both new tokens work', async () => {
       await signIn();
       const old = jar.hm_rt;
       const res = await cookieCall('/api/v1/auth/refresh').expect(200);
-      const race = await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: old }).expect(409);
-      expect(race.body.error.code).toBe('REFRESH_RACE');
+      // The browser never received res's cookie (e.g. the page reloaded) and presents the old one again.
+      const again = await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: old }).expect(200);
+      expect(again.body.accessToken).toEqual(expect.any(String));
+      await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: cookiesOf(again).hm_rt }).expect(200);
       await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: cookiesOf(res).hm_rt }).expect(200);
+    });
+
+    it('never revives a signed-out session with a recently rotated token', async () => {
+      await signIn();
+      const old = jar.hm_rt;
+      const res = await cookieCall('/api/v1/auth/refresh').expect(200);
+      await cookieCall('/api/v1/auth/logout', { ...jar, hm_rt: cookiesOf(res).hm_rt }).expect(204);
+      const revived = await cookieCall('/api/v1/auth/refresh', { ...jar, hm_rt: old }).expect(401);
+      expect(revived.body.error.code).toBe('NO_SESSION');
     });
 
     it('signs out: the refresh token and the access token both stop working at once', async () => {
@@ -242,6 +253,31 @@ describe('auth flows (real database)', () => {
     });
   });
 
+  describe('accounts created while email was off', () => {
+    it('a password reset (first proof of the address) removes 2FA a squatter may have turned on', async () => {
+      const { models } = await import('../../src/config/db.js');
+      const { hashPassword } = await import('../../src/modules/auth/password.service.js');
+      const squatApp = createApp();
+      const email = 'owner-of-this-inbox@example.com';
+      // As if registered by someone else while email was off: never verified, with their own 2FA on.
+      const user = await models.User.create({ email, displayName: 'Squatter', passwordHash: await hashPassword('Squatters-own-password-1') });
+      await models.UserTwoFactor.create({ userId: user.id, secretEncrypted: 'v1.not.a.real.secret', enabledAt: new Date() });
+      await models.TwoFactorBackupCode.create({ userId: user.id, codeHash: 'f'.repeat(64) });
+
+      // The real owner uses "forgot password" with their inbox.
+      await request(squatApp).post('/api/v1/auth/password/forgot').send({ email }).expect(202);
+      const token = lastLink(email, 'resetPassword').searchParams.get('token');
+      await request(squatApp).post('/api/v1/auth/password/reset').send({ token, password: 'Owners-real-password-2026' }).expect(200);
+
+      const login = await request(squatApp).post('/api/v1/auth/login').send({ email, password: 'Owners-real-password-2026' }).expect(200);
+      expect(login.body.accessToken).toEqual(expect.any(String)); // signed in, no squatter 2FA in the way
+      expect(await models.UserTwoFactor.count({ where: { userId: user.id } })).toBe(0);
+      expect(await models.TwoFactorBackupCode.count({ where: { userId: user.id } })).toBe(0);
+      const [actions] = await migrator.query(`SELECT action FROM \`${env.AUDIT_DB_NAME}\`.audit_logs WHERE actor_id = ?`, { replacements: [user.id] });
+      expect(actions.map((a) => a.action)).toContain('auth.2fa.cleared_unproven');
+    });
+  });
+
   describe('admin', () => {
     const email = 'admin@example.com';
     let backupCodes;
@@ -290,8 +326,8 @@ describe('auth flows (real database)', () => {
       ({ backupCodes } = enabled.body);
 
       const stats = await request(app).get('/api/v1/admin/stats').set('Authorization', `Bearer ${enabled.body.accessToken}`).expect(200);
-      // meera, arjun, twins (sessions block) + this admin.
-      expect(stats.body).toMatchObject({ users: 4, admins: 1 });
+      // meera, arjun, twins (sessions), the reclaimed inbox owner + this admin.
+      expect(stats.body).toMatchObject({ users: 5, admins: 1 });
     });
 
     it('asks for a code on the next sign-in and rejects a replayed one', async () => {
@@ -309,6 +345,9 @@ describe('auth flows (real database)', () => {
       expect(users.body).toMatchObject({ total: 1, items: [{ email: 'meera@example.com', role: 'user' }] });
       const logs = await request(app).get('/api/v1/admin/audit-logs?action=admin.').set('Authorization', auth).expect(200);
       expect(logs.body.items.map((l) => l.action)).toEqual(expect.arrayContaining(['admin.setup.created', 'admin.setup.failure']));
+      // Each entry names the acting account; anonymous events (a wrong setup code) have none.
+      expect(logs.body.items.find((l) => l.action === 'admin.setup.created').actorEmail).toBe(email);
+      expect(logs.body.items.find((l) => l.action === 'admin.setup.failure').actorEmail).toBeNull();
     });
 
     it('accepts each backup code only once', async () => {

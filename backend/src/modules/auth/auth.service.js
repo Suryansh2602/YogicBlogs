@@ -4,6 +4,7 @@
 // - Secrets are stored hashed; raw tokens exist only in the email link or cookie.
 // - Admins must pass a second factor; their first login forces 2FA enrolment.
 import { Op, UniqueConstraintError } from 'sequelize';
+import { env } from '../../config/env.js';
 import { models, sequelize } from '../../config/db.js';
 import { AUTH_TOKEN_PURPOSE, CONSENT_KIND, ROLES, USER_STATUS } from '../../config/constants.js';
 import { ApiError } from '../../utils/ApiError.js';
@@ -15,7 +16,7 @@ import { invalidateUserState, revokedSessionKey } from '../../middlewares/authen
 import {
   burnPasswordCheck,
   hashPassword,
-  isBreachedPassword,
+  breachCount,
   needsRehash,
   passwordProblems,
   verifyPassword,
@@ -35,6 +36,8 @@ export const POLICY_VERSION = '2026-10-25';
 const EMAIL_TOKEN_TTL_MS = { [AUTH_TOKEN_PURPOSE.EMAIL_VERIFICATION]: 24 * 3600_000, [AUTH_TOKEN_PURPOSE.PASSWORD_RESET]: 3600_000 };
 const MFA_TICKET_TTL_SECONDS = 5 * 60;
 const MFA_MAX_ATTEMPTS = 5;
+// Deliberately the same for an unknown email and a wrong password, so nobody can test which emails have accounts.
+const WRONG_CREDENTIALS = 'The email or password is incorrect. Check both and try again.';
 
 /** What the client may see about a user. */
 export function publicUser(user, { twoFactorEnabled = false } = {}) {
@@ -53,14 +56,12 @@ export function publicUser(user, { twoFactorEnabled = false } = {}) {
 export async function assertAcceptablePassword(password, { email, displayName }) {
   const problems = passwordProblems(password, { email, displayName });
   if (problems.length) {
-    throw ApiError.badRequest('Choose a stronger password', problems.map((message) => ({ path: 'password', message })), 'WEAK_PASSWORD');
+    throw ApiError.badRequest(problems[0], problems.map((message) => ({ path: 'password', message })), 'WEAK_PASSWORD');
   }
-  if (await isBreachedPassword(password)) {
-    throw ApiError.badRequest(
-      'This password has appeared in a data breach. Please choose a different one.',
-      [{ path: 'password', message: 'Found in known data breaches' }],
-      'BREACHED_PASSWORD',
-    );
+  const breaches = await breachCount(password);
+  if (breaches > 0) {
+    const message = `This password has appeared ${breaches.toLocaleString('en-IN')} time${breaches === 1 ? '' : 's'} in leaked password lists, so attackers try it early. Choose a different one.`;
+    throw ApiError.badRequest(message, [{ path: 'password', message }], 'BREACHED_PASSWORD');
   }
 }
 
@@ -89,7 +90,37 @@ async function consumeEmailToken(raw, purpose, transaction) {
 
 // ── Registration & email verification ────────────────────────────────────────────────────────────
 
+/**
+ * Without email (EMAIL_ENABLED=false) there is no way to prove an address or to tell someone privately
+ * that they already have an account, so: a duplicate gets a clear 409, and a new account is signed in
+ * straight away. Returns the session. Trade-off: sign-up then reveals whether an email is registered
+ * (rate limits slow down anyone trying many emails); turning email on restores the silent 202.
+ */
+async function registerWithoutEmail({ email, password, displayName }, req) {
+  await assertAcceptablePassword(password, { email, displayName });
+  const taken = () => {
+    const message = 'An account with this email already exists. Sign in instead, or use a different email.';
+    return new ApiError(409, message, [{ path: 'email', message }], 'EMAIL_TAKEN');
+  };
+  if (await models.User.count({ where: { email } })) {
+    await audit('auth.register.duplicate', { req, metadata: { emailEnabled: false } });
+    throw taken();
+  }
+  const passwordHash = await hashPassword(password);
+  let user;
+  try {
+    ({ user } = await createAccount({ email, displayName, passwordHash }, req, { withEmailToken: false }));
+  } catch (err) {
+    if (err instanceof UniqueConstraintError) throw taken();
+    throw err;
+  }
+  await audit('auth.register', { req, actorId: user.id, entityType: 'user', entityId: user.id });
+  return completeLogin(user, ['pwd'], req);
+}
+
+/** Returns a session when email is off (signed in straight away), otherwise nothing (check your email). */
 export async function register({ email, password, displayName }, req) {
+  if (!env.EMAIL_ENABLED) return registerWithoutEmail({ email, password, displayName }, req);
   await assertAcceptablePassword(password, { email, displayName });
   const existing = await models.User.findOne({ where: { email } });
 
@@ -123,7 +154,7 @@ export async function register({ email, password, displayName }, req) {
   await audit('auth.register', { req, actorId: created.user.id, entityType: 'user', entityId: created.user.id });
 }
 
-function createAccount({ email, displayName, passwordHash }, req) {
+function createAccount({ email, displayName, passwordHash }, req, { withEmailToken = true } = {}) {
   return sequelize.transaction(async (transaction) => {
     const created = await models.User.create({ email, displayName, passwordHash }, { transaction });
     const now = new Date();
@@ -137,7 +168,7 @@ function createAccount({ email, displayName, passwordHash }, req) {
       })),
       { transaction },
     );
-    const token = await createEmailToken(created.id, AUTH_TOKEN_PURPOSE.EMAIL_VERIFICATION, transaction);
+    const token = withEmailToken ? await createEmailToken(created.id, AUTH_TOKEN_PURPOSE.EMAIL_VERIFICATION, transaction) : null;
     return { user: created, raw: token };
   });
 }
@@ -182,11 +213,15 @@ async function failMfaAttempt(ticket, data) {
   const attempts = data.attempts + 1;
   if (attempts >= MFA_MAX_ATTEMPTS) {
     await ephemeralStore.del(ticketKey(ticket));
-    throw ApiError.unauthorized('Too many wrong codes. Please sign in again.', 'MFA_TICKET_INVALID');
+    throw ApiError.unauthorized(`That was the ${MFA_MAX_ATTEMPTS}th wrong code, so this sign-in was stopped. Please sign in again.`, 'MFA_TICKET_INVALID');
   }
   const ttl = Math.max(await ephemeralStore.ttl(ticketKey(ticket)), 1);
   await ephemeralStore.set(ticketKey(ticket), JSON.stringify({ ...data, attempts }), ttl);
-  throw ApiError.unauthorized('That code isn’t right. Please try again.', 'INVALID_CODE');
+  const left = MFA_MAX_ATTEMPTS - attempts;
+  throw ApiError.unauthorized(
+    `That code didn’t match. Codes change every 30 seconds, so enter the one your app shows now. ${left} ${left === 1 ? 'try' : 'tries'} left.`,
+    'INVALID_CODE',
+  );
 }
 
 /** Issue the session: access token in the body, refresh token as an HttpOnly cookie (set by the route). */
@@ -217,20 +252,21 @@ export async function login({ email, password }, req, { adminOnly = false } = {}
   if (!valid) {
     await lockout.recordFailure(ip, email);
     await audit('auth.login.failure', { req, actorId: user?.id ?? null, metadata: { reason: user ? 'bad_password' : 'unknown_email' } });
-    throw ApiError.unauthorized('Invalid email or password', 'INVALID_CREDENTIALS');
+    throw ApiError.unauthorized(WRONG_CREDENTIALS, 'INVALID_CREDENTIALS');
   }
   // Admin sign-in page: a valid non-admin account gets the same answer as a wrong password.
   if (adminOnly && user.role !== ROLES.ADMIN) {
     await lockout.recordFailure(ip, email);
     await audit('auth.login.failure', { req, actorId: user.id, metadata: { reason: 'not_admin' } });
-    throw ApiError.unauthorized('Invalid email or password', 'INVALID_CREDENTIALS');
+    throw ApiError.unauthorized(WRONG_CREDENTIALS, 'INVALID_CREDENTIALS');
   }
   await lockout.clear(ip, email);
 
   if (needsRehash(user.passwordHash)) {
     await models.User.update({ passwordHash: await hashPassword(password) }, { where: { id: user.id } });
   }
-  if (!user.emailVerifiedAt) {
+  // Only enforced while email is on: without it nobody could ever confirm their address.
+  if (env.EMAIL_ENABLED && !user.emailVerifiedAt) {
     throw ApiError.forbidden('Please confirm your email first. We can send the link again.', 'EMAIL_NOT_VERIFIED');
   }
   if (user.status !== USER_STATUS.ACTIVE) {
@@ -324,11 +360,19 @@ export async function forgotPassword(email, req) {
 }
 
 export async function resetPassword({ token, password }, req) {
+  let cleared2fa = false;
   const user = await sequelize.transaction(async (transaction) => {
     const row = await consumeEmailToken(token, AUTH_TOKEN_PURPOSE.PASSWORD_RESET, transaction);
     const target = await models.User.findByPk(row.userId, { transaction });
     if (!target) throw ApiError.badRequest('This link is invalid or has expired.', undefined, 'INVALID_TOKEN');
     await assertAcceptablePassword(password, { email: target.email, displayName: target.displayName });
+    // An account whose email was never confirmed (e.g. created while email features were off) may have
+    // been registered by someone who doesn't own the address, and they could have turned on 2FA. This link
+    // is the first proof of ownership, so any 2FA set up before it is removed; the owner can enable their own.
+    if (!target.emailVerifiedAt) {
+      cleared2fa = (await models.UserTwoFactor.destroy({ where: { userId: target.id }, transaction })) > 0;
+      await models.TwoFactorBackupCode.destroy({ where: { userId: target.id }, transaction });
+    }
     await target.update(
       {
         passwordHash: await hashPassword(password),
@@ -345,6 +389,7 @@ export async function resetPassword({ token, password }, req) {
   await invalidateUserState(user.id);
   sendMail('passwordChanged', user.email, { name: user.displayName });
   await audit('auth.password.reset', { req, actorId: user.id });
+  if (cleared2fa) await audit('auth.2fa.cleared_unproven', { req, actorId: user.id, entityType: 'user', entityId: user.id });
 }
 
 // ── 2FA for signed-in users (optional for users, done at first login for admins) ────────────────
@@ -358,7 +403,9 @@ export async function beginEnrolmentForUser(userId) {
 export async function enableForUser(userId, code, req) {
   const user = await models.User.findByPk(userId);
   const backupCodes = await twoFactor.enable(user, code);
-  if (!backupCodes) throw ApiError.badRequest('That code isn’t right. Please try again.', undefined, 'INVALID_CODE');
+  if (!backupCodes) {
+    throw ApiError.badRequest('That code didn’t match. Codes change every 30 seconds, so enter the one your app shows now.', undefined, 'INVALID_CODE');
+  }
   await audit('auth.2fa.enabled', { req, actorId: userId, entityType: 'user', entityId: userId });
   return { backupCodes };
 }

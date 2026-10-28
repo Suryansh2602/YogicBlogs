@@ -1,0 +1,112 @@
+.link-button {
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.link-button:hover {
+  color: var(--primary-hover);
+}
+
+/* ── 2FA enrolment ───────────────────────────────────────────────────────────────────────────── */
+.enrol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.enrol__loading {
+  display: grid;
+  place-items: center;
+  min-height: 14rem;
+  color: var(--primary);
+}
+
+.enrol__steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text-muted);
+  font-size: 0.93rem;
+}
+
+.enrol__qr {
+  justify-self: center;
+  padding: 0.8rem;
+  background: #ffffff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  animation: rise-in var(--dur-slow) var(--ease-out);
+}
+
+.enrol__qr img {
+  display: block;
+}
+
+.enrol__key {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.enrol__secret {
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.6rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  user-select: all;
+}
+
+.enrol__prompt {
+  margin: var(--space-2) 0 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.enrol--done {
+  justify-items: center;
+  text-align: center;
+}
+
+.enrol__title {
+  margin: 0;
+}
+
+.enrol__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.enrol--done .check,
+.enrol--done .btn--block {
+  justify-self: stretch;
+  text-align: left;
+}
+
+.backup-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 1.4rem;
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  list-style: none;
+  background: var(--surface-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.backup-codes code {
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+}

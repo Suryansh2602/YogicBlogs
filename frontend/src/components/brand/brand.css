@@ -1,0 +1,163 @@
+/* ── Logo ─────────────────────────────────────────────────────────────────────────────────────── */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.logo .logo-mark {
+  flex: none;
+  width: var(--logo-size);
+  height: var(--logo-size);
+}
+
+.logo__word {
+  font-size: calc(var(--logo-size) * 0.56);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.logo__a {
+  color: var(--wordmark-a);
+}
+
+.logo__b {
+  color: var(--wordmark-b);
+}
+
+.logo-mark path,
+.logo-mark ellipse {
+  transition: fill var(--dur) var(--ease-out), stroke var(--dur) var(--ease-out);
+}
+
+/* Animated variant: stem draws itself, leaves unfurl, petals open, sparks twinkle. */
+.logo-mark--animated .logo-mark__stem {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: logo-draw 900ms var(--ease-out) forwards;
+}
+
+.logo-mark--animated .logo-mark__leaf {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-pop 600ms var(--ease-spring) both;
+  animation-delay: 500ms;
+}
+
+.logo-mark--animated .logo-mark__petal {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: logo-open 800ms var(--ease-spring) both;
+  animation-delay: 750ms;
+}
+
+.logo-mark--animated .logo-mark__petal--l,
+.logo-mark--animated .logo-mark__petal--r {
+  animation-delay: 900ms;
+}
+
+.logo-mark--animated .logo-mark__spark path {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-twinkle 2.8s ease-in-out 1.4s infinite;
+}
+
+@keyframes logo-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes logo-pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes logo-open {
+  from {
+    transform: scaleY(0.2) scaleX(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes logo-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
+/* ── Mandala ──────────────────────────────────────────────────────────────────────────────────── */
+.mandala {
+  color: var(--mandala);
+  pointer-events: none;
+  user-select: none;
+}
+
+.mandala--spin .mandala__ring {
+  transform-origin: 0 0;
+  animation: mandala-spin linear infinite;
+  will-change: transform;
+}
+
+.mandala--spin .mandala__ring--ccw {
+  animation-direction: reverse;
+}
+
+@keyframes mandala-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Lotus bloom ─────────────────────────────────────────────────────────────────────────────── */
+.lotus-bloom__petal {
+  transform-origin: 0 8px;
+  transform: rotate(var(--angle, 0deg)) scaleY(0.1);
+  opacity: 0;
+  animation: lotus-open 900ms var(--ease-spring) forwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 150ms);
+}
+
+.lotus-bloom__petal--center {
+  --angle: 0deg;
+  --i: 6;
+}
+
+.lotus-bloom__seed {
+  opacity: 0;
+  animation: fade-in 400ms ease 1s forwards;
+}
+
+.lotus-bloom__water {
+  transform-origin: center;
+  animation: lotus-ripple 3s ease-in-out 1s infinite;
+}
+
+@keyframes lotus-open {
+  to {
+    transform: rotate(var(--angle, 0deg)) scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes lotus-ripple {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scaleX(1.12);
+    opacity: 0.12;
+  }
+}

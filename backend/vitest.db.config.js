@@ -16,6 +16,7 @@ export default defineConfig({
     testTimeout: 20_000,
     hookTimeout: 60_000,
     // Fixed setup code so the admin bootstrap can be tested; never a real value.
-    env: { NODE_ENV: 'test', ADMIN_SETUP_CODE: 'test-only-admin-setup-code' },
+    // EMAIL_ENABLED=true for the email flows; auth-no-email.test.js switches it off for itself.
+    env: { NODE_ENV: 'test', ADMIN_SETUP_CODE: 'test-only-admin-setup-code', EMAIL_ENABLED: 'true' },
   },
 });

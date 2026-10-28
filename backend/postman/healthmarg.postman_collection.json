@@ -75,7 +75,7 @@
     },
     {
       "name": "Auth",
-      "description": "Sign-up, email verification, sign-in (with 2FA), sessions and password reset.\n\nLocally, emails are saved as HTML files in backend/.local/outbox/ (and the link is printed in the API log). Copy the `token` from a link into the matching environment variable.\n\nThe refresh token lives in an HttpOnly cookie that Postman keeps automatically. Refresh/Logout need `GET csrf` first (it sets csrfToken) and send an Origin header, like a browser.",
+      "description": "EMAIL FEATURES ARE OFF FOR NOW (EMAIL_ENABLED=false): Register returns 201 and signs you in (409 EMAIL_TAKEN if the email exists); Verify email, Resend, Forgot password and Reset password return 404 until email is switched on.\n\nSign-up, email verification, sign-in (with 2FA), sessions and password reset.\n\nLocally, emails are saved as HTML files in backend/.local/outbox/ (and the link is printed in the API log). Copy the `token` from a link into the matching environment variable.\n\nThe refresh token lives in an HttpOnly cookie that Postman keeps automatically. Refresh/Logout need `GET csrf` first (it sets csrfToken) and send an Origin header, like a browser.",
       "item": [
         {
           "name": "GET csrf",
@@ -145,7 +145,7 @@
                 "register"
               ]
             },
-            "description": "Always 202. Then open the verifyEmail file in backend/.local/outbox/ and copy the token into verifyToken. Add captchaToken when RECAPTCHA_MODE=live."
+            "description": "Email off (current): 201 + accessToken (saved automatically) and the refresh cookie, or 409 EMAIL_TAKEN. Email on: always 202, then open the verifyEmail file in backend/.local/outbox/ and copy the token into verifyToken."
           },
           "event": [
             {
@@ -153,7 +153,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('always 202 (never reveals whether the email exists)', () => pm.response.to.have.status(202));"
+                  "pm.test('201 (signed in, email off) or 202 (email on)', () => pm.expect(pm.response.code).to.be.oneOf([201, 202]));",
+                  "if (pm.response.code === 201) pm.environment.set('accessToken', pm.response.json().accessToken);"
                 ]
               }
             }

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 8 200 200" role="img" aria-label="Healthmarg">
+  <!-- Chain-bead ring (navy): open at the top where the lotus rises. Rings and links alternate. -->
+  <g fill="none" stroke="#1F2B5E" stroke-width="4.5">
+    <ellipse cx="149.5" cy="70.5" rx="12" ry="8.5" transform="rotate(45 149.5 70.5)"/>
+    <ellipse cx="170" cy="120" rx="12" ry="8.5" transform="rotate(90 170 120)"/>
+    <ellipse cx="149.5" cy="169.5" rx="12" ry="8.5" transform="rotate(135 149.5 169.5)"/>
+    <ellipse cx="100" cy="190" rx="12" ry="8.5"/>
+    <ellipse cx="50.5" cy="169.5" rx="12" ry="8.5" transform="rotate(45 50.5 169.5)"/>
+    <ellipse cx="30" cy="120" rx="12" ry="8.5" transform="rotate(90 30 120)"/>
+    <ellipse cx="50.5" cy="70.5" rx="12" ry="8.5" transform="rotate(135 50.5 70.5)"/>
+  </g>
+  <g fill="#1F2B5E">
+    <ellipse cx="164.7" cy="93.2" rx="10" ry="3.2" transform="rotate(67.5 164.7 93.2)"/>
+    <ellipse cx="164.7" cy="146.8" rx="10" ry="3.2" transform="rotate(112.5 164.7 146.8)"/>
+    <ellipse cx="126.8" cy="184.7" rx="10" ry="3.2" transform="rotate(157.5 126.8 184.7)"/>
+    <ellipse cx="73.2" cy="184.7" rx="10" ry="3.2" transform="rotate(22.5 73.2 184.7)"/>
+    <ellipse cx="35.3" cy="146.8" rx="10" ry="3.2" transform="rotate(67.5 35.3 146.8)"/>
+    <ellipse cx="35.3" cy="93.2" rx="10" ry="3.2" transform="rotate(112.5 35.3 93.2)"/>
+  </g>
+  <!-- Orange accents above the ring's open ends -->
+  <g fill="#F2A33A">
+    <path d="M38 52 l7 -10 l3 12 z"/>
+    <path d="M162 52 l-7 -10 l-3 12 z"/>
+  </g>
+  <!-- Stem and leaves (teal) -->
+  <path d="M100 70 C104 92 101 110 99 128 C97 146 97 160 101 172" fill="none" stroke="#1C9AA0" stroke-width="5" stroke-linecap="round"/>
+  <path d="M101 112 C104 96 116 88 130 88 C127 102 116 111 101 112 Z" fill="#1C9AA0"/>
+  <path d="M99 134 C96 120 84 113 70 113 C73 127 84 135 99 134 Z" fill="#1C9AA0"/>
+  <!-- Lotus petals -->
+  <path d="M100 72 C82 72 70 60 70 42 C86 44 98 56 100 72 Z" fill="#F3A7B7"/>
+  <path d="M100 72 C118 72 130 60 130 42 C114 44 102 56 100 72 Z" fill="#F3A7B7"/>
+  <path d="M100 72 C86 60 86 36 100 18 C114 36 114 60 100 72 Z" fill="#E8728F"/>
+</svg>

@@ -10,13 +10,16 @@ export class ApiRequestError extends Error {
   /** Machine-readable reason from the backend, e.g. `TOKEN_INVALID` or `REFRESH_RACE`. */
   readonly code: string | undefined;
   readonly details: unknown;
+  /** Seconds to wait before trying again, from the Retry-After header (lockouts, rate limits). */
+  readonly retryAfter: number | undefined;
 
-  constructor(status: number, message: string, code?: string, details?: unknown) {
+  constructor(status: number, message: string, code?: string, details?: unknown, retryAfter?: number) {
     super(message);
     this.name = 'ApiRequestError';
     this.status = status;
     this.code = code;
     this.details = details;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -50,7 +53,8 @@ async function request<T>(method: Method, path: string, body?: unknown, options:
 
   if (!res.ok) {
     const error = (data as ApiErrorBody | null)?.error;
-    throw new ApiRequestError(res.status, error?.message ?? res.statusText, error?.code, error?.details);
+    const retryAfter = Number(res.headers.get('Retry-After'));
+    throw new ApiRequestError(res.status, error?.message ?? res.statusText, error?.code, error?.details, retryAfter > 0 ? retryAfter : undefined);
   }
   return data as T;
 }

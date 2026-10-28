@@ -7,10 +7,10 @@ import { REFRESH_COOKIE, clearRefreshCookie, setRefreshCookie } from './cookies.
 const ACCEPTED = { message: 'If the details are valid, we’ve sent you an email with the next step.' };
 
 /** Finished login → refresh token goes into the HttpOnly cookie, never into the JSON body. */
-function sendSession(res, { accessToken, user, refresh, backupCodes }) {
+function sendSession(res, { accessToken, user, refresh, backupCodes }, status = 200) {
   setRefreshCookie(res, refresh.raw, refresh.expiresAt);
   res.set('Cache-Control', 'no-store');
-  res.json({ accessToken, user, ...(backupCodes && { backupCodes }) });
+  res.status(status).json({ accessToken, user, ...(backupCodes && { backupCodes }) });
 }
 
 export function csrf(_req, res) {
@@ -19,8 +19,10 @@ export function csrf(_req, res) {
 }
 
 export async function register(req, res) {
-  await auth.register(req.body, req);
-  res.status(202).json(ACCEPTED);
+  const session = await auth.register(req.body, req);
+  // Email off: the new account is signed in at once. Email on: "check your email" (same answer for everyone).
+  if (session) return sendSession(res, session, 201);
+  return res.status(202).json(ACCEPTED);
 }
 
 export async function verifyEmail(req, res) {

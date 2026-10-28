@@ -6,6 +6,7 @@ function mockFetch(status: number, body: unknown) {
     ok: status >= 200 && status < 300,
     status,
     statusText: 'status text',
+    headers: new Headers(),
     json: () => Promise.resolve(body),
   } as Response);
   vi.stubGlobal('fetch', fetchMock);
@@ -79,6 +80,7 @@ describe('apiClient', () => {
         ok: false,
         status: 502,
         statusText: 'Bad Gateway',
+        headers: new Headers(),
         json: () => Promise.reject(new SyntaxError('Unexpected token <')),
       } as Response),
     );
@@ -97,6 +99,21 @@ describe('apiClient', () => {
     expect(err.message).toBe('Session refresh already in progress');
     expect(err.code).toBe('REFRESH_RACE');
     expect(err.details).toEqual({ a: 1 });
+  });
+
+  it('reads Retry-After so the page can say how long to wait', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'Retry-After': '840' }),
+        json: () => Promise.resolve({ error: { message: 'Too many', code: 'LOGIN_LOCKED' } }),
+      } as Response),
+    );
+    const err = await rejectionOf(apiClient.post('/auth/login'));
+    expect(err.retryAfter).toBe(840);
   });
 
   it('returns null for 204 No Content', async () => {
