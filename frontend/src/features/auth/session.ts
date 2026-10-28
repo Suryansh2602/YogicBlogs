@@ -130,10 +130,20 @@ export function refreshSession(): Promise<SessionResponse | null> {
   return refreshing;
 }
 
+/** Unsaved article drafts kept in this browser (hm-draft-<id>): not left behind on a shared computer. */
+function forgetDraftCopies() {
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith('hm-draft-')) localStorage.removeItem(key);
+  } catch {
+    // Storage blocked: nothing was kept.
+  }
+}
+
 export async function signOutSession() {
   try {
     await cookieRoute<null>('/auth/logout');
   } finally {
+    forgetDraftCopies();
     clearSession();
   }
 }
