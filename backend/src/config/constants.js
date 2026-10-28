@@ -40,6 +40,22 @@ export const MEDIA_VISIBILITY = Object.freeze({
   PROTECTED: 'protected',
 });
 
+/** processing: being cleaned/converted; failed: rejected after upload (failure_reason has a safe code). */
+export const MEDIA_STATUS = Object.freeze({
+  PROCESSING: 'processing',
+  READY: 'ready',
+  FAILED: 'failed',
+});
+
+/** Where a media file lives. local = the server's disk (UPLOAD_DIR); r2 = Cloudflare R2 (later). */
+export const STORAGE_BACKEND = Object.freeze({
+  LOCAL: 'local',
+  R2: 'r2',
+});
+
+/** Image renditions the pipeline produces (WebP widths, px). */
+export const IMAGE_WIDTHS = Object.freeze([480, 960, 1600]);
+
 export const OAUTH_PROVIDERS = Object.freeze({
   GOOGLE: 'google',
 });

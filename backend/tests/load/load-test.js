@@ -14,6 +14,8 @@
 //   login flood       one IP brute-forces POST /auth/login with 1000 connections: at most 30 password
 //                     checks (argon2 is deliberately slow), everything else 429, no errors
 //   forged tokens     GET /users/me with an invalid JWT at full speed: all 401, no errors or timeouts
+//   image serving     GET /media/i/:id/480 (cached lookup + file from disk), image limit lifted
+//   image flood       one IP floods the image route from cold (cache stampede); the limit (1500/15 min) holds
 //
 // Tunables (env): LOAD_DURATION (s, default 8), LOAD_CONNECTIONS (default 1000),
 //                 LOAD_MIN_RATIO (min share of baseline rps, default 0.5), LOAD_P99_MS (default 3000).
@@ -123,7 +125,6 @@ const baselineRps = baseline.requests.average;
     await pingDatabase();
   } catch {
     dbUp = false;
-  } finally {
     await closeDatabase().catch(() => {});
   }
   if (dbUp) {
@@ -149,6 +150,63 @@ const baselineRps = baseline.requests.average;
       ]),
     );
     await api.stop();
+
+    // Public image route: a file streamed from disk per request; the database is asked once per image
+    // (then the in-memory lookup cache answers). The "image flood" scenario starts cold, so it also covers
+    // a stampede of first requests. One temporary image (row + file) is created for the run and removed
+    // afterwards, whatever happens.
+    const { models } = await import('../../src/config/db.js');
+    const { storage } = await import('../../src/services/storage.js');
+    const { v7: uuidv7 } = await import('uuid');
+    const id = uuidv7();
+    const key = `images/load/${id}-480.webp`;
+    try {
+      const sharp = (await import('sharp')).default;
+      const webp = await sharp({ create: { width: 480, height: 320, channels: 3, background: '#e8728f' } }).webp().toBuffer();
+      await storage.put(key, webp);
+      await models.Media.create({
+        id,
+        kind: 'image',
+        visibility: 'public',
+        storageKey: key,
+        variants: { 480: { key, height: 320, bytes: webp.length } },
+        mimeType: 'image/webp',
+        sizeBytes: webp.length,
+        checksumSha256: 'f'.repeat(64),
+        width: 480,
+        height: 320,
+      });
+      const path = `/api/v1/media/i/${id}/480`;
+      const imgApi = await startApi({ redisRateLimit: false, imageRateLimit: 1e9 });
+      const img = await measure(imgApi.url, path, conns);
+      const imgNon200 = Object.entries(codes(img)).filter(([c]) => c !== '200').reduce((n, [, v]) => n + v, 0);
+      rows.push(
+        row('image serving (cached lookup + disk)', img, [
+          ...clean(img),
+          { name: `p99 < ${P99_MS} ms`, ok: img.latency.p99 < P99_MS },
+          { name: 'all 200', ok: imgNon200 === 0 },
+        ]),
+      );
+      await imgApi.stop();
+
+      // One IP hammering images with the real limit (1500 / 15 min): must hold and answer 429.
+      const floodApi = await startApi({ redisRateLimit: false });
+      const flood = await measure(floodApi.url, path, CONNECTIONS, { warmup: false });
+      const fc = codes(flood);
+      rows.push(
+        row('image flood (1 IP)', flood, [
+          ...clean(flood),
+          { name: `p99 < ${P99_MS} ms`, ok: flood.latency.p99 < P99_MS },
+          { name: 'limit held (≤ 1500 through)', ok: (fc['200'] ?? 0) <= 1500 },
+          { name: 'answered with 429', ok: (fc['429'] ?? 0) > 0 },
+        ]),
+      );
+      await floodApi.stop();
+    } finally {
+      await models.Media.destroy({ where: { id }, force: true }).catch(() => {});
+      await storage.remove(key).catch(() => {});
+      await closeDatabase().catch(() => {});
+    }
   } else {
     rows.push({ scenario: 'capacity-health (MySQL)', result: 'SKIPPED: MySQL unreachable (run create-db-users.sql first)' });
   }

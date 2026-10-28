@@ -571,6 +571,11 @@
   background: var(--danger-bg);
 }
 
+.badge--warn {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
 .badge--accent {
   color: var(--accent);
   background: var(--accent-soft);

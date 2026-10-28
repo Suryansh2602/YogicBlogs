@@ -88,8 +88,12 @@ const schema = z
     // Reject passwords found in known breaches (Have I Been Pwned, k-anonymity: only 5 hash chars leave).
     HIBP_ENABLED: bool.default(true),
 
+    // Media storage on the server's disk (git-ignored, never served statically: only via /api/v1/media).
     UPLOAD_DIR: z.string().default('uploads'),
-    MAX_UPLOAD_MB: z.coerce.number().positive().default(5),
+    // Largest image an admin may upload (it's re-encoded to WebP, so the stored files are much smaller).
+    MAX_IMAGE_MB: z.coerce.number().positive().max(50).default(15),
+    // Uploads are refused (507) when the disk holding UPLOAD_DIR has less free space than this.
+    MIN_FREE_DISK_MB: z.coerce.number().int().nonnegative().default(2048),
   })
   .superRefine((cfg, ctx) => {
     const fail = (path, message) => ctx.addIssue({ code: 'custom', path: [path], message });

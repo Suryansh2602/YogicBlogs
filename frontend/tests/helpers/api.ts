@@ -29,7 +29,8 @@ export function mockApi(routes: Record<string, Handler | Handler[]>) {
     const call: Call = {
       method,
       path,
-      body: typeof init.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined,
+      // JSON bodies are parsed; uploads (FormData) are kept as they are so tests can look inside.
+      body: typeof init.body === 'string' ? (JSON.parse(init.body) as unknown) : init.body instanceof FormData ? init.body : undefined,
       headers: (init.headers ?? {}) as Record<string, string>,
     };
     calls.push(call);
@@ -71,3 +72,53 @@ export const makeUser = (overrides: Partial<User> = {}): User => ({
 });
 
 export const session = (user: User = makeUser()) => ({ body: { accessToken: `token-for-${user.id}`, user } });
+
+/**
+ * jsdom's XMLHttpRequest would go to the network. This one sends uploads through the same scripted
+ * fake API (mockApi), reporting progress at 50% and 100% first, like a real upload.
+ */
+export function installFakeXhr() {
+  class FakeXhr {
+    status = 0;
+    statusText = '';
+    responseText = '';
+    withCredentials = false;
+    upload: { onprogress: ((event: ProgressEvent) => void) | null } = { onprogress: null };
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    onabort: (() => void) | null = null;
+    private method = 'GET';
+    private url = '';
+    private headers: Record<string, string> = {};
+    private responseHeaders = new Headers();
+
+    open(method: string, url: string) {
+      this.method = method;
+      this.url = url;
+    }
+    setRequestHeader(name: string, value: string) {
+      this.headers[name] = value;
+    }
+    getResponseHeader(name: string) {
+      return this.responseHeaders.get(name);
+    }
+    abort() {
+      this.onabort?.();
+    }
+    send(body: FormData) {
+      for (const loaded of [50, 100]) this.upload.onprogress?.({ lengthComputable: true, loaded, total: 100 } as ProgressEvent);
+      fetch(this.url, { method: this.method, headers: this.headers, body }).then(
+        async (res) => {
+          this.status = res.status;
+          this.statusText = res.statusText;
+          this.responseHeaders = res.headers;
+          const data: unknown = await res.json();
+          this.responseText = data === undefined ? '' : JSON.stringify(data);
+          this.onload?.();
+        },
+        () => this.onerror?.(),
+      );
+    }
+  }
+  vi.stubGlobal('XMLHttpRequest', FakeXhr);
+}

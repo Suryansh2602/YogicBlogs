@@ -10,6 +10,7 @@ const AdminSignIn = lazy(() => import('./AdminSignIn'));
 const NAV = [
   { to: '/admin', label: 'Overview', deva: 'अवलोकन', end: true },
   { to: '/admin/conditions', label: 'Conditions', deva: 'रोग', end: false },
+  { to: '/admin/media', label: 'Media', deva: 'चित्र', end: false },
   { to: '/admin/users', label: 'Members', deva: 'सदस्य', end: false },
   { to: '/admin/audit', label: 'Audit log', deva: 'लेखा', end: false },
 ];

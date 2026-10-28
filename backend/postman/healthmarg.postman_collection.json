@@ -1511,6 +1511,433 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Media (public)",
+      "description": "Image renditions for pages. Cached for a year; served with CORP same-site and a sandboxing CSP.",
+      "item": [
+        {
+          "name": "Image at 480 px",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media/i/{{mediaId}}/480",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "media",
+                "i",
+                "{{mediaId}}",
+                "480"
+              ]
+            },
+            "description": "Widths: 480, 960, 1600 (or the original width when the image is smaller)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 WebP', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.include('image/webp'); });",
+                  "pm.test('cached for a year', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('immutable'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: path traversal in width",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media/i/{{mediaId}}/..%2F..%2F.env",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "media",
+                "i",
+                "{{mediaId}}",
+                "..%2F..%2F.env"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin · Media",
+      "description": "Needs an admin session that passed 2FA (Auth → Admin login → 2FA code). Uploads are multipart: in \"Upload image\", click the file field and choose an image. The uploaded id is saved as mediaId. Limits: one file, up to MAX_IMAGE_MB (15 MB by default; the list returns it as limits.maxImageMb), 60 uploads per admin per hour. Postman always sends Content-Length (uploads without one get 411).",
+      "item": [
+        {
+          "name": "Upload image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pick a JPEG, PNG or WebP from your computer."
+                },
+                {
+                  "key": "altText",
+                  "value": "Child’s pose on a yoga mat",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/media/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media",
+                "images"
+              ]
+            },
+            "description": "The file type is read from its bytes (JPEG, PNG, WebP only). Stored as WebP at 480/960/1600 px without EXIF/GPS. 201 = new; 200 + deduplicated:true = this exact file was already uploaded."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 or 200 (duplicate)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const { media } = pm.response.json();",
+                  "pm.test('has web sizes', () => pm.expect(media.variants.length).to.be.above(0));",
+                  "pm.environment.set('mediaId', media.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload the same image again (deduplicated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pick a JPEG, PNG or WebP from your computer."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/media/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media",
+                "images"
+              ]
+            },
+            "description": "Choose the same file as above."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 deduplicated', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().deduplicated).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List images",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/media?kind=image&page=1&pageSize=24",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "kind",
+                  "value": "image"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "24"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with items', () => pm.expect(pm.response.json().items).to.be.an('array'));",
+                  "pm.test('tells the page the upload limit', () => pm.expect(pm.response.json().limits.maxImageMb).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit alt text",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"altText\": \"Sunrise over the ghats\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/media/{{mediaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media",
+                "{{mediaId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/media/{{mediaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media",
+                "{{mediaId}}"
+              ]
+            },
+            "description": "409 MEDIA_IN_USE (with counts) while an article or condition uses it."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 or 409 in use', () => pm.expect(pm.response.code).to.be.oneOf([204, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: a non-image renamed .jpg",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose any PDF, SVG, GIF or text file, even if renamed to .jpg."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/media/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media",
+                "images"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('415 names the real type', () => { pm.response.to.have.status(415); pm.expect(pm.response.json().error.code).to.eql('UNSUPPORTED_FILE_TYPE'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attack: smuggled field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pick a JPEG, PNG or WebP from your computer."
+                },
+                {
+                  "key": "uploadedById",
+                  "value": "00000000-0000-7000-8000-000000000000",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/media/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "media",
+                "images"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": []

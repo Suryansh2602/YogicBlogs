@@ -43,3 +43,38 @@ export function createAuthLimiter(store) {
     message: { error: { message: 'Too many attempts, please try again later', code: 'RATE_LIMITED' } },
   });
 }
+
+const ONE_HOUR = 60 * 60 * 1000;
+
+/**
+ * Image uploads per admin (not per IP: the route is behind sign-in), so a stolen or runaway session
+ * can't fill the disk or hog the image worker. Fails closed like the auth limiter.
+ */
+export function createUploadLimiter(store, limit = 60) {
+  return rateLimit({
+    windowMs: ONE_HOUR,
+    limit,
+    keyGenerator: (req) => `user:${req.auth.userId}`,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    store,
+    passOnStoreError: false,
+    message: { error: { message: `You've uploaded ${limit} files in the last hour, the most allowed. Please wait a while and try again.`, code: 'UPLOAD_LIMIT' } },
+  });
+}
+
+/**
+ * Public image requests, kept apart from the general limit: one article page loads several images,
+ * and browsers then cache them for a year. Fails open (images aren't a security boundary).
+ */
+export function createImageLimiter(store, limit = 1500) {
+  return rateLimit({
+    windowMs: FIFTEEN_MINUTES,
+    limit,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    store,
+    passOnStoreError: true,
+    message: { error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' } },
+  });
+}

@@ -1,7 +1,7 @@
 // Content tables: conditions, articles, media, and per-user reading data for the user dashboard.
 import { DataTypes, Model } from 'sequelize';
 import { v7 as uuidv7 } from 'uuid';
-import { ACCESS_LEVEL, ARTICLE_STATUS, MEDIA_KIND, MEDIA_VISIBILITY, SLUG_PATTERN } from '../../config/constants.js';
+import { ACCESS_LEVEL, ARTICLE_STATUS, MEDIA_KIND, MEDIA_STATUS, MEDIA_VISIBILITY, SLUG_PATTERN, STORAGE_BACKEND } from '../../config/constants.js';
 
 const uuidPk = () => ({ type: DataTypes.UUID, primaryKey: true, defaultValue: () => uuidv7() });
 // Uniqueness is enforced in MySQL among non-deleted rows only (generated `alive` column),
@@ -55,7 +55,7 @@ export function initContentModels(sequelize) {
       },
       // Server-generated path/key in storage (never the client's file name).
       storageKey: { type: DataTypes.STRING(512), allowNull: false, unique: true },
-      // Resized image renditions, e.g. { "480": "images/x-480.webp", "960": ... }.
+      // Image renditions by width: { "480": { key: "images/2026/10/<id>-480.webp", height, bytes }, ... }.
       variants: { type: DataTypes.JSON, allowNull: true },
       originalName: { type: DataTypes.STRING(255), allowNull: true },
       mimeType: { type: DataTypes.STRING(100), allowNull: false },
@@ -65,6 +65,21 @@ export function initContentModels(sequelize) {
       height: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
       durationSeconds: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
       altText: { type: DataTypes.STRING(255), allowNull: true },
+      status: {
+        type: DataTypes.STRING(12),
+        allowNull: false,
+        defaultValue: MEDIA_STATUS.READY,
+        validate: { isIn: [Object.values(MEDIA_STATUS)] },
+      },
+      failureReason: { type: DataTypes.STRING(64), allowNull: true },
+      // Tiny blurred preview shown while the real image loads (data:image/webp;base64,…).
+      placeholder: { type: DataTypes.STRING(700), allowNull: true },
+      storageBackend: {
+        type: DataTypes.STRING(8),
+        allowNull: false,
+        defaultValue: STORAGE_BACKEND.LOCAL,
+        validate: { isIn: [Object.values(STORAGE_BACKEND)] },
+      },
     },
     {
       sequelize,

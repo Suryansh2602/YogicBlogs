@@ -4,7 +4,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { isRedisEnabled } from './config/redis.js';
-import { createApiLimiter, createAuthLimiter, createRedisStore } from './middlewares/rateLimiter.js';
+import { createApiLimiter, createAuthLimiter, createImageLimiter, createRedisStore, createUploadLimiter } from './middlewares/rateLimiter.js';
+import { publicImageRouter } from './modules/media/media.routes.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 import { createRoutes } from './routes.js';
 
@@ -14,8 +15,9 @@ import { createRoutes } from './routes.js';
  *   (default: on when Redis is enabled, outside tests; otherwise an in-memory store).
  * @param {number} [options.apiRateLimit] Override the per-IP request limit. Only for load tests that
  *   measure raw capacity; never set in the running server.
+ * @param {number} [options.imageRateLimit] Same, for the public image route.
  */
-export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), apiRateLimit } = {}) {
+export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), apiRateLimit, imageRateLimit } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -23,6 +25,8 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
   if (env.isProduction) app.set('trust proxy', 1);
 
   app.use(helmet());
+  // Public images have their own limit (a page loads several), so they're mounted before the general one.
+  app.use('/api/v1/media/i', createImageLimiter(redisRateLimit ? createRedisStore('img') : undefined, imageRateLimit), publicImageRouter);
   // Limit before parsing bodies, and on every path, so floods and route scans are throttled too.
   app.use(createApiLimiter(redisRateLimit ? createRedisStore('api') : undefined, apiRateLimit));
   // The frontend is a separate app on its own origin: only origins on the allow-list may call the API.
@@ -53,7 +57,8 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
   app.use(cookieParser());
 
   const strictLimiter = createAuthLimiter(redisRateLimit ? createRedisStore('auth') : undefined);
-  app.use('/api/v1', createRoutes({ strictLimiter }));
+  const uploadLimiter = createUploadLimiter(redisRateLimit ? createRedisStore('upload') : undefined);
+  app.use('/api/v1', createRoutes({ strictLimiter, uploadLimiter }));
 
   app.use(notFound);
   app.use(errorHandler);

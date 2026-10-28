@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -19,6 +21,8 @@ export default defineConfig({
       HIBP_ENABLED: 'false',
       // Most auth tests cover the email flows; tests/db/auth-no-email.test.js covers EMAIL_ENABLED=false.
       EMAIL_ENABLED: 'true',
+      // Never the real uploads folder.
+      UPLOAD_DIR: join(tmpdir(), 'healthmarg-unit-uploads'),
     },
     // Thresholds are enforced on the merged unit + DB coverage: see vitest.coverage.config.js.
     coverage: { provider: 'v8', include: ['src/**/*.js'], exclude: ['src/server.js', 'src/db/cli.js', 'src/db/seeders/**'] },

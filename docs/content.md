@@ -67,7 +67,8 @@ flowchart TB
 | Video | MP4 (H.264/AAC), WebM (VP9/Opus) | 150 MB, 10 min, 1080p | Signed links that expire, `preload="none"`, poster first |
 
 - **Server load:** one file is processed at a time. If 3 are already waiting, an upload gets "busy, try again" (503 + Retry-After). Uploads are refused when the disk has under 2 GB free.
-- **Deleting media:** media that's still used in an article can't be deleted (409 "used in N articles").
+- **Deleting media:** media that's still used in an article can't be deleted (409 "used by N articles"). Covers and condition images are checked now; use inside article bodies is added with the articles API (branch 3).
+- **Built in branch 2 (images):** a declared size over the limit is refused from the headers alone (413) and the connection is closed, so the body is never read. Files are parsed by multer into `UPLOAD_DIR/tmp` with random names (1 file, at most 2 parts, 2 KB of text) and the temp file is always deleted. The same file uploaded twice returns the first copy (SHA-256). Uploads must declare their size (411 otherwise), the server waits long enough for the largest image over a 1 Mbit/s uplink (150 s for 15 MB; headers are still cut at 15 s), each processing step has a 30 s limit, and leftover temp files from a crash are swept at startup and hourly. The same file uploaded twice at once is still stored once (the duplicate check runs again inside the one-at-a-time queue). The public image route answers from a small in-memory lookup cache (1000 images, 60 s, simultaneous misses share one query) and is limited separately from the rest of the API (1500 requests per 15 min per IP), because one page loads several images and browsers then keep them for a year. Downloads are streamed with `pipeline`, so a visitor who leaves mid-download never leaves a file open, and a miss is never cached. **Known trade-off:** browsers that already showed an image may keep it for up to a year after it is deleted (URLs are unguessable); when a CDN is added, deleting must also purge it there.
 
 ## 4. References between articles
 
@@ -197,7 +198,7 @@ The link tables use **RESTRICT** foreign keys. Articles and media are soft-delet
 | # | Branch | Delivers | Done when |
 |---|---|---|---|
 | 1 | `feature/conditions` | Conditions (what each article is about): admin create/edit/delete, public list, admin page | Real-DB, attack and load tests; Postman |
-| 2 | `feature/media-images` | Image upload pipeline (sharp → WebP, EXIF/GPS stripped), media library page | Attack suite: SVG, polyglots, pixel bombs, spoofed types, GPS photo comes out clean |
+| 2 | `feature/media-images` ✅ built | Image upload pipeline (sharp → WebP, EXIF/GPS stripped), media library page | Attack suite: SVG, polyglots, pixel bombs, spoofed types, GPS photo comes out clean |
 | 3 | `feature/articles-api` | Article drafts, autosave, publish checklist, revisions, references, public article API with caching | Real-DB + attack tests (hostile JSON, links, 1 MB limit, draft never public); load test |
 | 4 | `feature/article-editor` | The editor (TipTap 3), all blocks, thumbnail designer, references panel, preview, reader page | Contract test (editor ⇄ API schema), contrast test for new tones, bundle budgets, end-to-end publish |
 | 5 | `feature/editor-speech` | Dictation + listen back in the editor | Mocked speech tests; Chrome/Edge manual check; Firefox fallback |
