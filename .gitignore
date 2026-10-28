@@ -18,6 +18,9 @@ backend/logs/*
 !backend/logs/.gitkeep
 *.log
 
+# Local-only generated files (real secrets)
+backend/.local/
+
 # Editors / OS
 .vscode/*
 !.vscode/extensions.json

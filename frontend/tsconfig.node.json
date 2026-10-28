@@ -1,0 +1,24 @@
+// Build tooling that runs in Node (vite.config.ts and config/).
+{
+  "compilerOptions": {
+    "noEmit": true,
+    // vite.config.ts is loaded by Node directly, so its relative imports keep the .ts extension.
+    "allowImportingTsExtensions": true,
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["vite.config.ts", "config"]
+}

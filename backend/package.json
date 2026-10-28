@@ -1,0 +1,63 @@
+{
+  "name": "healthmarg-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REST API for Healthmarg",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "qa": "npm run lint && npm run test:coverage && npm run test:db && npm run audit:prod",
+    "test:db": "vitest run -c vitest.db.config.js",
+    "db:migrate": "node --env-file-if-exists=.env src/db/cli.js up",
+    "db:migrate:undo": "node --env-file-if-exists=.env src/db/cli.js down",
+    "db:migrate:status": "node --env-file-if-exists=.env src/db/cli.js status",
+    "db:seed": "node --env-file-if-exists=.env src/db/cli.js seed",
+    "test:load": "node tests/load/load-test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "mysql2": "^3.24.6",
+    "pino": "^10.4.0",
+    "rate-limit-redis": "^6.0.1",
+    "redis": "^6.3.0",
+    "sequelize": "^6.37.8",
+    "umzug": "^3.8.3",
+    "uuid": "^14.0.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^5.0.5",
+    "autocannon": "^8.0.0",
+    "eslint": "^10.13.0",
+    "eslint-plugin-security": "^4.2.0",
+    "globals": "^17.13.0",
+    "pino-pretty": "^13.2.0",
+    "supertest": "^7.3.1",
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "sequelize": {
+      "uuid": "^11.1.1"
+    },
+    "hyperid": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

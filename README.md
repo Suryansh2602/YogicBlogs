@@ -1,4 +1,4 @@
-# Nerve and Nector
+# Healthmarg
 
 A yoga and Ayurveda wellness web app. Signed-in users read or listen to articles on diseases, their causes and Ayurvedic solutions. Subscribers get personal routine guidance. Admins write and design articles and upload photos.
 
