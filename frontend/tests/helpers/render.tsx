@@ -50,5 +50,6 @@ export async function preloadPages() {
     import('../../src/pages/admin/AdminAudit'),
     import('../../src/pages/admin/AdminConditions'),
     import('../../src/pages/admin/AdminMedia'),
+    import('../../src/pages/RitucharyaPage'),
   ]);
 }

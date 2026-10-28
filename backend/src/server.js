@@ -1,3 +1,6 @@
+// Load backend/.env first, before any module reads the settings: lets `nodemon src/server.js` (or plain
+// `node src/server.js`) work without --env-file. Variables already set (e.g. by the host) win.
+import 'dotenv/config';
 import { createApp } from './app.js';
 import { createHttpServer, requestTimeoutFor } from './httpServer.js';
 import { env } from './config/env.js';

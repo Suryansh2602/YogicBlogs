@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
     build: {
       // No source maps in production: they would publish the original source.
       sourcemap: false,
+      // Which chunks each page loads: read by scripts/check-bundle-size.mjs (editor budget, and proof
+      // that reader pages never load the editor). Lives in dist/.vite/, not served by the app's routes.
+      manifest: true,
     },
     test: {
       environment: 'jsdom',

@@ -9,13 +9,16 @@ import { BlurReveal } from '../components/motion/BlurReveal';
 import { ShinyText } from '../components/motion/ShinyText';
 import { SpotlightCard } from '../components/motion/SpotlightCard';
 import { useAuth } from '../features/auth/useAuth';
+import { TodayPanel } from '../features/ritu/TodayPanel';
 import './pages.css';
 
 const PILLARS = [
   {
-    deva: 'निदान',
-    title: 'Understand the root',
-    text: 'Clear explanations of what causes common conditions, from the body and from daily habits.',
+    deva: 'ऋतुचर्या',
+    title: 'Life by the seasons',
+    text: 'Ritucharya: how Vata, Pitta and Kapha shift through the six ritus, and what to eat, practise and avoid in each.',
+    to: '/ritucharya',
+    cta: 'Explore the six ritus',
   },
   {
     deva: 'चिकित्सा',
@@ -37,7 +40,9 @@ export default function HomePage() {
         <Aurora />
         <Nakshatra />
         <Mandala size={720} className="hero__mandala" />
-        <div className="container hero__inner">
+        <div className="container hero__split">
+          <TodayPanel />
+          <div className="hero__inner">
           <div className="hero__emblem">
             <Yantra size={190} className="hero__yantra" />
             <LogoMark size={88} animated className="hero__mark" />
@@ -80,6 +85,7 @@ export default function HomePage() {
           <p className="hero__tagline rise-in" style={{ '--delay': '1000ms' } as CSSProperties}>
             Break limits. Find ease.
           </p>
+          </div>
         </div>
       </section>
 
@@ -96,6 +102,11 @@ export default function HomePage() {
               <span className="deva pillar__deva">{p.deva}</span>
               <h3>{p.title}</h3>
               <p className="muted">{p.text}</p>
+              {'to' in p && (
+                <Link to={p.to} className="pillar__link">
+                  {p.cta} <span aria-hidden="true">→</span>
+                </Link>
+              )}
             </SpotlightCard>
           ))}
         </div>
