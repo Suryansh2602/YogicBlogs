@@ -12,8 +12,10 @@ export default defineConfig({
     fileParallelism: false,
     globalSetup: ['./tests/db/globalSetup.js'],
     restoreMocks: true,
+    coverage: { provider: 'v8', include: ['src/**/*.js'], exclude: ['src/server.js', 'src/db/cli.js', 'src/db/seeders/**'] },
     testTimeout: 20_000,
     hookTimeout: 60_000,
-    env: { NODE_ENV: 'test' },
+    // Fixed setup code so the admin bootstrap can be tested; never a real value.
+    env: { NODE_ENV: 'test', ADMIN_SETUP_CODE: 'test-only-admin-setup-code' },
   },
 });

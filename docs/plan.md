@@ -75,10 +75,10 @@ Foundation first: every later feature reads and writes this schema, so it has to
 ### P1 · Authentication & security
 | # | Branch | Delivers | Owner action |
 |---|---|---|---|
-| 5 | `feature/auth-core` | argon2id, `jose` access JWT (15 min, `token_version`), refresh rotation + reuse detection (HttpOnly cookie + CSRF), login lockout (Redis), `authenticate` / `authorize`, audit service, route-guard test, `create-admin` script | — |
-| 6 | `feature/auth-email-flows` | nodemailer + templates, email verification, forgot/reset password, breached-password check | — |
-| 7 | `feature/recaptcha-v3` | `requireRecaptcha(action, minScore)`, test mode for automated tests | **Create a reCAPTCHA v3 key** (localhost + prod domain) |
-| 8 | `feature/auth-2fa` | TOTP (`otpauth`), AES-256-GCM secret, backup codes, login step-up, mandatory for admins, session list | Back up `TWO_FACTOR_ENC_KEY` offline |
+| 5 | `feature/auth-core` ✅ built | Also absorbed steps 6–8 (email flows, reCAPTCHA v3, 2FA): argon2id + HIBP, `jose` access JWT (15 min, `token_version`), refresh rotation + reuse detection (HttpOnly cookie + CSRF), lockout, `authenticate` / `requireRole` / `requireMfa`, audit service, email verification + reset (dev outbox), TOTP 2FA with backup codes (mandatory for admins), `/users/me`, admin bootstrap (`/admin/setup` + setup code), admin stats/users/audit API. 188 tests, 94.7% merged coverage, load + attack suites | Later: reCAPTCHA keys, SMTP |
+| 6 | ~~`feature/auth-email-flows`~~ done in #5 | nodemailer + templates, email verification, forgot/reset password, breached-password check | — |
+| 7 | `feature/recaptcha-v3` (server side done in #5; frontend hook in #10) | `requireRecaptcha(action, minScore)`, test mode for automated tests | **Create a reCAPTCHA v3 key** (localhost + prod domain) |
+| 8 | `feature/auth-2fa` (TOTP, backup codes, admin enforcement done in #5; session list + disable later) | TOTP (`otpauth`), AES-256-GCM secret, backup codes, login step-up, mandatory for admins, session list | Back up `TWO_FACTOR_ENC_KEY` offline |
 | 9 | `feature/google-oauth` | `openid-client` PKCE flow, safe linking rules | **Create a Google OAuth client** + consent screen |
 | 10 | `feature/frontend-auth` | Login, Register, Verify, Forgot/Reset, 2FA pages; auth context; route guards; reCAPTCHA hook | — |
 

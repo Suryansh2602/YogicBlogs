@@ -24,7 +24,7 @@ export function createApiLimiter(store, limit = 300) {
     legacyHeaders: false,
     store,
     passOnStoreError: true,
-    message: { error: { message: 'Too many requests, please try again later' } },
+    message: { error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' } },
   });
 }
 
@@ -35,11 +35,11 @@ export function createApiLimiter(store, limit = 300) {
 export function createAuthLimiter(store) {
   return rateLimit({
     windowMs: FIFTEEN_MINUTES,
-    limit: 10,
+    limit: 30, // per IP; per-account lockout (lockout.service.js) is the main brute-force guard. Many users share one IP behind mobile CGNAT.
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     store,
     passOnStoreError: false,
-    message: { error: { message: 'Too many attempts, please try again later' } },
+    message: { error: { message: 'Too many attempts, please try again later', code: 'RATE_LIMITED' } },
   });
 }
