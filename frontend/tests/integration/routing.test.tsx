@@ -1,19 +1,23 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockApi, session } from '../helpers/api';
-import { preloadPages, rememberSignedIn, renderApp } from '../helpers/render';
+import { preloadPages, rememberSignedIn, renderApp, siteHeader } from '../helpers/render';
 
 beforeAll(preloadPages, 60_000);
 
 describe('app routing', () => {
-  it('renders the home page inside the layout without calling the API for a new visitor', async () => {
-    const api = mockApi({});
+  it('renders the home page inside the layout; a new visitor triggers no sign-in check, only the public article list', async () => {
+    const api = mockApi({ 'GET /articles': { body: { items: [], nextCursor: null } } });
     renderApp('/');
     expect(screen.getByRole('heading', { level: 1, name: /Ancient wisdom for/ })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: 'Join free' })).toBeInTheDocument();
-    expect(api.calls).toHaveLength(0);
+    expect(await within(siteHeader()).findByRole('link', { name: 'Join free' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(api.calls.length).toBeGreaterThan(0);
+    });
+    // StrictMode starts effects twice in tests (the first request is cancelled); a real browser asks once.
+    expect(new Set(api.calls.map((c) => `${c.method} ${c.path}`))).toEqual(new Set(['GET /articles?limit=4']));
   });
 
   it('shows the not-found page for unknown paths and links home', async () => {

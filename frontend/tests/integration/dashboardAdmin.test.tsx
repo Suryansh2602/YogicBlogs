@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { apiError, makeUser, mockApi, session } from '../helpers/api';
-import { preloadPages, rememberSignedIn, renderApp } from '../helpers/render';
+import { preloadPages, rememberSignedIn, renderApp, siteHeader } from '../helpers/render';
 
 const restore = (user = makeUser()) => ({ 'GET /auth/csrf': { body: { csrfToken: 'c' } }, 'POST /auth/refresh': session(user) });
 const admin = makeUser({ id: '0190a1b2-c3d4-7000-8000-0000000000aa', email: 'guru@example.com', displayName: 'Guru Admin', role: 'admin', twoFactorEnabled: true });
@@ -82,7 +82,7 @@ describe('member dashboard', () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/');
     });
-    expect(await screen.findByRole('link', { name: 'Join free' })).toBeInTheDocument();
+    expect(await within(siteHeader()).findByRole('link', { name: 'Join free' })).toBeInTheDocument();
   });
 });
 

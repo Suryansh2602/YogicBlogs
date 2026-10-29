@@ -1,9 +1,21 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { BlurReveal } from '../components/motion/BlurReveal';
 import { RITU_ORDER, rituOn, type RituId } from '../features/ritu/calendar';
 import { RituArt } from '../features/ritu/RituArt';
-import { capitalize, MEDICAL_NOTE, MEDICAL_NOTE_HI, PRANAYAMA_CAUTION, RITUS, RITUS_HI, RITUSANDHI_HI, rituById, SOURCES, type DoshaState, type Ritu, type SourceId } from '../features/ritu/ritucharya';
+import {
+  capitalize,
+  MEDICAL_NOTE,
+  MEDICAL_NOTE_HI,
+  PRANAYAMA_CAUTION,
+  RITUS,
+  RITUS_HI,
+  RITUSANDHI_HI,
+  rituById,
+  SOURCES,
+  type DoshaState,
+  type Ritu,
+  type SourceId,
+} from '../features/ritu/ritucharya';
 import { dateIn } from '../features/ritu/sun';
 import '../features/ritu/ritu.css';
 
@@ -247,12 +259,12 @@ export default function RitucharyaPage() {
           <span className="deva dandas">ऋतुचर्या</span> Ritucharya
         </p>
         <h1>
-          <BlurReveal text="Living in tune with the six seasons" />
+          Living in tune with the six seasons
         </h1>
         <p className="ritucharya__lead">
-          Ayurveda divides the year into six ritus of about two months each. As the sun, heat, rain and cold change, so do our digestion, strength
-          and the balance of Vata, Pitta and Kapha. <strong>Ritucharya</strong> is the regimen for each season: what to eat, how to move and
-          breathe, and how to protect your health before problems begin. <SourceMark id="charaka" /> <SourceMark id="thakkar2011" />
+          Ayurveda divides the year into six ritus of about two months each. As the sun, heat, rain and cold change, so do our digestion, strength and the balance of Vata, Pitta
+          and Kapha. <strong>Ritucharya</strong> is the regimen for each season: what to eat, how to move and breathe, and how to protect your health before problems begin.{' '}
+          <SourceMark id="charaka" /> <SourceMark id="thakkar2011" />
         </p>
         <div className="ritucharya__halves">
           <p>
@@ -265,37 +277,39 @@ export default function RitucharyaPage() {
             <strong>Ritusandhi</strong>: the last week of one ritu and the first of the next. Change habits gradually, not overnight. <SourceMark id="ashtanga" />
           </p>
         </div>
-        <div className="chips ritucharya__lang" role="group" aria-label="Language / भाषा">
-          <button
-            type="button"
-            className="chip"
-            aria-pressed={!hindi}
-            onClick={() => {
-              setParams({ ritu: selected }, { replace: true, preventScrollReset: true });
-            }}
-          >
-            English
-          </button>
-          <button
-            type="button"
-            className="chip"
-            lang="hi"
-            aria-pressed={hindi}
-            onClick={() => {
-              setParams({ ritu: selected, lang: 'hi' }, { replace: true, preventScrollReset: true });
-            }}
-          >
-            हिन्दी
-          </button>
+        <div className="ritucharya__bar">
+          <p className="ritucharya__now">
+            Now: <strong>{rituById(current).name}</strong> ({rituById(current).english}). Choose any season below.
+          </p>
+          <div className="segmented" role="group" aria-label="Language / भाषा">
+            <button
+              type="button"
+              className="segmented__option"
+              aria-pressed={!hindi}
+              onClick={() => {
+                setParams({ ritu: selected }, { replace: true, preventScrollReset: true });
+              }}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              className="segmented__option"
+              lang="hi"
+              aria-pressed={hindi}
+              onClick={() => {
+                setParams({ ritu: selected, lang: 'hi' }, { replace: true, preventScrollReset: true });
+              }}
+            >
+              हिन्दी
+            </button>
+          </div>
         </div>
         {hindi && (
           <p className="ritucharya__sandhi-hi" lang="hi">
             <strong>💡 ऋतु संधि (सुनहरा नियम):</strong> {RITUSANDHI_HI}
           </p>
         )}
-        <p className="ritucharya__now">
-          Now: <strong>{rituById(current).name}</strong> ({rituById(current).english}). Choose any season below.
-        </p>
       </section>
 
       <section className="container" aria-label="The six seasons">
@@ -368,11 +382,15 @@ export default function RitucharyaPage() {
         <div className="ritu-principles">
           <blockquote>
             <p className="deva">स्थिरसुखमासनम्</p>
-            <p>A posture should be steady and easy. (Yoga Sutra 2.46) Choose practices your body can hold calmly in each season. <SourceMark id="yogaSutra" /></p>
+            <p>
+              A posture should be steady and easy. (Yoga Sutra 2.46) Choose practices your body can hold calmly in each season. <SourceMark id="yogaSutra" />
+            </p>
           </blockquote>
           <blockquote>
             <p className="deva">युक्ताहारविहारस्य</p>
-            <p>Yoga is for one who is moderate in eating, activity and sleep. (Bhagavad Gita 6.17) Ritucharya is moderation, adjusted to the season. <SourceMark id="gita" /></p>
+            <p>
+              Yoga is for one who is moderate in eating, activity and sleep. (Bhagavad Gita 6.17) Ritucharya is moderation, adjusted to the season. <SourceMark id="gita" />
+            </p>
           </blockquote>
         </div>
       </section>

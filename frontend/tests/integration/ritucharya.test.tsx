@@ -18,54 +18,80 @@ const atDate = (iso: string) => {
   vi.useFakeTimers({ toFake: ['Date'], now: new Date(iso) });
 };
 
-describe('home: Today panel', () => {
+const noArticles = { 'GET /articles': { body: { items: [], nextCursor: null } } };
+
+/** The season strip's readable copy (the marquee's second copy is hidden from assistive tech). */
+const strip = async () => within(await screen.findByRole('region', { name: /^Today:/ })).getByRole('list');
+
+describe('season strip (under the header, every page)', () => {
   it('shows the date, the current ritu and sunrise/sunset for New Delhi, with a link to that season', async () => {
     atDate('2026-10-28T06:00:00Z'); // 11:30 in India
-    mockApi({});
+    mockApi(noArticles);
     renderApp('/');
-    const panel = await screen.findByRole('complementary', { name: /Today/ });
-    expect(within(panel).getByText('Wednesday, 28 October 2026')).toBeInTheDocument();
-    expect(within(panel).getByText(/^Sharad/)).toBeInTheDocument();
-    expect(within(panel).getByText(/^6:\d\d\s?am$/i)).toBeInTheDocument();
-    expect(within(panel).getByText(/^5:\d\d\s?pm$/i)).toBeInTheDocument();
-    expect(within(panel).getByRole('link', { name: 'Living well in Sharad →' })).toHaveAttribute('href', '/ritucharya?ritu=sharad');
-    // The first card is now Ritucharya.
+    const items = await strip();
+    expect(within(items).getByText('Wednesday, 28 October 2026')).toBeInTheDocument();
+    expect(within(items).getByText('Sharad')).toBeInTheDocument();
+    expect(within(items).getByText(/^6:\d\d\s?am$/i)).toBeInTheDocument();
+    expect(within(items).getByText(/^5:\d\d\s?pm$/i)).toBeInTheDocument();
+    expect(within(items).getByRole('link', { name: 'Living well in Sharad →' })).toHaveAttribute('href', '/ritucharya?ritu=sharad');
+    // The home page features this season and the six-ritu guide.
+    expect(screen.getByRole('link', { name: /This seasons*Sharad/ })).toHaveAttribute('href', '/ritucharya?ritu=sharad');
     expect(screen.getByRole('link', { name: /Explore the six ritus/ })).toHaveAttribute('href', '/ritucharya');
+  });
+
+  it('is on other pages too, and can be paused', async () => {
+    mockApi({});
+    renderApp('/ritucharya');
+    await strip();
+    const pause = screen.getByRole('button', { name: 'Pause the season strip' });
+    expect(pause).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(pause);
+    expect(screen.getByRole('button', { name: 'Play the season strip' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('notes Ritusandhi when the seasons are changing', async () => {
     atDate('2026-09-20T06:00:00Z');
-    mockApi({});
+    mockApi(noArticles);
     renderApp('/');
-    expect(await screen.findByText(/Varsha is giving way to Sharad/)).toBeInTheDocument();
+    expect(within(await strip()).getByText(/Varsha is giving way to Sharad/)).toBeInTheDocument();
   });
 
   it('uses the visitor’s location only when asked, and explains a refusal', async () => {
-    mockApi({});
+    mockApi(noArticles);
     const getCurrentPosition = vi.fn((_ok: PositionCallback, fail?: PositionErrorCallback | null) => {
       fail?.({ code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: 'denied' });
     });
     fakeGeolocation(getCurrentPosition);
     renderApp('/');
-    await screen.findByRole('complementary', { name: /Today/ });
+    const items = await strip();
     expect(getCurrentPosition).not.toHaveBeenCalled(); // never asked on page load
-    await userEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+    await userEvent.click(within(items).getByRole('button', { name: 'Use my location' }));
     expect(getCurrentPosition).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(/Location wasn’t shared, so times are for New Delhi/)).toBeInTheDocument();
   });
 
   it('switches to the visitor’s location when they share it, and remembers it', async () => {
-    mockApi({});
+    mockApi(noArticles);
     const getCurrentPosition = vi.fn((ok: PositionCallback) => {
       ok({ coords: { latitude: 19.076, longitude: 72.8777 } } as GeolocationPosition);
     });
     fakeGeolocation(getCurrentPosition);
     renderApp('/');
-    await userEvent.click(await screen.findByRole('button', { name: 'Use my location' }));
-    expect(await screen.findByText(/For Your location/)).toBeInTheDocument();
+    await userEvent.click(within(await strip()).getByRole('button', { name: 'Use my location' }));
+    expect(await within(await strip()).findByText(/Your location/)).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem('hm-place') ?? '{}')).toMatchObject({ latitude: 19.08, longitude: 72.88 });
-    await userEvent.click(screen.getByRole('button', { name: 'Use New Delhi' }));
+    await userEvent.click(within(await strip()).getByRole('button', { name: 'Use New Delhi' }));
     expect(localStorage.getItem('hm-place')).toBeNull();
+  });
+
+  it('shows its content once to screen readers: the marquee copy is hidden and out of the tab order', async () => {
+    mockApi(noArticles);
+    renderApp('/');
+    const region = await screen.findByRole('region', { name: /^Today:/ });
+    const lists = region.querySelectorAll('ul');
+    expect(lists).toHaveLength(2);
+    expect(lists[1]).toHaveAttribute('aria-hidden', 'true');
+    for (const control of lists[1]?.querySelectorAll('a, button') ?? []) expect(control).toHaveAttribute('tabindex', '-1');
   });
 });
 

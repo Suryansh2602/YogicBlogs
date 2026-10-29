@@ -4,7 +4,6 @@ import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { TextField } from '../../components/ui/TextField';
-import { Mandala } from '../../components/brand/Mandala';
 import { ArticleCard } from '../../features/articles/ArticleCard';
 import { readerApi } from '../../features/articles/api';
 import type { ArticleListItem } from '../../features/articles/types';
@@ -150,9 +149,8 @@ export default function ArticlesPage() {
   return (
     <section className="articles-page container">
       <header className="articles-hero">
-        <Mandala size={260} spin={false} className="articles-hero__mandala" />
         <p className="eyebrow">
-          <span className="deva">लेख</span> Articles
+          <span className="deva dandas">लेख</span> Articles
         </p>
         <h1>Read and heal</h1>
         <p className="muted articles-hero__lead">Clear explanations of common conditions, and gentle Ayurvedic and yogic ways to ease them.</p>

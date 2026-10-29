@@ -6,34 +6,26 @@
 }
 
 .articles-hero {
-  position: relative;
-  isolation: isolate;
   display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-  padding-block: var(--space-5) var(--space-6);
-  text-align: center;
+  gap: var(--space-3);
+  padding-block: clamp(2rem, 5vw, 3.5rem) var(--space-5);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border);
 }
 
-/* Fine line art behind the heading: very faint, never behind body text. */
-.articles-hero__mandala {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: -1;
-  color: var(--yantra);
-  opacity: 0.45;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
+.articles-hero .eyebrow,
 .articles-hero h1 {
   margin: 0;
 }
 
+.articles-hero h1 {
+  font-size: clamp(2.2rem, 1.4rem + 3vw, 3.4rem);
+}
+
 .articles-hero__lead {
-  max-width: 36rem;
+  max-width: 40rem;
   margin: 0;
+  font-size: 1.1rem;
 }
 
 /* ── /articles: search and condition chips ───────────────────────────────────────────────────── */
@@ -49,7 +41,6 @@
   gap: var(--space-3);
   width: 100%;
   max-width: 36rem;
-  margin-inline: auto;
 }
 
 .articles-search .field {
@@ -61,7 +52,7 @@
 .chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--space-2);
 }
 
@@ -102,7 +93,7 @@
 .articles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  gap: var(--space-5);
+  gap: var(--space-7) var(--space-6);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -325,7 +316,8 @@
 .article-loading {
   display: grid;
   place-items: center;
-  min-height: 50vh;
+  /* A full screen, so the footer stays out of view until the article arrives (no layout shift). */
+  min-height: 100vh;
   color: var(--text-muted);
 }
 

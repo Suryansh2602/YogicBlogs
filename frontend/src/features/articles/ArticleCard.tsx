@@ -66,7 +66,6 @@ interface ArticleCardProps {
 /** An article as a card: the whole card is one link to the article. */
 export function ArticleCard({ article, headingLevel = 3, layout = 'stacked', ref }: ArticleCardProps) {
   const Heading = headingLevel === 2 ? 'h2' : 'h3';
-  const meta = [article.condition?.name, article.readingMinutes ? `${String(article.readingMinutes)} min read` : null].filter(Boolean).join(' · ');
   return (
     <Link ref={ref} to={`/articles/${article.slug}`} className={`article-card article-card--${layout} accent--${article.accent}`}>
       <div className="article-card__cover">
@@ -88,10 +87,15 @@ export function ArticleCard({ article, headingLevel = 3, layout = 'stacked', ref
         )}
       </div>
       <div className="article-card__body">
-        {meta && <p className="article-card__meta">{meta}</p>}
+        {article.condition && <p className="article-card__kicker">{article.condition.name}</p>}
         <Heading className="article-card__title">{article.title}</Heading>
         {article.summary && <p className="article-card__summary">{article.summary}</p>}
-        {article.accessLevel === 'members' && <span className="members-badge">Members</span>}
+        {(article.readingMinutes !== undefined || article.accessLevel === 'members') && (
+          <p className="article-card__meta">
+            {article.readingMinutes !== undefined && <span>{article.readingMinutes} min read</span>}
+            {article.accessLevel === 'members' && <span className="members-badge">Members</span>}
+          </p>
+        )}
       </div>
     </Link>
   );
