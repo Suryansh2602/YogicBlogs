@@ -321,34 +321,6 @@
   color: var(--text-muted);
 }
 
-.article-missing {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-3);
-  width: min(36rem, 100% - 2rem);
-  margin: 0 auto;
-  padding-block: var(--space-8);
-  text-align: center;
-}
-
-.article-missing .mandala {
-  color: var(--yantra);
-}
-
-.article-missing h1 {
-  margin: 0;
-  font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.4rem);
-}
-
-.article-missing p {
-  margin: 0 0 var(--space-3);
-}
-
-.article-missing .alert {
-  width: 100%;
-  text-align: left;
-}
-
 @media (max-width: 30rem) {
   .articles-page {
     padding-inline: var(--space-4);

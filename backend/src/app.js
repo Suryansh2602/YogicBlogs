@@ -4,7 +4,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { isRedisEnabled } from './config/redis.js';
-import { createApiLimiter, createAreaLimiter, createAuthLimiter, createAutosaveLimiter, createImageLimiter, createRedisStore, createUploadLimiter } from './middlewares/rateLimiter.js';
+import { createApiLimiter, createAreaLimiter, createAuthLimiter, createAutosaveLimiter, createClientErrorLimiter, createImageLimiter, createRedisStore, createUploadLimiter } from './middlewares/rateLimiter.js';
+import { requestId } from './middlewares/requestId.js';
 import { isDraftSave } from './modules/articles/articles.routes.js';
 import { publicImageRouter } from './modules/media/media.routes.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
@@ -22,6 +23,8 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
   const app = express();
 
   app.disable('x-powered-by');
+  // First, so every response (errors and rate limits included) carries its ID.
+  app.use(requestId);
   // Behind a reverse proxy in production, so rate limiting sees the real client IP.
   if (env.isProduction) app.set('trust proxy', 1);
 
@@ -51,7 +54,7 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
               methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
               allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
               // Lets the frontend read how long to wait after a lockout or rate limit.
-              exposedHeaders: ['Retry-After'],
+              exposedHeaders: ['Retry-After', 'X-Request-Id'],
               maxAge: 600,
             }
           : { origin: false },
@@ -67,7 +70,8 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
   const strictLimiter = createAuthLimiter(redisRateLimit ? createRedisStore('auth') : undefined);
   const uploadLimiter = createUploadLimiter(redisRateLimit ? createRedisStore('upload') : undefined);
   const autosaveLimiter = createAutosaveLimiter(redisRateLimit ? createRedisStore('autosave') : undefined);
-  app.use('/api/v1', createRoutes({ strictLimiter, uploadLimiter, autosaveLimiter }));
+  const clientErrorLimiter = createClientErrorLimiter(redisRateLimit ? createRedisStore('clienterr') : undefined);
+  app.use('/api/v1', createRoutes({ strictLimiter, uploadLimiter, autosaveLimiter, clientErrorLimiter }));
 
   app.use(notFound);
   app.use(errorHandler);

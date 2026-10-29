@@ -112,3 +112,19 @@ export function createImageLimiter(store, limit = 1500) {
     message: { error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' } },
   });
 }
+
+/**
+ * Crash reports from visitors' browsers: a page reports at most a few, so 20 per 15 minutes per IP is
+ * plenty, and stops anyone flooding the logs. Not critical, so it lets requests through if the store fails.
+ */
+export function createClientErrorLimiter(store, limit = 20) {
+  return rateLimit({
+    windowMs: FIFTEEN_MINUTES,
+    limit,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    store,
+    passOnStoreError: true,
+    message: { error: { message: 'Too many reports, please try again later', code: 'RATE_LIMITED' } },
+  });
+}

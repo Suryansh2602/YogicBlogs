@@ -5,6 +5,7 @@ import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { PageLoader } from '../ui/PageLoader';
 import { useAuth } from '../../features/auth/useAuth';
 import { SeasonStrip } from '../../features/ritu/SeasonStrip';
+import { OfflineNotice } from '../OfflineNotice';
 import './layout.css';
 
 const PAGES = [
@@ -149,6 +150,7 @@ export default function Layout() {
           <MobileMenu />
         </div>
       </header>
+      <OfflineNotice />
       <SeasonStrip />
 
       {/* The footer waits for the page: shown before a lazily loaded page arrives, it would jump down (layout shift). */}

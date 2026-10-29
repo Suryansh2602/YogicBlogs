@@ -1,21 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Alert } from '../../components/ui/Alert';
-import { Button } from '../../components/ui/Button';
+import { ErrorView } from '../../components/ErrorView';
+import { ErrorPageFor } from '../../components/ErrorPages';
 import { Spinner } from '../../components/ui/Spinner';
-import { Mandala } from '../../components/brand/Mandala';
 import { ArticleBody } from '../../features/articles/ArticleBody';
 import { ArticleCard, ReaderImg } from '../../features/articles/ArticleCard';
 import { readerApi } from '../../features/articles/api';
 import type { ReaderArticle } from '../../features/articles/types';
-import { errorMessage } from '../../features/auth/errors';
 import { useAuth } from '../../features/auth/useAuth';
 import { ApiRequestError } from '../../services/apiClient';
 import './articlePages.css';
 
 const DISCLAIMER = 'For education only, not medical advice. Consult a qualified doctor or Ayurvedic practitioner before trying any remedy.';
 
-type Result = { kind: 'article'; article: ReaderArticle } | { kind: 'notFound' } | { kind: 'error'; message: string };
+type Result = { kind: 'article'; article: ReaderArticle } | { kind: 'notFound' } | { kind: 'error'; error: unknown };
 
 const dateFormat = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
 const formatDate = (iso: string | null) => {
@@ -151,7 +149,7 @@ export default function ArticlePage() {
       (err: unknown) => {
         if (controller.signal.aborted) return;
         const missing = err instanceof ApiRequestError && (err.status === 404 || err.status === 400);
-        setResult({ key: requestKey, value: missing ? { kind: 'notFound' } : { kind: 'error', message: errorMessage(err) } });
+        setResult({ key: requestKey, value: missing ? { kind: 'notFound' } : { kind: 'error', error: err } });
       },
     );
     return () => {
@@ -180,32 +178,30 @@ export default function ArticlePage() {
 
   if (shown.kind === 'notFound') {
     return (
-      <section className="article-missing">
-        <Mandala size={130} spin={false} />
-        <h1>We couldn’t find that article</h1>
-        <p className="muted">It may have moved or been taken down, or the address may have a typo.</p>
-        <Link to="/articles" className="btn btn--primary btn--md">
-          <span className="btn__label">Browse all articles</span>
-        </Link>
-      </section>
+      <ErrorView
+        code="404"
+        title="We couldn’t find that article"
+        search="articles"
+        actions={
+          <Link to="/articles" className="btn btn--primary btn--md">
+            <span className="btn__label">Browse all articles</span>
+          </Link>
+        }
+      >
+        <p>It may have moved or been taken down, or the address may have a typo.</p>
+      </ErrorView>
     );
   }
 
   if (shown.kind === 'error') {
     return (
-      <section className="article-missing">
-        <Alert tone="danger" title="This article couldn’t load.">
-          {shown.message}
-        </Alert>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setReloadKey((k) => k + 1);
-          }}
-        >
-          Try again
-        </Button>
-      </section>
+      <ErrorPageFor
+        error={shown.error}
+        crashTitle="This article couldn’t load"
+        onRetry={() => {
+          setReloadKey((k) => k + 1);
+        }}
+      />
     );
   }
 

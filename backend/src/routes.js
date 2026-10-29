@@ -5,12 +5,13 @@ import { createAdminRouter } from './modules/admin/admin.routes.js';
 import userRoutes from './modules/users/users.routes.js';
 import { publicConditionsRouter } from './modules/conditions/conditions.routes.js';
 import { publicArticlesRouter } from './modules/articles/articles.routes.js';
+import { createClientErrorsRouter } from './modules/clientErrors/clientErrors.routes.js';
 
 /**
  * Mount each feature module here as it is built, e.g. router.use('/articles', articleRoutes).
- * @param {{ strictLimiter: import('express').RequestHandler, uploadLimiter: import('express').RequestHandler, autosaveLimiter: import('express').RequestHandler }} deps
+ * @param {{ strictLimiter: import('express').RequestHandler, uploadLimiter: import('express').RequestHandler, autosaveLimiter: import('express').RequestHandler, clientErrorLimiter: import('express').RequestHandler }} deps
  */
-export function createRoutes({ strictLimiter, uploadLimiter, autosaveLimiter }) {
+export function createRoutes({ strictLimiter, uploadLimiter, autosaveLimiter, clientErrorLimiter }) {
   const router = Router();
 
   router.use('/health', healthRoutes);
@@ -19,6 +20,7 @@ export function createRoutes({ strictLimiter, uploadLimiter, autosaveLimiter }) 
   router.use('/admin', createAdminRouter(strictLimiter, { uploadLimiter, autosaveLimiter }));
   router.use('/articles', publicArticlesRouter);
   router.use('/conditions', publicConditionsRouter);
+  router.use('/client-errors', createClientErrorsRouter(clientErrorLimiter));
 
   return router;
 }
