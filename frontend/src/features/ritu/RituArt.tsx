@@ -2,6 +2,7 @@
 // clear moonlit sky, mist. Pure SVG (no image downloads), decorative only (aria-hidden): every word that
 // matters is in the text next to it.
 import type { RituId } from './calendar';
+import './ritu-art.css';
 
 interface Props {
   ritu: RituId;

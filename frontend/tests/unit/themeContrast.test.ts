@@ -52,3 +52,31 @@ describe.each(THEMES.map((t) => t.id))('theme %s is readable', (id) => {
     expect(ratio, `${fg} ${tokens[fg]} on ${bg} ${tokens[bg]} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(min);
   });
 });
+
+// The season strip mixes 16% of the ritu's colour into the page background (CSS color-mix in sRGB), and
+// writes the theme's own text on it. Every theme × ritu must stay readable.
+import stripCss from '../../src/features/ritu/seasonStrip.css?raw';
+
+const RITU_COLOURS = Object.fromEntries([...stripCss.matchAll(/\.season-strip--(\w+) \{\s*--ritu: (#[0-9a-fA-F]{6});/g)].map((m) => [m[1] ?? '', m[2] ?? '']));
+const mix = (a: string, b: string, share: number) =>
+  '#' +
+  [1, 3, 5]
+    .map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * share + parseInt(b.slice(i, i + 2), 16) * (1 - share)))
+    .map((v) => v.toString(16).padStart(2, '0'))
+    .join('');
+
+describe('season strip is readable in every theme and season', () => {
+  it('knows all six ritu colours', () => {
+    expect(Object.keys(RITU_COLOURS).sort()).toEqual(['grishma', 'hemanta', 'sharad', 'shishira', 'varsha', 'vasanta']);
+  });
+  for (const id of THEMES.map((t) => t.id)) {
+    const tokens = themeTokens(id);
+    for (const [ritu, colour] of Object.entries(RITU_COLOURS)) {
+      it(`${id} · ${ritu}: text ≥ 7:1 and secondary text ≥ 4.5:1`, () => {
+        const background = mix(colour, tokens['bg'] ?? '', 0.16);
+        expect(contrast(tokens['text'] ?? '', background), `text on ${background}`).toBeGreaterThanOrEqual(7);
+        expect(contrast(tokens['text-muted'] ?? '', background), `secondary text on ${background}`).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+});
