@@ -9,6 +9,16 @@ export async function setup(req, res) {
   res.status(201).json(await admin.createFirstAdmin(req.body, req));
 }
 
+export async function recoveryLookup(req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.json(await admin.recoveryLookup(req.body, req));
+}
+
+export async function recover(req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.json(await admin.recoverAdmin(req.body, req));
+}
+
 export async function stats(_req, res) {
   res.set('Cache-Control', 'no-store');
   res.json(await admin.stats());

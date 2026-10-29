@@ -18,6 +18,7 @@ import {
   AdminGate,
   AdminOverview,
   AdminSetupPage,
+  AdminRecoverPage,
   AdminUsers,
   CheckEmailPage,
   DashboardPage,
@@ -87,6 +88,7 @@ export const routes: RouteObject[] = [
           { path: 'articles', element: <ArticlesPage /> },
           { path: 'articles/:slug', element: <ArticlePage /> },
           { path: 'admin/setup', element: <AdminSetupPage /> },
+          { path: 'admin/recover', element: <AdminRecoverPage /> },
           {
             path: 'admin',
             element: <AdminGate />,

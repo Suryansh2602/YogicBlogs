@@ -1089,6 +1089,74 @@
           ]
         },
         {
+          "name": "Recovery: list admin accounts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"setupCode\": \"{{setupCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/recover/lookup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "recover",
+                "lookup"
+              ]
+            },
+            "description": "With the server's ADMIN_SETUP_CODE: lists admin accounts with their emails (a forgotten admin email). 503 RECOVERY_NOT_CONFIGURED when the code isn't set; 403 SETUP_CODE_INVALID. Audited."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 with the admin accounts', () => pm.response.to.have.status(200));",
+                  "const first = pm.response.json().admins?.[0];",
+                  "if (first) pm.environment.set('adminId', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recovery: reset an admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"setupCode\": \"{{setupCode}}\",\n  \"adminId\": \"{{adminId}}\",\n  \"password\": \"Monsoon-clouds-over-hills-7\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/recover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "recover"
+              ]
+            },
+            "description": "New password, 2FA removed (set up again at next sign-in), all sessions signed out, active again. Returns { email }. Audited."
+          }
+        },
+        {
           "name": "Stats",
           "request": {
             "method": "GET",

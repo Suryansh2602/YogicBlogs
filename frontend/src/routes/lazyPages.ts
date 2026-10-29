@@ -11,6 +11,7 @@ export const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage
 export const LegalPage = lazy(() => import('../pages/LegalPage'));
 export const AdminGate = lazy(() => import('../pages/admin/AdminGate'));
 export const AdminSetupPage = lazy(() => import('../pages/admin/AdminSetupPage'));
+export const AdminRecoverPage = lazy(() => import('../pages/admin/AdminRecoverPage'));
 export const AdminOverview = lazy(() => import('../pages/admin/AdminOverview'));
 export const AdminUsers = lazy(() => import('../pages/admin/AdminUsers'));
 export const AdminAudit = lazy(() => import('../pages/admin/AdminAudit'));

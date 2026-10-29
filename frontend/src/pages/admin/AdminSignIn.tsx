@@ -146,6 +146,9 @@ export default function AdminSignIn() {
         <Button type="submit" variant="primary" size="lg" block loading={busy}>
           Continue
         </Button>
+        <p className="muted center-text">
+          Can’t sign in? <Link to="/admin/recover">Recover the admin account</Link> with the server’s setup code.
+        </p>
       </form>
     </AuthLayout>
   );

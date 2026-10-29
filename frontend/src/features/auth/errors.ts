@@ -19,6 +19,8 @@ const MESSAGES: Record<string, (error: ApiRequestError) => string> = {
     }.`,
   CAPTCHA_FAILED: () => 'Our automatic check thought this might be a bot. Please try again.',
   CSRF_FAILED: () => 'This page was open too long and its security check expired. Reload the page and try again.',
+  // A 503 the server operator can fix, so it says exactly what to do (other 5xx stay generic).
+  RECOVERY_NOT_CONFIGURED: () => 'Recovery isn’t set up on this server. Set ADMIN_SETUP_CODE in the server settings (backend/.env), restart the API, then try again.',
 };
 
 export function errorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {

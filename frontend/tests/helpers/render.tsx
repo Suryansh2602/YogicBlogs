@@ -45,6 +45,7 @@ export async function preloadPages() {
     import('../../src/pages/admin/AdminGate'),
     import('../../src/pages/admin/AdminSignIn'),
     import('../../src/pages/admin/AdminSetupPage'),
+    import('../../src/pages/admin/AdminRecoverPage'),
     import('../../src/pages/admin/AdminOverview'),
     import('../../src/pages/admin/AdminUsers'),
     import('../../src/pages/admin/AdminAudit'),

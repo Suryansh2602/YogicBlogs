@@ -87,10 +87,19 @@ const query = (params: Record<string, string | number | undefined>) => {
   return text ? `?${text}` : '';
 };
 
+export interface RecoverableAdmin {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
 export const adminApi = {
   setupStatus: () => apiClient.get<{ setupRequired: boolean }>('/admin/setup/status'),
   setup: (input: { setupCode: string; email: string; password: string; displayName: string }) =>
     apiClient.post<{ user: User }>('/admin/setup', input),
+  // Recovery with the server's setup code (docs/admin-recovery.md).
+  recoveryLookup: (setupCode: string) => apiClient.post<{ admins: RecoverableAdmin[] }>('/admin/recover/lookup', { setupCode }),
+  recover: (input: { setupCode: string; adminId: string; password: string }) => apiClient.post<{ email: string }>('/admin/recover', input),
   stats: () => authed((o) => apiClient.get<AdminStats>('/admin/stats', o)),
   users: (params: { page?: number; search?: string }) => authed((o) => apiClient.get<Page<AdminUserRow>>(`/admin/users${query({ pageSize: 20, ...params })}`, o)),
   auditLogs: (params: { page?: number; action?: string }) =>
