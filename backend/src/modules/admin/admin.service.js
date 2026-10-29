@@ -2,6 +2,7 @@
 // There is no public admin sign-up: the first admin is created at /admin/setup with a setup code that only
 // the server operator has (ADMIN_SETUP_CODE, or a random code printed to the server log at startup).
 // Once any admin exists, setup is closed for good; further admins are promoted by an existing admin (later).
+// The same code (when configured) also recovers an admin account: a forgotten email or password, a lost 2FA device.
 import { Op } from 'sequelize';
 import { env } from '../../config/env.js';
 import { models, sequelize } from '../../config/db.js';
@@ -12,6 +13,8 @@ import { logger } from '../../utils/logger.js';
 import { audit } from '../../services/audit.js';
 import { assertAcceptablePassword, publicUser } from '../auth/auth.service.js';
 import { hashPassword } from '../auth/password.service.js';
+import { revokeAllForUser } from '../auth/token.service.js';
+import { invalidateUserState } from '../../middlewares/authenticate.js';
 
 // Generated once per process when no code is configured. Never logged except by announceAdminSetup().
 let generatedSetupCode;
@@ -70,6 +73,60 @@ export async function createFirstAdmin({ setupCode: presented, email, password, 
   generatedSetupCode = undefined;
   await audit('admin.setup.created', { req, actorId: admin.id, entityType: 'user', entityId: admin.id });
   return { user: publicUser(admin) };
+}
+
+// ── Recovery: a forgotten email or password, or a lost 2FA device ───────────────────────────────
+// Reusable, and proven by the configured ADMIN_SETUP_CODE (the server operator's secret). Never by the
+// temporary startup code: recovery must not depend on a code that disappears. It never creates an admin
+// or changes a role. See docs/admin-recovery.md.
+
+async function assertRecoveryCode(presented, req) {
+  if (!env.ADMIN_SETUP_CODE) {
+    throw ApiError.unavailable('Recovery isn’t set up on this server. The operator must set ADMIN_SETUP_CODE in the server environment.', 'RECOVERY_NOT_CONFIGURED');
+  }
+  // Compare hashes so the check is constant-time regardless of the presented length.
+  if (!safeEqual(sha256Hex(presented), sha256Hex(env.ADMIN_SETUP_CODE))) {
+    await audit('admin.recovery.failure', { req, metadata: { reason: 'bad_code' } });
+    throw ApiError.forbidden('The setup code is not correct', 'SETUP_CODE_INVALID');
+  }
+}
+
+/** The admin accounts, with their emails, for whoever holds the setup code. */
+export async function recoveryLookup({ setupCode: presented }, req) {
+  await assertRecoveryCode(presented, req);
+  const admins = await models.User.findAll({
+    where: { role: ROLES.ADMIN },
+    attributes: ['id', 'email', 'displayName'],
+    order: [['createdAt', 'ASC']],
+  });
+  await audit('admin.recovery.lookup', { req, metadata: { admins: admins.length } });
+  return { admins: admins.map((a) => ({ id: a.id, email: a.email, displayName: a.displayName })) };
+}
+
+/** New password, 2FA removed (set up again at the next sign-in), every session signed out, active again. */
+export async function recoverAdmin({ setupCode: presented, adminId, password }, req) {
+  await assertRecoveryCode(presented, req);
+  const admin = await sequelize.transaction(async (transaction) => {
+    const target = await models.User.findOne({ where: { id: adminId, role: ROLES.ADMIN }, transaction, lock: transaction.LOCK.UPDATE });
+    if (!target) throw ApiError.notFound('No admin account has this ID.');
+    await assertAcceptablePassword(password, { email: target.email, displayName: target.displayName });
+    await models.UserTwoFactor.destroy({ where: { userId: target.id }, transaction });
+    await models.TwoFactorBackupCode.destroy({ where: { userId: target.id }, transaction });
+    await target.update(
+      {
+        passwordHash: await hashPassword(password),
+        passwordChangedAt: new Date(),
+        tokenVersion: target.tokenVersion + 1,
+        status: USER_STATUS.ACTIVE,
+      },
+      { transaction },
+    );
+    await revokeAllForUser(target.id, 'admin_recovery', transaction);
+    return target;
+  });
+  await invalidateUserState(admin.id);
+  await audit('admin.recovery.completed', { req, actorId: admin.id, entityType: 'user', entityId: admin.id });
+  return { email: admin.email };
 }
 
 // ── Admin panel ──────────────────────────────────────────────────────────────────────────────────

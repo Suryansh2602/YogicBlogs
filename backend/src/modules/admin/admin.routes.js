@@ -3,7 +3,7 @@ import { validate } from '../../middlewares/validate.js';
 import { authenticate, requireMfa, requireRole } from '../../middlewares/authenticate.js';
 import { ROLES } from '../../config/constants.js';
 import * as c from './admin.controller.js';
-import { adminSetupSchema, listAuditLogsQuery, listUsersQuery } from './admin.validation.js';
+import { adminSetupSchema, listAuditLogsQuery, listUsersQuery, recoverAdminSchema, recoveryLookupSchema } from './admin.validation.js';
 import { adminConditionsRouter } from '../conditions/conditions.routes.js';
 import { createAdminMediaRouter } from '../media/media.routes.js';
 import { createAdminArticlesRouter } from '../articles/articles.routes.js';
@@ -18,6 +18,9 @@ export function createAdminRouter(strictLimiter, { uploadLimiter, autosaveLimite
   // Bootstrap (works only while no admin exists).
   router.get('/setup/status', c.setupStatus);
   router.post('/setup', strictLimiter, validate({ body: adminSetupSchema }), c.setup);
+  // Recovery with the configured setup code: a forgotten email or password, a lost 2FA device.
+  router.post('/recover/lookup', strictLimiter, validate({ body: recoveryLookupSchema }), c.recoveryLookup);
+  router.post('/recover', strictLimiter, validate({ body: recoverAdminSchema }), c.recover);
 
   // Everything else: a signed-in admin whose session passed 2FA.
   router.use(authenticate, requireRole(ROLES.ADMIN), requireMfa);
