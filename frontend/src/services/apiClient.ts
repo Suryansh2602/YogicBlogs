@@ -2,7 +2,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api
 
 /** The backend's error body: `{ error: { message, code?, details? } }`. */
 interface ApiErrorBody {
-  error?: { message?: string; code?: string; details?: unknown };
+  error?: { message?: string; code?: string; details?: unknown; reference?: string };
 }
 
 export class ApiRequestError extends Error {
@@ -12,14 +12,17 @@ export class ApiRequestError extends Error {
   readonly details: unknown;
   /** Seconds to wait before trying again, from the Retry-After header (lockouts, rate limits). */
   readonly retryAfter: number | undefined;
+  /** For server errors: the request ID that finds the log entry, shown to readers to quote. */
+  readonly reference: string | undefined;
 
-  constructor(status: number, message: string, code?: string, details?: unknown, retryAfter?: number) {
+  constructor(status: number, message: string, code?: string, details?: unknown, retryAfter?: number, reference?: string) {
     super(message);
     this.name = 'ApiRequestError';
     this.status = status;
     this.code = code;
     this.details = details;
     this.retryAfter = retryAfter;
+    this.reference = reference;
   }
 }
 
@@ -54,7 +57,7 @@ async function request<T>(method: Method, path: string, body?: unknown, options:
   if (!res.ok) {
     const error = (data as ApiErrorBody | null)?.error;
     const retryAfter = Number(res.headers.get('Retry-After'));
-    throw new ApiRequestError(res.status, error?.message ?? res.statusText, error?.code, error?.details, retryAfter > 0 ? retryAfter : undefined);
+    throw new ApiRequestError(res.status, error?.message ?? res.statusText, error?.code, error?.details, retryAfter > 0 ? retryAfter : undefined, error?.reference);
   }
   return data as T;
 }
@@ -113,7 +116,7 @@ function upload<T>(path: string, form: FormData, options: UploadOptions = {}): P
         }
         const error = (data as ApiErrorBody | null)?.error;
         const retryAfter = Number(xhr.getResponseHeader('Retry-After'));
-        reject(new ApiRequestError(xhr.status, error?.message ?? xhr.statusText, error?.code, error?.details, retryAfter > 0 ? retryAfter : undefined));
+        reject(new ApiRequestError(xhr.status, error?.message ?? xhr.statusText, error?.code, error?.details, retryAfter > 0 ? retryAfter : undefined, error?.reference));
       });
     };
     xhr.onerror = () => {

@@ -105,3 +105,17 @@
 .offline-notice .container {
   display: block;
 }
+
+/* A server error's reference (request ID), for readers to quote. */
+.error-view__ref {
+  font-size: 0.9rem;
+}
+
+.error-view__ref code {
+  padding: 0.05rem 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+}

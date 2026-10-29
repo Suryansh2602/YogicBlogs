@@ -7,7 +7,12 @@ import '@fontsource/tiro-devanagari-hindi/devanagari-400.css';
 import { routes } from './routes/routes';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { AuthProvider } from './features/auth/AuthProvider';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
+import { installGlobalErrorHandlers } from './services/errorReporting';
 import './styles/global.css';
+
+// The global error handler: errors nothing else caught are reported, never lost (services/errorReporting.ts).
+installGlobalErrorHandlers();
 
 const router = createBrowserRouter(routes);
 
@@ -16,10 +21,12 @@ if (!container) throw new Error('index.html is missing the #root element');
 
 createRoot(container).render(
   <StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </ThemeProvider>
+    <AppErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ThemeProvider>
+    </AppErrorBoundary>
   </StrictMode>,
 );

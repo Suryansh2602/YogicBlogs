@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Button } from '../../components/ui/Button';
 import { ErrorView } from '../../components/ErrorView';
+import { ErrorPageFor } from '../../components/ErrorPages';
 import { Spinner } from '../../components/ui/Spinner';
 import { ArticleBody } from '../../features/articles/ArticleBody';
 import { ArticleCard, ReaderImg } from '../../features/articles/ArticleCard';
 import { readerApi } from '../../features/articles/api';
 import type { ReaderArticle } from '../../features/articles/types';
-import { errorMessage } from '../../features/auth/errors';
 import { useAuth } from '../../features/auth/useAuth';
 import { ApiRequestError } from '../../services/apiClient';
 import './articlePages.css';
 
 const DISCLAIMER = 'For education only, not medical advice. Consult a qualified doctor or Ayurvedic practitioner before trying any remedy.';
 
-type Result = { kind: 'article'; article: ReaderArticle } | { kind: 'notFound' } | { kind: 'error'; message: string };
+type Result = { kind: 'article'; article: ReaderArticle } | { kind: 'notFound' } | { kind: 'error'; error: unknown };
 
 const dateFormat = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
 const formatDate = (iso: string | null) => {
@@ -150,7 +149,7 @@ export default function ArticlePage() {
       (err: unknown) => {
         if (controller.signal.aborted) return;
         const missing = err instanceof ApiRequestError && (err.status === 404 || err.status === 400);
-        setResult({ key: requestKey, value: missing ? { kind: 'notFound' } : { kind: 'error', message: errorMessage(err) } });
+        setResult({ key: requestKey, value: missing ? { kind: 'notFound' } : { kind: 'error', error: err } });
       },
     );
     return () => {
@@ -196,25 +195,13 @@ export default function ArticlePage() {
 
   if (shown.kind === 'error') {
     return (
-      <ErrorView
-        title="This article couldn’t load"
-        actions={
-          <>
-            <Button
-              onClick={() => {
-                setReloadKey((k) => k + 1);
-              }}
-            >
-              Try again
-            </Button>
-            <Link to="/articles" className="btn btn--secondary btn--md">
-              <span className="btn__label">Browse all articles</span>
-            </Link>
-          </>
-        }
-      >
-        <p>{shown.message}</p>
-      </ErrorView>
+      <ErrorPageFor
+        error={shown.error}
+        crashTitle="This article couldn’t load"
+        onRetry={() => {
+          setReloadKey((k) => k + 1);
+        }}
+      />
     );
   }
 
