@@ -77,7 +77,7 @@ describe('attack prevention — request payloads', () => {
   ])('answers %s (%s) with a generic 404 that echoes nothing', async (path) => {
     const res = await request(app).get(path);
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: { message: 'Route not found' } });
+    expect(res.body).toEqual({ error: { message: 'Route not found', code: 'NOT_FOUND' } });
     expect(res.text).not.toMatch(/passwd|DROP|onerror|OR 1=1/i);
   });
 

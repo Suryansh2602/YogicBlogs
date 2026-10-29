@@ -70,6 +70,46 @@
               }
             }
           ]
+        },
+        {
+          "name": "Report a browser error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"crash\",\n  \"message\": \"Cannot read properties of undefined\",\n  \"path\": \"/articles/calm\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client-errors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "client-errors"
+              ]
+            },
+            "description": "Logs an error from a visitor's browser (204). Only kind, message (≤300), path (≤500) and an optional reference (a request ID) are accepted; query strings, emails and tokens are removed before logging. 20 per 15 minutes per IP."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204, with a request ID', () => {",
+                  "  pm.response.to.have.status(204);",
+                  "  pm.expect(pm.response.headers.get('X-Request-Id')).to.match(/^[0-9a-f-]{36}$/);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
