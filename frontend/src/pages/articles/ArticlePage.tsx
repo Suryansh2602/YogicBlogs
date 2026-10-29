@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { ErrorView } from '../../components/ErrorView';
 import { Spinner } from '../../components/ui/Spinner';
-import { Mandala } from '../../components/brand/Mandala';
 import { ArticleBody } from '../../features/articles/ArticleBody';
 import { ArticleCard, ReaderImg } from '../../features/articles/ArticleCard';
 import { readerApi } from '../../features/articles/api';
@@ -180,32 +179,42 @@ export default function ArticlePage() {
 
   if (shown.kind === 'notFound') {
     return (
-      <section className="article-missing">
-        <Mandala size={130} spin={false} />
-        <h1>We couldn’t find that article</h1>
-        <p className="muted">It may have moved or been taken down, or the address may have a typo.</p>
-        <Link to="/articles" className="btn btn--primary btn--md">
-          <span className="btn__label">Browse all articles</span>
-        </Link>
-      </section>
+      <ErrorView
+        code="404"
+        title="We couldn’t find that article"
+        search="articles"
+        actions={
+          <Link to="/articles" className="btn btn--primary btn--md">
+            <span className="btn__label">Browse all articles</span>
+          </Link>
+        }
+      >
+        <p>It may have moved or been taken down, or the address may have a typo.</p>
+      </ErrorView>
     );
   }
 
   if (shown.kind === 'error') {
     return (
-      <section className="article-missing">
-        <Alert tone="danger" title="This article couldn’t load.">
-          {shown.message}
-        </Alert>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setReloadKey((k) => k + 1);
-          }}
-        >
-          Try again
-        </Button>
-      </section>
+      <ErrorView
+        title="This article couldn’t load"
+        actions={
+          <>
+            <Button
+              onClick={() => {
+                setReloadKey((k) => k + 1);
+              }}
+            >
+              Try again
+            </Button>
+            <Link to="/articles" className="btn btn--secondary btn--md">
+              <span className="btn__label">Browse all articles</span>
+            </Link>
+          </>
+        }
+      >
+        <p>{shown.message}</p>
+      </ErrorView>
     );
   }
 
