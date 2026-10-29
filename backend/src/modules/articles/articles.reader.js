@@ -31,6 +31,7 @@ export async function readyImages(ids, { transaction, lock } = {}) {
     attributes: ['id', 'altText', 'width', 'height', 'placeholder', 'variants'],
     transaction,
     lock,
+    raw: true,
   });
   return new Map(rows.map((m) => [m.id.toLowerCase(), m]));
 }
@@ -42,6 +43,7 @@ export async function publishedCards(ids) {
   const rows = await models.Article.findAll({
     where: { id: list, status: ARTICLE_STATUS.PUBLISHED, publishedAt: { [Op.lte]: new Date() } },
     attributes: ['id', 'slug', 'title', 'summary', 'cardAccent', 'coverImageId', 'coverAlt', 'accessLevel'],
+    raw: true,
   });
   const covers = await readyImages(rows.map((r) => r.coverImageId));
   return new Map(
@@ -64,8 +66,15 @@ export async function publishedCards(ids) {
  * `teaser` leaves out the body: what a signed-out visitor sees of a members article.
  */
 export async function buildReaderPayload(content, { teaser = false } = {}) {
-  const condition = await models.Condition.findByPk(content.conditionId, { attributes: ['slug', 'name'] });
-  const covers = await readyImages([content.cover.mediaId]);
+  // Everything the page needs is looked up at the same time (one wait, not four in a row).
+  const refs = teaser ? null : collectReferences(content.body);
+  const related = (content.relatedIds ?? []).map((r) => r.toLowerCase());
+  const [condition, covers, cards, images] = await Promise.all([
+    models.Condition.findByPk(content.conditionId, { attributes: ['slug', 'name'], raw: true }),
+    readyImages([content.cover.mediaId]),
+    refs ? publishedCards([...refs.links, ...refs.cards, ...related]) : new Map(),
+    refs ? readyImages(refs.images.map((i) => i.mediaId)) : new Map(),
+  ]);
   const base = {
     slug: content.slug,
     title: content.title,
@@ -81,11 +90,8 @@ export async function buildReaderPayload(content, { teaser = false } = {}) {
     updatedAt: content.contentUpdatedAt ?? null,
     seo: { title: content.seoTitle || content.title, description: content.seoDescription || content.summary },
   };
-  if (teaser) return { ...base, locked: true, reason: 'SIGN_IN_REQUIRED' };
+  if (!refs) return { ...base, locked: true, reason: 'SIGN_IN_REQUIRED' };
 
-  const refs = collectReferences(content.body);
-  const related = (content.relatedIds ?? []).map((r) => r.toLowerCase());
-  const [cards, images] = await Promise.all([publishedCards([...refs.links, ...refs.cards, ...related]), readyImages(refs.images.map((i) => i.mediaId))]);
   const body = readerBody(
     content.body,
     (articleId) => cards.has(articleId),

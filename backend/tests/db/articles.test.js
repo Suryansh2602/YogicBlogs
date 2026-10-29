@@ -1,6 +1,6 @@
 // Articles through the real HTTP app and MySQL: drafts and autosave, the publish checklist, publishing,
 // what readers (anonymous and signed in) can see, references, revisions, delete, and the attacks on them.
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import http from 'node:http';
 import request from 'supertest';
 
@@ -227,6 +227,40 @@ describe('articles (real database)', () => {
       const preview = await api('get', `/admin/articles/${id}/preview`).expect(200);
       expect(preview.body.preview.title).toBe('A new title, not yet live');
       expect(await auditActions()).toEqual(expect.arrayContaining(['article.published', 'article.draft_saved']));
+    });
+
+    it('builds the reader page from one fixed query that skips the search-only text copy, and still sends everything it shows', async () => {
+      await published();
+      const { sequelize } = await import('../../src/config/db.js');
+      const query = vi.spyOn(sequelize, 'query');
+      try {
+        const pub = await request(app).get('/api/v1/articles/calming-migraine-with-breath').expect(200);
+        const sql = query.mock.calls.map(([text]) => String(text)).find((text) => text.includes('FROM articles WHERE slug'));
+        expect(sql).toContain('content_json');
+        expect(sql).not.toContain('content_text'); // as large as the body, and only search uses it
+        expect(sql).toContain('deleted_at IS NULL');
+        expect(pub.body.article).toMatchObject({ condition: { slug: 'migraine' }, cover: { width: 960 }, locked: false });
+        expect(pub.body.article.body.content.length).toBeGreaterThan(0);
+      } finally {
+        query.mockRestore();
+      }
+    });
+
+    it('treats SQL in the address as a plain (missing) address', async () => {
+      await published();
+      for (const attack of ["x' OR '1'='1", "calming-migraine-with-breath' -- ", "x'; DROP TABLE articles; --", 'x" OR 1=1 #', "%' OR slug LIKE '%"]) {
+        await request(app).get(`/api/v1/articles/${encodeURIComponent(attack)}`).expect(404);
+      }
+      await request(app).get('/api/v1/articles/calming-migraine-with-breath').expect(200); // the table is untouched
+    });
+
+    it('never serves a deleted article, even one that was published', async () => {
+      const { id, draftVersion } = await published({ slug: 'deleted-while-live' });
+      await request(app).get('/api/v1/articles/deleted-while-live').expect(200);
+      await api('delete', `/admin/articles/${id}`).send({ draftVersion }).expect(204);
+      await request(app).get('/api/v1/articles/deleted-while-live').expect(404);
+      const list = await request(app).get('/api/v1/articles').expect(200);
+      expect(list.body.items.map((x) => x.slug)).not.toContain('deleted-while-live');
     });
 
     it('never shows a draft to anyone, and members articles in full only to signed-in readers', async () => {
