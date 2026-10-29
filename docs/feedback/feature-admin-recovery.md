@@ -4,7 +4,7 @@ Owner, 2026-10-30:
 - "What is the name of the database table for admin?" Answer: `users` (`role = 'admin'`).
 - "Set up a way so that admin can register himself." Decision: "first admin only for now, and also give reusable setup code for cases if admin forget his/her ID".
 
-Design: [admin-recovery.md](../admin-recovery.md).
+Design: [admin-recovery.md](../admin-recovery.md). Owner how-to: [admin-guide.md](../admin-guide.md).
 
 ## What was built
 

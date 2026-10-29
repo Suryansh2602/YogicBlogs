@@ -7,6 +7,7 @@
 | [database.md](database.md) | MySQL schema (ER diagram + tables), Redis keys, DB users, migration commands |
 | [api.md](api.md) | REST conventions, error format, rate limits, every endpoint (built and planned) |
 | [capacity.md](capacity.md) | How much load the site handles: measured load test results, users it can serve, limits, what to measure before launch |
+| [admin-guide.md](admin-guide.md) | How to set up the admin account, sign in every day, and recover it (step by step, for the owner) |
 | [security.md](security.md) | Credential handling, DB least privilege, hardening checklist |
 | [workflow.md](workflow.md) | Branch per task; Developer → Reviewer → Tester → owner review stream |
 
