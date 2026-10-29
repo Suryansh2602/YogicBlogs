@@ -111,7 +111,7 @@ describe('reader pages', () => {
   it('says plainly when an article does not exist', async () => {
     mockApi({ 'GET /articles/nothing-here': apiError(404, 'NOT_FOUND', 'This article doesn’t exist or isn’t published.') });
     renderApp('/articles/nothing-here');
-    expect(await screen.findByRole('link', { name: /articles/i })).toBeInTheDocument();
+    expect(await within(screen.getByRole('main')).findByRole('link', { name: /articles/i })).toBeInTheDocument();
     expect(screen.getByText(/doesn’t exist|not found|couldn’t find/i)).toBeInTheDocument();
   });
 });

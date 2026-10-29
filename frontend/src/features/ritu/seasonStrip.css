@@ -1,0 +1,173 @@
+/* Season strip: a calm band under the header, tinted with the current ritu's colour. The tint is mixed
+   into the page background (16%), so the theme's own text colour stays readable in all four themes. */
+.season-strip--shishira {
+  --ritu: #7f9cc0;
+}
+
+.season-strip--vasanta {
+  --ritu: #e98aa9;
+}
+
+.season-strip--grishma {
+  --ritu: #f0a020;
+}
+
+.season-strip--varsha {
+  --ritu: #5d86b0;
+}
+
+.season-strip--sharad {
+  --ritu: #4fa3d9;
+}
+
+.season-strip--hemanta {
+  --ritu: #b39b72;
+}
+
+.season-strip {
+  background: color-mix(in srgb, var(--ritu) 16%, var(--bg));
+  border-bottom: 1px solid color-mix(in srgb, var(--ritu) 40%, var(--border));
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.season-strip__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 2.75rem;
+}
+
+.season-strip__badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.season-strip__art {
+  width: 40px;
+  height: 26px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.season-strip__window {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  /* Text fades in and out at the edges instead of being cut. */
+  mask-image: linear-gradient(90deg, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+
+.season-strip__track {
+  display: flex;
+  width: max-content;
+  animation: season-marquee 50s linear infinite;
+}
+
+.season-strip__window:hover .season-strip__track,
+.season-strip__window:focus-within .season-strip__track,
+.season-strip__window--paused .season-strip__track {
+  animation-play-state: paused;
+}
+
+@keyframes season-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.season-strip__items {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.season-strip__items li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-right: var(--space-6);
+}
+
+.season-strip__items li::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  margin-left: var(--space-6);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ritu) 70%, var(--text));
+}
+
+.season-strip__items .deva {
+  color: var(--text-muted);
+}
+
+.season-strip__action {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ritu) 70%, var(--text));
+  text-underline-offset: 3px;
+}
+
+.season-strip__action:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.season-strip__pause {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  font-size: 0.65rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ritu) 45%, var(--border));
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.season-strip__error {
+  margin: 0;
+  padding-bottom: var(--space-2);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 520px) {
+  .season-strip__name {
+    display: none;
+  }
+}
+
+/* Reduced motion: a still strip that can be scrolled sideways, shown once. */
+@media (prefers-reduced-motion: reduce) {
+  .season-strip__window {
+    overflow-x: auto;
+    mask-image: none;
+  }
+  .season-strip__track {
+    animation: none;
+  }
+  .season-strip__items[aria-hidden='true'],
+  .season-strip__pause {
+    display: none;
+  }
+}

@@ -1,22 +1,21 @@
-import type { CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { LogoMark } from '../components/brand/Logo';
-import { Mandala } from '../components/brand/Mandala';
-import { Nakshatra } from '../components/brand/Nakshatra';
-import { Yantra } from '../components/brand/Yantra';
-import { Aurora } from '../components/motion/Aurora';
 import { BlurReveal } from '../components/motion/BlurReveal';
-import { ShinyText } from '../components/motion/ShinyText';
-import { SpotlightCard } from '../components/motion/SpotlightCard';
+import { ArticleCard } from '../features/articles/ArticleCard';
+import { readerApi } from '../features/articles/api';
+import type { ArticleListItem } from '../features/articles/types';
 import { useAuth } from '../features/auth/useAuth';
-import { TodayPanel } from '../features/ritu/TodayPanel';
+import { rituOn } from '../features/ritu/calendar';
+import { RituArt } from '../features/ritu/RituArt';
+import { RITU_NAMES } from '../features/ritu/names';
+import { dateIn } from '../features/ritu/sun';
 import './pages.css';
 
 const PILLARS = [
   {
     deva: 'ऋतुचर्या',
     title: 'Life by the seasons',
-    text: 'Ritucharya: how Vata, Pitta and Kapha shift through the six ritus, and what to eat, practise and avoid in each.',
+    text: 'How Vata, Pitta and Kapha shift through the six ritus, and what to eat, practise and avoid in each.',
     to: '/ritucharya',
     cta: 'Explore the six ritus',
   },
@@ -24,98 +23,139 @@ const PILLARS = [
     deva: 'चिकित्सा',
     title: 'Ayurvedic ways to heal',
     text: 'Gentle remedies, diet and routines drawn from Ayurveda and written with yoga practitioners.',
+    to: '/articles',
+    cta: 'Read the articles',
   },
   {
     deva: 'श्रवण',
-    title: 'Read or listen',
-    text: 'Every article is made to be read at your pace or heard on a walk, with your place remembered.',
+    title: 'Read at your pace',
+    text: 'Clear, referenced articles with the classical source and the research beside each claim.',
   },
 ];
 
+/** The newest published articles: one lead story, then a short list. Hidden until there are some. */
+function LatestArticles() {
+  const [items, setItems] = useState<ArticleListItem[] | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    readerApi.list({ limit: 4 }, { signal: controller.signal }).then(
+      (data) => {
+        setItems(data.items);
+      },
+      () => {
+        if (!controller.signal.aborted) setItems([]); // the home page still works without them
+      },
+    );
+    return () => {
+      controller.abort();
+    };
+  }, []);
+  // While loading, keep the space it will take, so the sections below don't jump when it arrives.
+  if (items === null) return <div className="container home-section latest-placeholder" aria-hidden="true" />;
+  if (!items.length) return null;
+  const [lead, ...rest] = items;
+  return (
+    <section className="container home-section" aria-labelledby="latest-title">
+      <header className="home-section__head">
+        <h2 id="latest-title">Latest articles</h2>
+        <Link to="/articles">All articles →</Link>
+      </header>
+      <div className="latest">
+        {lead && (
+          <div className="latest__lead">
+            <ArticleCard article={lead} />
+          </div>
+        )}
+        {rest.length > 0 && (
+          <ul className="latest__list">
+            {rest.map((a) => (
+              <li key={a.slug}>
+                <ArticleCard article={a} layout="row" />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function HomePage() {
   const { user } = useAuth();
+  const today = dateIn('Asia/Kolkata');
+  const rituId = rituOn(today.month, today.day);
+  const ritu = RITU_NAMES[rituId];
   return (
     <>
       <section className="hero">
-        <Aurora />
-        <Nakshatra />
-        <Mandala size={720} className="hero__mandala" />
-        <div className="container hero__split">
-          <TodayPanel />
-          <div className="hero__inner">
-          <div className="hero__emblem">
-            <Yantra size={190} className="hero__yantra" />
-            <LogoMark size={88} animated className="hero__mark" />
-          </div>
-          <p className="eyebrow rise-in" style={{ '--delay': '150ms' } as CSSProperties}>
-            <span className="deva dandas">स्वास्थ्य मार्ग</span> The path to wellbeing
-          </p>
-          <h1 className="hero__title">
-            <BlurReveal text="Ancient wisdom for" delay={250} />{' '}
-            {/* The sheen paints text through background-clip, which a per-word blur would break: this phrase rises instead. */}
-            <ShinyText className="hero__shine rise-in" style={{ '--delay': '550ms' } as CSSProperties}>
-              modern ease
-            </ShinyText>
-          </h1>
-          <p className="hero__lead rise-in" style={{ '--delay': '700ms' } as CSSProperties}>
-            Understand the causes of everyday conditions and find Ayurvedic ways to heal, guided by yoga practitioners.
-          </p>
-          <div className="hero__actions rise-in" style={{ '--delay': '850ms' } as CSSProperties}>
-            {user ? (
-              <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="btn btn--primary btn--lg">
-                <span className="btn__label">Continue your path</span>
-                <span className="btn__arrow" aria-hidden="true">
-                  →
-                </span>
-              </Link>
-            ) : (
-              <>
-                <Link to="/signup" className="btn btn--primary btn--lg">
-                  <span className="btn__label">Begin free</span>
+        <div className="container hero__grid">
+          <div className="hero__text">
+            <p className="eyebrow">
+              <span className="deva dandas">स्वास्थ्य मार्ग</span> The path to wellbeing
+            </p>
+            <h1 className="hero__title">
+              <BlurReveal text="Ancient wisdom for" /> <em className="hero__accent">modern ease</em>
+            </h1>
+            <p className="hero__lead">Understand the causes of everyday conditions and find Ayurvedic ways to heal, guided by yoga practitioners.</p>
+            <div className="hero__actions">
+              {user ? (
+                <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="btn btn--primary btn--lg">
+                  <span className="btn__label">Continue your path</span>
                   <span className="btn__arrow" aria-hidden="true">
                     →
                   </span>
                 </Link>
-                <Link to="/signin" className="btn btn--secondary btn--lg">
-                  <span className="btn__label">Sign in</span>
-                </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link to="/signup" className="btn btn--primary btn--lg">
+                    <span className="btn__label">Begin free</span>
+                    <span className="btn__arrow" aria-hidden="true">
+                      →
+                    </span>
+                  </Link>
+                  <Link to="/articles" className="btn btn--secondary btn--lg">
+                    <span className="btn__label">Read the articles</span>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
-          <p className="hero__tagline rise-in" style={{ '--delay': '1000ms' } as CSSProperties}>
-            Break limits. Find ease.
-          </p>
-          </div>
+          <Link to={`/ritucharya?ritu=${rituId}`} className="hero__season">
+            <RituArt ritu={rituId} className="hero__season-art" />
+            <span className="hero__season-text">
+              <span className="hero__season-kicker">This season</span>
+              <span className="hero__season-name">
+                {ritu.name} <span className="deva">{ritu.deva}</span> · {ritu.english}
+              </span>
+              <span className="hero__season-link">What to eat, practise and avoid now →</span>
+            </span>
+          </Link>
         </div>
       </section>
 
-      <section className="container pillars" aria-labelledby="pillars-title">
-        <h2 id="pillars-title" className="section-title">
-          <BlurReveal text="Three steps on the path" />
-        </h2>
-        <div className="pillars__grid">
-          {PILLARS.map((p, i) => (
-            <SpotlightCard key={p.title} className="pillar rise-in">
-              <span className="pillar__num" aria-hidden="true">
-                {['१', '२', '३'][i]}
-              </span>
+      <LatestArticles />
+
+      <section className="container home-section" aria-labelledby="pillars-title">
+        <header className="home-section__head">
+          <h2 id="pillars-title">What you’ll find here</h2>
+        </header>
+        <ul className="pillars">
+          {PILLARS.map((p) => (
+            <li key={p.title} className="pillar">
               <span className="deva pillar__deva">{p.deva}</span>
               <h3>{p.title}</h3>
               <p className="muted">{p.text}</p>
-              {'to' in p && (
+              {p.to && (
                 <Link to={p.to} className="pillar__link">
                   {p.cta} <span aria-hidden="true">→</span>
                 </Link>
               )}
-            </SpotlightCard>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section className="sutra-band">
-        <span className="om-watermark" aria-hidden="true">
-          ॐ
-        </span>
         <div className="container sutra-band__inner">
           <p className="deva sutra-band__sanskrit">योगश्चित्तवृत्तिनिरोधः</p>
           <p className="sutra-band__translit">yogaś citta-vṛtti-nirodhaḥ</p>

@@ -57,3 +57,17 @@ export async function preloadPages() {
     import('../../src/pages/admin/AdminArticleEditor'),
   ]);
 }
+
+/** The site header (the page's sections have <header>s too, so "banner" can match more than one). */
+export function siteHeader(): HTMLElement {
+  const header = document.querySelector<HTMLElement>('header.header');
+  if (!header) throw new Error('The site header is not on the page');
+  return header;
+}
+
+/** An element by id, or a clear failure. */
+export function byId(id: string): HTMLElement {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`No element with id "${id}"`);
+  return element;
+}

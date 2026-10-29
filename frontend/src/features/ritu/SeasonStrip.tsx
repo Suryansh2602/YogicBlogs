@@ -1,13 +1,15 @@
-// "Today" on the home page: the date, the current ritu (and Ritusandhi when seasons are changing), and
-// sunrise/sunset. Location: New Delhi until the visitor chooses "Use my location" (the browser asks them
-// then, never on page load). Their place is remembered only in this browser.
+// The season strip under the header on every page: today's date, the current ritu (and Ritusandhi when
+// seasons are changing), sunrise and sunset, moving slowly like a marquee. Its colour follows the ritu.
+// It pauses on hover, on keyboard focus and with its Pause button, and stands still for visitors who
+// prefer reduced motion. Location: New Delhi until the visitor chooses "Use my location" (the browser asks
+// them then, never on page load); their place is remembered only in this browser.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { rituOn, sandhiOn } from './calendar';
 import { RituArt } from './RituArt';
 import { RITU_NAMES } from './names';
 import { dateIn, formatTime, NEW_DELHI, sunTimes, type Place } from './sun';
-import './ritu.css';
+import './seasonStrip.css';
 
 const PLACE_KEY = 'hm-place';
 
@@ -25,11 +27,12 @@ function savedPlace(): Place {
   return NEW_DELHI;
 }
 
-export function TodayPanel() {
+export function SeasonStrip() {
   const [now, setNow] = useState(() => new Date());
   const [place, setPlace] = useState<Place>(savedPlace);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
 
   // Refresh once a minute so the date and times are right if the page stays open past midnight.
   useEffect(() => {
@@ -43,7 +46,7 @@ export function TodayPanel() {
 
   const { year, month, day } = dateIn(place.timeZone, now);
   const rituId = rituOn(month, day);
-  const ritu = { id: rituId, ...RITU_NAMES[rituId] };
+  const ritu = RITU_NAMES[rituId];
   const sandhi = sandhiOn(month, day);
   const sun = sunTimes(year, month, day, place);
   const dateText = now.toLocaleDateString('en-IN', { timeZone: place.timeZone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -93,63 +96,77 @@ export function TodayPanel() {
     }
   };
 
-  return (
-    <aside className="today" aria-labelledby="today-title">
-      <h2 id="today-title" className="today__title">
-        Today <span className="deva today__deva">आज</span>
-      </h2>
-      <p className="today__date">{dateText}</p>
-
-      <Link to={`/ritucharya?ritu=${ritu.id}`} className={`today__ritu today__ritu--${ritu.id}`}>
-        <RituArt ritu={ritu.id} className="today__art" />
-        <span className="today__ritu-text">
-          <span className="today__label">Season (ritu)</span>
-          <span className="today__ritu-name">
-            {ritu.name} <span className="deva">{ritu.deva}</span>
-          </span>
-          <span className="muted today__ritu-en">{ritu.english}</span>
-        </span>
-      </Link>
+  /**
+   * One run of the strip's content. The marquee shows it twice for a seamless loop; the copy can be clicked
+   * but is skipped by the keyboard and screen readers, so nothing is read or focused twice.
+   */
+  const items = (copy: boolean) => (
+    <ul className="season-strip__items" aria-hidden={copy || undefined}>
+      <li>{dateText}</li>
+      <li>
+        Season: <strong>{ritu.name}</strong> <span className="deva">{ritu.deva}</span> · {ritu.english}
+      </li>
       {sandhi && (
-        <p className="today__sandhi">
-          <strong>Ritusandhi:</strong> {RITU_NAMES[sandhi.from].name} is giving way to {RITU_NAMES[sandhi.to].name}. Change food and habits gradually.
-        </p>
+        <li>
+          Ritusandhi: {RITU_NAMES[sandhi.from].name} is giving way to {RITU_NAMES[sandhi.to].name}. Change food and habits gradually.
+        </li>
       )}
-
-      <dl className="today__sun">
-        <div>
-          <dt>
-            <span aria-hidden="true">🌅</span> Sunrise
-          </dt>
-          <dd>{formatTime(sun.sunrise, place.timeZone)}</dd>
-        </div>
-        <div>
-          <dt>
-            <span aria-hidden="true">🌇</span> Sunset
-          </dt>
-          <dd>{formatTime(sun.sunset, place.timeZone)}</dd>
-        </div>
-      </dl>
-      <p className="today__place muted">
-        For {place.name}
+      <li>
+        Sunrise <strong>{formatTime(sun.sunrise, place.timeZone)}</strong>
+      </li>
+      <li>
+        Sunset <strong>{formatTime(sun.sunset, place.timeZone)}</strong>
+      </li>
+      <li>
+        {place.name}{' '}
         {place.name === NEW_DELHI.name ? (
-          <button type="button" className="link-button" onClick={useMyLocation} disabled={locating}>
+          <button type="button" className="season-strip__action" tabIndex={copy ? -1 : undefined} onClick={useMyLocation} disabled={locating}>
             {locating ? 'Finding you…' : 'Use my location'}
           </button>
         ) : (
-          <button type="button" className="link-button" onClick={useDelhi}>
+          <button type="button" className="season-strip__action" tabIndex={copy ? -1 : undefined} onClick={useDelhi}>
             Use New Delhi
           </button>
         )}
-      </p>
+      </li>
+      <li>
+        <Link to={`/ritucharya?ritu=${rituId}`} className="season-strip__action" tabIndex={copy ? -1 : undefined}>
+          Living well in {ritu.name} →
+        </Link>
+      </li>
+    </ul>
+  );
+
+  return (
+    <section className={`season-strip season-strip--${rituId}`} aria-label={`Today: ${ritu.name}, ${ritu.english}`}>
+      <div className="container season-strip__inner">
+        <Link to={`/ritucharya?ritu=${rituId}`} className="season-strip__badge" aria-label={`${ritu.name}: living well this season`}>
+          <RituArt ritu={rituId} className="season-strip__art" />
+          <span className="season-strip__name">{ritu.name}</span>
+        </Link>
+        <div className={`season-strip__window ${paused ? 'season-strip__window--paused' : ''}`}>
+          <div className="season-strip__track">
+            {items(false)}
+            {items(true)}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="season-strip__pause"
+          aria-pressed={paused}
+          onClick={() => {
+            setPaused((p) => !p);
+          }}
+        >
+          <span aria-hidden="true">{paused ? '▶' : '❚❚'}</span>
+          <span className="visually-hidden">{paused ? 'Play the season strip' : 'Pause the season strip'}</span>
+        </button>
+      </div>
       {locationError && (
-        <p className="today__error" role="status">
+        <p className="container season-strip__error" role="status">
           {locationError}
         </p>
       )}
-      <Link to={`/ritucharya?ritu=${ritu.id}`} className="today__more">
-        Living well in {ritu.name} →
-      </Link>
-    </aside>
+    </section>
   );
 }
