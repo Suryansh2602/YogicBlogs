@@ -7,14 +7,15 @@ import { Link, useRouteError } from 'react-router';
 import { Logo } from '../components/brand/Logo';
 import { ErrorPageFor } from '../components/ErrorPages';
 import { errorKind } from '../routes/errorKind';
+import { useSeo } from '../seo/useSeo';
 import { reportError } from '../services/errorReporting';
 import '../components/errorView.css';
 
 function ErrorContent() {
   const error = useRouteError();
+  useSeo({ title: 'Something went wrong · Healthmarg', path: window.location.pathname, noindex: true });
 
   useEffect(() => {
-    document.title = 'Something went wrong · Healthmarg';
     const kind = errorKind(error, navigator.onLine);
     if (kind === 'crash' || kind === 'unavailable') reportError('crash', error);
     else if (kind === 'updated') reportError('updated', error);

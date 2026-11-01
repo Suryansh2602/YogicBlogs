@@ -8,7 +8,9 @@ import { ArticleCard, ReaderImg } from '../../features/articles/ArticleCard';
 import { readerApi } from '../../features/articles/api';
 import type { ReaderArticle } from '../../features/articles/types';
 import { useAuth } from '../../features/auth/useAuth';
-import { ApiRequestError } from '../../services/apiClient';
+import { articleJsonLd } from '../../seo/structuredData';
+import { siteOrigin, useSeo, type SeoInput } from '../../seo/useSeo';
+import { ApiRequestError, apiUrl } from '../../services/apiClient';
 import './articlePages.css';
 
 const DISCLAIMER = 'For education only, not medical advice. Consult a qualified doctor or Ayurvedic practitioner before trying any remedy.';
@@ -22,20 +24,19 @@ const formatDate = (iso: string | null) => {
   return Number.isNaN(date.getTime()) ? null : dateFormat.format(date);
 };
 
-/** Set the tab title (and description) while the page is open; the previous ones come back on leaving. */
-function useDocumentMeta(title: string | null, description: string | null) {
-  useEffect(() => {
-    if (!title) return;
-    const previous = document.title;
-    document.title = `${title} · Healthmarg`;
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    const previousDescription = meta?.content;
-    if (meta && description) meta.content = description;
-    return () => {
-      document.title = previous;
-      if (meta && previousDescription !== undefined) meta.content = previousDescription;
-    };
-  }, [title, description]);
+/** The article's title, preview and structured data. The largest cover makes the best link preview. */
+function articleSeo(article: ReaderArticle): SeoInput {
+  const cover = article.cover?.variants.at(-1);
+  const image = cover ? apiUrl(cover.url) : null;
+  return {
+    title: `${article.seo.title} · Healthmarg`,
+    description: article.seo.description ?? article.summary,
+    path: `/articles/${encodeURIComponent(article.slug)}`,
+    image,
+    type: 'article',
+    lang: article.lang,
+    jsonLd: articleJsonLd(siteOrigin(), article, image),
+  };
 }
 
 function ArticleHeader({ article }: { article: ReaderArticle }) {
@@ -163,10 +164,8 @@ export default function ArticlePage() {
   const shown = current ?? sameSlug;
   const article = shown?.kind === 'article' ? shown.article : null;
 
-  useDocumentMeta(
-    article ? article.seo.title : shown?.kind === 'notFound' ? 'Article not found' : null,
-    article ? (article.seo.description ?? article.summary) : null,
-  );
+  const missing = shown?.kind === 'notFound' ? { title: 'Article not found · Healthmarg', path: `/articles/${encodeURIComponent(slug)}`, noindex: true } : null;
+  useSeo(article ? articleSeo(article) : missing);
 
   if (!shown) {
     return (

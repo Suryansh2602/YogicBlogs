@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { useRef, type KeyboardEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { RITU_ORDER, rituOn, type RituId } from '../features/ritu/calendar';
 import { RituArt } from '../features/ritu/RituArt';
@@ -17,6 +17,8 @@ import {
   type SourceId,
 } from '../features/ritu/ritucharya';
 import { dateIn } from '../features/ritu/sun';
+import { ritucharyaSeo } from '../seo/ritucharyaSeo';
+import { useSeo } from '../seo/useSeo';
 import '../features/ritu/ritu.css';
 
 const isRitu = (v: string | null): v is RituId => RITU_ORDER.some((r) => r.id === v);
@@ -227,11 +229,9 @@ export default function RitucharyaPage() {
   const hindi = params.get('lang') === 'hi';
   const tabRefs = useRef<Partial<Record<RituId, HTMLButtonElement | null>>>({});
 
-  useEffect(() => {
-    document.title = 'Ritucharya: living by the six seasons · Healthmarg';
-  }, []);
+  useSeo(ritucharyaSeo(isRitu(requested) ? requested : null, hindi));
 
-  const select = (id: RituId, focus = false) => {
+  const select =(id: RituId, focus = false) => {
     setParams(hindi ? { ritu: id, lang: 'hi' } : { ritu: id }, { replace: true, preventScrollReset: true });
     if (focus) tabRefs.current[id]?.focus();
   };

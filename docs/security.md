@@ -53,6 +53,7 @@ helmet security headers, `x-powered-by` off, 100 kB body limit, rate limits (300
 
 - Serve the client with a `Content-Security-Policy` header from the host (e.g. `default-src 'self'; connect-src 'self' https://api.<domain>; img-src 'self' data: https://api.<domain>`), plus `Strict-Transport-Security`.
 - If uploaded images are served by the API to the client on another origin, relax helmet's `Cross-Origin-Resource-Policy` for the uploads route only.
+- Article pages for search engines ([seo.md](seo.md)) are HTML built from database text. Every value is escaped, `<` is escaped inside JSON-LD, and the page always uses the signed-out view, so a members article's text never appears in it. Set `SITE_CSP` to the static host's policy; the API refuses to start in production without it when `SITE_INDEX_HTML` is set.
 - If CI is added later: secret scanning (gitleaks) and GitHub Actions pinned to commit SHAs.
 
 ## QA gates (`npm run qa` in each app, before every commit)

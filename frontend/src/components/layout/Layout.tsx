@@ -6,6 +6,7 @@ import { PageLoader } from '../ui/PageLoader';
 import { useAuth } from '../../features/auth/useAuth';
 import { SeasonStrip } from '../../features/ritu/SeasonStrip';
 import { OfflineNotice } from '../OfflineNotice';
+import { RouteSeo } from '../../seo/RouteSeo';
 import './layout.css';
 
 const PAGES = [
@@ -132,6 +133,7 @@ export default function Layout() {
   const { user } = useAuth();
   return (
     <div className="layout">
+      <RouteSeo />
       <a href="#main" className="skip-link">
         Skip to content
       </a>
