@@ -8,6 +8,8 @@
     "jsx": "react-jsx",
     "types": ["vite/client"],
     "noEmit": true,
+    // config/ is also read by vite.config.ts, whose imports keep the .ts extension.
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",

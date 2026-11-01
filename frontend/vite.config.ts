@@ -2,12 +2,14 @@ import { defineConfig } from 'vitest/config';
 import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { assertNoSecretsInClientEnv } from './config/envGuard.ts';
+import { seoPlugin } from './config/seoPlugin.ts';
 
 export default defineConfig(({ mode }) => {
-  assertNoSecretsInClientEnv(loadEnv(mode, process.cwd(), 'VITE_'));
+  const clientEnv = loadEnv(mode, process.cwd(), 'VITE_');
+  assertNoSecretsInClientEnv(clientEnv);
 
   return {
-    plugins: [react()],
+    plugins: [react(), seoPlugin(clientEnv.VITE_SITE_URL)],
     server: {
       port: 5173,
       // Test and build output isn't app code: without this, every test run's coverage report made the

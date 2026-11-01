@@ -1,12 +1,11 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { ErrorView } from '../components/ErrorView';
+import { useSeo } from '../seo/useSeo';
 
 /** An address that doesn't exist: say so plainly, then help the reader find what they wanted. */
 export default function NotFoundPage() {
-  useEffect(() => {
-    document.title = 'Page not found · Healthmarg';
-  }, []);
+  const { pathname } = useLocation();
+  useSeo({ title: 'Page not found · Healthmarg', path: pathname, noindex: true });
   return (
     <ErrorView
       code="404"
