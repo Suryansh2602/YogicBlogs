@@ -34,11 +34,6 @@
   font-variation-settings: 'SOFT' 100, 'WONK' 1;
 }
 
-.hero__accent {
-  font-style: italic;
-  color: var(--primary);
-}
-
 .hero__lead {
   max-width: 36rem;
   margin: 0;
@@ -214,27 +209,6 @@
   text-align: center;
   background: var(--surface-muted);
   border-block: 1px solid var(--border);
-}
-
-.sutra-band__inner {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.sutra-band__sanskrit {
-  margin: 0;
-  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
-}
-
-.sutra-band__translit {
-  margin: 0;
-  font-style: italic;
-  color: var(--primary);
-}
-
-.sutra-band__meaning {
-  margin: 0;
-  color: var(--text-muted);
 }
 
 /* ── Simple content pages (not found, legal) ────────────────────────────────────────────────── */
