@@ -467,3 +467,52 @@
 .media-notice:focus {
   outline: none;
 }
+
+/* ── Security: the setup code ─────────────────────────────────────────────────────────────────── */
+.security-facts {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 44rem;
+  margin: 0 0 var(--space-6);
+}
+
+.security-facts div {
+  display: grid;
+  gap: 2px;
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--border-strong);
+}
+
+.security-facts dt {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.security-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.security-facts__warn {
+  color: var(--warning);
+}
+
+.security-form {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 34rem;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.security-form h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.security-form__generate,
+.security-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
