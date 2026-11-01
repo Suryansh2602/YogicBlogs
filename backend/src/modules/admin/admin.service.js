@@ -75,7 +75,7 @@ export async function createFirstAdmin({ setupCode: presented, email, password, 
 // ── Recovery: a forgotten email or password, or a lost 2FA device ───────────────────────────────
 // Reusable, and proven by the setup code (the Admin panel's, else ADMIN_SETUP_CODE). Never by the
 // temporary startup code: recovery must not depend on a code that disappears. It never creates an admin
-// or changes a role. See docs/admin-recovery.md.
+// or changes a role. See docs/admin-guide.md.
 
 async function assertRecoveryCode(presented, req) {
   const matches = await checkSetupCode(presented);

@@ -1,6 +1,6 @@
 // Admin security settings: the setup code set from the Admin panel (stored hashed, argon2id), which
 // replaces ADMIN_SETUP_CODE from the server environment while it is set. One row (id = 1).
-// See docs/admin-recovery.md.
+// See docs/admin-guide.md.
 export async function up({ queryInterface, Sequelize }) {
   await queryInterface.createTable('admin_security', {
     id: { type: Sequelize.TINYINT.UNSIGNED, primaryKey: true },

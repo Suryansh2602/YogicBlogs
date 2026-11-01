@@ -1,7 +1,6 @@
-# How to set up and recover the admin account
+# Admin account guide
 
-A step-by-step guide for the Healthmarg owner or server operator. How it works inside:
-[admin-recovery.md](admin-recovery.md).
+How to set up, use and recover the Healthmarg admin account. Sections 1–7 are step-by-step for the owner or server operator; section 8 is the technical reference for developers.
 
 **You need:**
 - access to the server's settings file, `backend/.env`;
@@ -63,7 +62,7 @@ After this, `/admin/setup` closes for good. Nobody can create another admin with
 Use this if you **forgot the admin email**, **forgot the password**, or **lost the phone** with the authenticator app (and the backup codes).
 
 1. Open **`/admin/recover`**. You can also click **"Can't sign in? Recover the admin account"** on the admin sign-in page.
-2. Enter the **setup code** (from `backend/.env`), then **Continue**.
+2. Enter the **setup code** (the one set in Admin → Security, or the one in `backend/.env` if none was set there), then **Continue**.
 3. The admin account is shown **with its email**. Note the email: that's your sign-in email.
 4. Choose a **new password** (at least 12 characters), then click **Recover this account**.
 5. The page confirms the email to sign in with. Click **Go to admin sign-in**.
@@ -131,6 +130,101 @@ You can change the setup code at any time, without editing files or restarting a
 
 ---
 
-*Where the data lives:* admins are rows in the `users` table with `role = 'admin'` (database `healthmarg`).
-The panel's setup code (hashed) is in `admin_security`. Two-step sign-in is in `user_two_factor` and `two_factor_backup_codes`, sessions are in `refresh_tokens`,
-and every action is logged in `audit_logs` (database `healthmarg_audit`).
+## 8. Technical reference
+
+For developers. The owner's decisions behind this design (2026-10-30): first admin only for now, a reusable setup code for an admin who forgets their ID, and a code that can be changed later.
+
+### Where admins live
+
+There is no separate admin table. An admin is a row in **`users`** (database `healthmarg`) with **`role = 'admin'`**, like members.
+
+| Table | Holds |
+|---|---|
+| `users` | Email, name, password hash (argon2id), `role`, `status`, `token_version` |
+| `admin_security` | One row: the setup code set from the Admin panel, hashed (argon2id) |
+| `user_two_factor` | The admin's 2FA (TOTP) secret, encrypted |
+| `two_factor_backup_codes` | Hashed backup codes |
+| `refresh_tokens` | Signed-in sessions |
+| `audit_logs` (database `healthmarg_audit`) | Every admin action, including setup and recovery |
+
+### Which setup code counts
+
+1. The code set in Admin → Security, when there is one.
+2. Otherwise `ADMIN_SETUP_CODE` from `backend/.env` (the fallback).
+3. Otherwise, for first-time setup only, the temporary code printed in the API's startup log. Recovery never accepts it.
+
+```mermaid
+flowchart TD
+  P[Recovery or setup presents a code] --> Q{Panel code set?}
+  Q -- yes --> R[argon2 check against admin_security]
+  Q -- no --> S{ADMIN_SETUP_CODE in .env?}
+  S -- yes --> T[Constant-time check against .env]
+  S -- no --> U{First-time setup?}
+  U -- yes --> V[Temporary startup code]
+  U -- no --> W[503 RECOVERY_NOT_CONFIGURED]
+```
+
+### Registration
+
+Once an admin exists, `/admin/setup` closes for good (`409 SETUP_CLOSED`). **There is no public admin sign-up**, and the setup code never creates another admin. The first sign-in forces 2FA setup.
+
+### Recovery
+
+Holding the setup code proves the server operator. A successful recovery runs in one transaction:
+- the new password is saved;
+- 2FA and backup codes are removed;
+- every session is signed out (`token_version` + 1, refresh tokens revoked);
+- the account is reactivated if it was suspended.
+
+```mermaid
+flowchart TD
+  A["/admin/recover"] --> B[Enter setup code]
+  B --> C{A setup code set?}
+  C -- no --> X[503: recovery not set up on this server]
+  C -- yes --> D{Code correct?}
+  D -- no --> F[403, audited, counts toward the rate limit]
+  D -- yes --> E[Admin accounts with their emails]
+  E --> G[Choose one + new password]
+  G --> H[One transaction: new password, 2FA removed, all sessions signed out, active]
+  H --> I[Shown: sign in with this email; 2FA setup required]
+```
+
+**Safety rules**
+- The panel code is checked with argon2, the `.env` code in constant time.
+- The credential rate limit applies: 30 attempts per 15 minutes per IP, shared with sign-in.
+- Only admin accounts can be recovered; a member's ID gets `404`.
+- Recovery never creates an admin and never changes anyone's role.
+
+### Changing the setup code
+
+- Needs a signed-in admin with 2FA, plus the password and a fresh 2FA code. The credential rate limit applies.
+- Rules: 24–200 characters, no spaces, and not the admin's password.
+- Stored hashed only, and applied at once with no restart.
+- Removing the panel code falls back to `.env`, and is refused when `.env` has no code (`409 NO_FALLBACK`).
+- The Security page's count of wrong codes covers setup and recovery over the last 24 hours.
+
+### Audit log actions
+
+| Action | When |
+|---|---|
+| `admin.setup.failure` | Wrong code at first-time setup |
+| `admin.recovery.failure` | Wrong code at recovery |
+| `admin.recovery.lookup` | Admin accounts listed with the code |
+| `admin.recovery.completed` | An account was recovered |
+| `admin.setup_code.changed` | The panel code was set or changed |
+| `admin.setup_code.removed` | The panel code was removed |
+| `admin.setup_code.change_failed` | Wrong password or 2FA code at change or removal |
+
+The code itself is never logged.
+
+### API
+
+| Method and path | Who | Body → answer |
+|---|---|---|
+| `POST /admin/recover/lookup` | Setup code | `{ setupCode }` → `{ admins: [{ id, email, displayName }] }` |
+| `POST /admin/recover` | Setup code | `{ setupCode, adminId, password }` → `{ email }` |
+| `GET /admin/security` | Admin + 2FA | → `{ setupCode: { source: "panel" \| "env" \| "none", changedAt, changedBy }, failedCodeAttempts24h }` |
+| `PUT /admin/security/setup-code` | Admin + 2FA | `{ password, totpCode, newCode }` → `{ setupCode }` |
+| `DELETE /admin/security/setup-code` | Admin + 2FA | `{ password, totpCode }` → `{ setupCode }` |
+
+**Errors:** `403 SETUP_CODE_INVALID` · `403 PASSWORD_INCORRECT` · `403 TOTP_INVALID` · `404 NOT_FOUND` (not an admin) · `400 VALIDATION_FAILED` · `409 NO_FALLBACK` · `429 RATE_LIMITED` · `503 RECOVERY_NOT_CONFIGURED`.

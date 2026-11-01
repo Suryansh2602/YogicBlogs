@@ -15,7 +15,7 @@ type Field = 'setupCode' | 'password';
 
 /**
  * Admin recovery with the server's setup code (ADMIN_SETUP_CODE): find a forgotten admin email, set a
- * new password, and set up two-step sign-in again. All sessions are signed out. See docs/admin-recovery.md.
+ * new password, and set up two-step sign-in again. All sessions are signed out. See docs/admin-guide.md.
  */
 export default function AdminRecoverPage() {
   const [setupCode, setSetupCode] = useState('');
