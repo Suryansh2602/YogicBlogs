@@ -32,6 +32,6 @@ Owner requests, 2026-11-01 (design and reasons in [design-refresh.md](../design-
 | Security | 42 backend + 16 frontend passed |
 | Regression | 35 of 35 Edge steps passed |
 
-Slow 4G home LCP rose from 2460 ms to 2600 ms compared with the last run. It stays under the 2500–4000 ms "needs improvement" ceiling but above the 2500 ms "good" line. CLS improved from 0.002 to 0.001. Both typed texts are hidden from screen readers while moving, and the first slogan is the LCP element, so the page paints it as soon as the code runs.
+**Known cost:** Slow 4G home LCP rose from 2460 ms to 2600 ms compared with the last run, which moves it just past Google's 2500 ms "good" line. CLS improved from 0.002 to 0.001.
 
 **Limit:** at 320px, three slogans take three lines. Nothing overflows; the hero is only a little taller there.
