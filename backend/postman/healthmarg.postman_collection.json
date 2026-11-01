@@ -3087,6 +3087,75 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Search engines",
+      "description": "Pages for crawlers, outside /api/v1 (docs/seo.md). The article page needs SITE_INDEX_HTML set on the server.",
+      "item": [
+        {
+          "name": "Sitemap",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{siteUrl}}/sitemap.xml",
+              "host": [
+                "{{siteUrl}}"
+              ],
+              "path": [
+                "sitemap.xml"
+              ]
+            },
+            "description": "Fixed pages, each season in English and Hindi, and live articles with their last-changed dates. Held in memory for 10 minutes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 and XML', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/xml');",
+                  "  pm.expect(pm.response.text()).to.include('<urlset');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Article page (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{siteUrl}}/articles/{{articleSlug}}",
+              "host": [
+                "{{siteUrl}}"
+              ],
+              "path": [
+                "articles",
+                "{{articleSlug}}"
+              ]
+            },
+            "description": "index.html with the article in the head and its text in noscript. 301 from an old address, 404 + noindex when missing, 503 + Retry-After when the database is down. Always the signed-out view."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('an HTML page, not JSON', () => {",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": []

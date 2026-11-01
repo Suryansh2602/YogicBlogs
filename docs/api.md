@@ -216,6 +216,17 @@ Password rules: 12–128 characters, must not contain your email name or display
   "condition": { "slug": "migraine", "name": "Migraine" }, "locked": true, "reason": "SIGN_IN_REQUIRED" }
 ```
 
+### Pages for search engines ✅
+
+These two are outside `/api/v1`, on the site's own address through the reverse proxy ([seo.md](seo.md)).
+
+| Method | Path | Answer |
+|---|---|---|
+| GET | `/sitemap.xml` | Fixed pages, each season in English and Hindi, and live articles with `lastmod`. Held in memory for 10 minutes; `Cache-Control: public, max-age=3600` |
+| GET | `/articles/:slug` | `index.html` with the article's title, description, canonical, previews and JSON-LD, and its text in `<noscript>`. On only when `SITE_INDEX_HTML` is set. Always the signed-out view, so a members article sends no body. `301` from an old address · `404` + `noindex` when missing or invalid · `503` + `Retry-After: 30` when the database is down |
+
+Both have their own limit of 1500 requests per 15 minutes per IP.
+
 ---
 
 ## 6. Admin dashboard (✅ setup, stats, users, audit, conditions, media, articles)
