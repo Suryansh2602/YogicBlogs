@@ -4,6 +4,7 @@ import { createMigrator } from '../../src/db/migrator.js';
 import { connectAsApp, connectAsMigrator } from './helpers.js';
 
 const APP_TABLES = [
+  'admin_security',
   'article_bookmarks',
   'article_drafts',
   'article_media',

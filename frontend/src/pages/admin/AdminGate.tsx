@@ -14,6 +14,7 @@ const NAV = [
   { to: '/admin/media', label: 'Media', deva: 'चित्र', end: false },
   { to: '/admin/users', label: 'Members', deva: 'सदस्य', end: false },
   { to: '/admin/audit', label: 'Audit log', deva: 'लेखा', end: false },
+  { to: '/admin/security', label: 'Security', deva: 'सुरक्षा', end: false },
 ];
 
 /**

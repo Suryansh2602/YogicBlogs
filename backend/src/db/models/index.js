@@ -2,6 +2,7 @@ import { initUser } from './user.model.js';
 import { initAuthModels } from './auth.models.js';
 import { initContentModels } from './content.models.js';
 import { initAuditLog } from './auditLog.model.js';
+import { initAdminSecurity } from './adminSecurity.model.js';
 
 /**
  * Register every model on a Sequelize instance and wire the associations.
@@ -12,6 +13,7 @@ export function initModels(sequelize, { auditSequelize = sequelize } = {}) {
   const auth = initAuthModels(sequelize);
   const content = initContentModels(sequelize);
   const AuditLog = initAuditLog(auditSequelize);
+  const AdminSecurity = initAdminSecurity(sequelize);
 
   const { OAuthAccount, RefreshToken, UserTwoFactor, TwoFactorBackupCode, AuthToken, UserConsent } = auth;
   const { Condition, Media, Article, ArticleDraft, ArticleReference, ArticleMedia, ArticleRevision, ArticleSlugRedirect, ArticleBookmark, ReadingProgress } = content;
@@ -62,5 +64,5 @@ export function initModels(sequelize, { auditSequelize = sequelize } = {}) {
   // AuditLog has no association: it lives in a separate database (own connection) and entries must
   // outlive the users they mention. Look actors up by actorId when displaying the log.
 
-  return { User, AuditLog, ...auth, ...content };
+  return { User, AuditLog, AdminSecurity, ...auth, ...content };
 }

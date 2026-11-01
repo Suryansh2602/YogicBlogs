@@ -87,6 +87,13 @@ const query = (params: Record<string, string | number | undefined>) => {
   return text ? `?${text}` : '';
 };
 
+export interface SetupCodeInfo {
+  /** Which code counts: the Admin panel's, ADMIN_SETUP_CODE from the server's .env, or none. */
+  source: 'panel' | 'env' | 'none';
+  changedAt: string | null;
+  changedBy: string | null;
+}
+
 export interface RecoverableAdmin {
   id: string;
   email: string;
@@ -101,6 +108,11 @@ export const adminApi = {
   recoveryLookup: (setupCode: string) => apiClient.post<{ admins: RecoverableAdmin[] }>('/admin/recover/lookup', { setupCode }),
   recover: (input: { setupCode: string; adminId: string; password: string }) => apiClient.post<{ email: string }>('/admin/recover', input),
   stats: () => authed((o) => apiClient.get<AdminStats>('/admin/stats', o)),
+  security: () => authed((o) => apiClient.get<{ setupCode: SetupCodeInfo; failedCodeAttempts24h: number }>('/admin/security', o)),
+  changeSetupCode: (input: { password: string; totpCode: string; newCode: string }) =>
+    authed((o) => apiClient.put<{ setupCode: SetupCodeInfo }>('/admin/security/setup-code', input, o)),
+  removeSetupCode: (input: { password: string; totpCode: string }) =>
+    authed((o) => apiClient.delete<{ setupCode: SetupCodeInfo }>('/admin/security/setup-code', { ...o, body: input })),
   users: (params: { page?: number; search?: string }) => authed((o) => apiClient.get<Page<AdminUserRow>>(`/admin/users${query({ pageSize: 20, ...params })}`, o)),
   auditLogs: (params: { page?: number; action?: string }) =>
     authed((o) => apiClient.get<Page<AuditRow>>(`/admin/audit-logs${query({ pageSize: 25, ...params })}`, o)),

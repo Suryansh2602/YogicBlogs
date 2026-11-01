@@ -26,6 +26,8 @@ The **setup code** is a secret password for the server owner. It creates the fir
 
 > If `ADMIN_SETUP_CODE` is left empty, the API prints a temporary code in its startup log. That works only for creating the first admin, never for recovery. Set your own code.
 
+> Once you are an admin, you can change the code **from the Admin panel** instead of editing this file (section 5). The `.env` code then becomes the emergency fallback.
+
 ---
 
 ## 2. Create the admin account (first time only)
@@ -79,12 +81,40 @@ Use this if you **forgot the admin email**, **forgot the password**, or **lost t
 
 ---
 
-## 5. If something goes wrong
+## 5. Change the setup code from the Admin panel
+
+You can change the setup code at any time, without editing files or restarting anything.
+
+1. Sign in at **`/admin`** and open **Security** (सुरक्षा) in the admin menu.
+2. The page shows:
+   - **Code in use:** "Set here, in the Admin panel", or "ADMIN_SETUP_CODE from backend/.env (the fallback)";
+   - when it was last changed, and by whom;
+   - **wrong codes tried in the last 24 hours.** If this isn't 0 and it wasn't you, someone may be guessing: change the code.
+3. Under **Change the setup code**, enter:
+   - **your password;**
+   - **the 6-digit code** from your authenticator app;
+   - the **new setup code**, twice. Or click **Generate a strong code**, then **Copy the code**, and save it in your password manager straight away. It is shown only here.
+
+   Rules: at least 24 characters, no spaces, and not your password.
+4. Click **Change setup code**. **It works at once**: the old code (from the panel or from `.env`) stops working immediately.
+
+**Good to know:**
+- The code is stored **only in scrambled (hashed) form**. Nobody can read it back, not even you or the database. If you lose it, set a new one here while you're signed in, or use the `.env` code (below).
+- **Use the .env code instead** removes the panel code, so `ADMIN_SETUP_CODE` from `backend/.env` counts again. This needs your password and a 2FA code too. It is refused if `.env` has no code, because then nobody could recover the account.
+- **The emergency fallback:** if you lose the panel code *and* can't sign in, recovery needs the panel code, which only an admin can change. Keep the panel code in your password manager. If it's truly lost, a developer can clear it in the database (`UPDATE admin_security SET setup_code_hash = NULL`), and then `ADMIN_SETUP_CODE` from `.env` counts again.
+- Every change is in the **Audit log**: `admin.setup_code.changed`, `admin.setup_code.removed`, and `admin.setup_code.change_failed` for a wrong password or 2FA code. The code itself is never logged.
+
+---
+
+## 6. If something goes wrong
 
 | Message | What to do |
 |---|---|
-| **"Recovery isn't set up on this server"** | `ADMIN_SETUP_CODE` is empty. Do step 1, restart the API, try again. |
-| **"The setup code is not correct"** | Copy the code again from `backend/.env`, with no extra spaces. After many wrong tries you are paused for a while. |
+| **"Recovery isn't set up on this server"** | No code is set (neither in the panel nor in `.env`). Do step 1, restart the API, try again. |
+| **"Your password is not correct"** (Security page) | Enter your admin sign-in password. |
+| **"The two-step sign-in code is not correct, or was already used"** | Wait for the next code in your app (each code works once), then try again. |
+| **"Set ADMIN_SETUP_CODE in backend/.env first"** | You tried *Use the .env code instead*, but `.env` has no code. Set one there first (step 1). |
+| **"The setup code is not correct"** | Use the code that's in use (see Security: panel or `.env`), with no extra spaces. After many wrong tries you are paused for a while. |
 | **"Too many attempts…"** | Wait the time shown (up to 15 minutes), then try again. |
 | **"Setup is already complete"** on `/admin/setup` | An admin already exists. Sign in at `/admin`, or use **recovery** (section 4). |
 | **"Your password has N characters. Use at least 12."** (or other password advice) | Choose a longer password, avoiding your name and email. |
@@ -92,9 +122,9 @@ Use this if you **forgot the admin email**, **forgot the password**, or **lost t
 
 ---
 
-## 6. Keeping it safe
+## 7. Keeping it safe
 
-- Keep `ADMIN_SETUP_CODE` **long, random and secret**. If it may have leaked, change it in `backend/.env` and restart the API. If someone could have used it, recover the account straight away (section 4), which signs everyone else out.
+- Keep the setup code **long, random and secret**. If it may have leaked, change it in **Admin → Security** (section 5). It applies at once. If someone could have used it, also recover the account straight away (section 4), which signs everyone else out.
 - Use a password you use nowhere else.
 - Keep the backup codes offline, separate from your phone.
 - Check **Admin → Audit log** now and then. Every setup, sign-in and recovery is listed there.
@@ -102,5 +132,5 @@ Use this if you **forgot the admin email**, **forgot the password**, or **lost t
 ---
 
 *Where the data lives:* admins are rows in the `users` table with `role = 'admin'` (database `healthmarg`).
-Two-step sign-in is in `user_two_factor` and `two_factor_backup_codes`, sessions are in `refresh_tokens`,
+The panel's setup code (hashed) is in `admin_security`. Two-step sign-in is in `user_two_factor` and `two_factor_backup_codes`, sessions are in `refresh_tokens`,
 and every action is logged in `audit_logs` (database `healthmarg_audit`).

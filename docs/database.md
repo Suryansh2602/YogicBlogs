@@ -219,6 +219,7 @@ erDiagram
 | `two_factor_backup_codes` | One-time recovery codes | Hashed; `used_at` marks single use |
 | `auth_tokens` | Email verification, password reset, email change | Hashed, expiring, single-use (`used_at`) |
 | `user_consents` | Terms, privacy and marketing acceptance with document version | Required by India's DPDP Act 2023 |
+| `admin_security` | One row (`id = 1`): the setup code set from Admin → Security | `setup_code_hash` is argon2id, hidden by default (`withHash` scope), never sent or logged; `CHECK id = 1`; when null, `ADMIN_SETUP_CODE` from `.env` counts ([admin-recovery.md](admin-recovery.md)) |
 
 ### Content
 | Table | Purpose | Key rules |
