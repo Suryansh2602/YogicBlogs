@@ -50,6 +50,11 @@ const schema = z
     // Public URL of the frontend: the only base used for links in emails (never the request's Host header).
     APP_URL: z.url().default('http://localhost:5173'),
 
+    // Article pages for search engines (docs/seo.md). Leave SITE_INDEX_HTML unset to switch them off.
+    SITE_INDEX_HTML: z.string().min(1).optional(),
+    SITE_CSP: z.string().min(1).optional(),
+    SITE_API_URL: z.url().optional(),
+
     JWT_ACCESS_SECRET: secret,
     JWT_REFRESH_SECRET: secret,
     JWT_ACCESS_EXPIRES_IN: duration.default('15m'),
@@ -119,6 +124,7 @@ const schema = z
         fail('CLIENT_ORIGIN', 'must use https in production');
       }
       if (!cfg.APP_URL.startsWith('https://')) fail('APP_URL', 'must use https in production');
+      if (cfg.SITE_INDEX_HTML && !cfg.SITE_CSP) fail('SITE_CSP', 'is required with SITE_INDEX_HTML in production');
       if (cfg.RECAPTCHA_MODE !== 'live') fail('RECAPTCHA_MODE', 'must be live in production');
       if (cfg.EMAIL_ENABLED && cfg.MAIL_MODE !== 'smtp') fail('MAIL_MODE', 'must be smtp in production when EMAIL_ENABLED=true');
     }

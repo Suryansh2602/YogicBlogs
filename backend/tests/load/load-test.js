@@ -17,6 +17,8 @@
 //   image serving     GET /media/i/:id/480 (cached lookup + file from disk), image limit lifted
 //   image flood       one IP floods the image route from cold (cache stampede); the limit (1500/15 min) holds
 //   article page/list public article page and list built from MySQL per request (no Redis): worst case
+//   sitemap           GET /sitemap.xml, built once and then held in memory
+//   crawler page      GET /articles/:slug as HTML: the article read from MySQL, then filled into index.html
 //
 // Tunables (env): LOAD_DURATION (s, default 8), LOAD_CONNECTIONS (default 1000),
 //                 LOAD_MIN_RATIO (min share of baseline rps, default 0.5), LOAD_P99_MS (default 3000).
@@ -30,6 +32,7 @@ const CONNECTIONS = Number(process.env.LOAD_CONNECTIONS ?? 1000);
 const MIN_RATIO = Number(process.env.LOAD_MIN_RATIO ?? 0.5);
 const P99_MS = Number(process.env.LOAD_P99_MS ?? 3000);
 const PROBE = '/api/v1/load-probe'; // unknown route → full middleware stack, no DB
+process.env.SITE_INDEX_HTML ??= '../frontend/index.html'; // read by the API process, for the crawler page
 
 async function startApi(options) {
   const child = spawn(process.execPath, ['tests/load/server.js'], {
@@ -229,6 +232,8 @@ const baselineRps = baseline.requests.average;
         for (const [label, path] of [
           ['article page (MySQL, uncached)', `/api/v1/articles/${article.slug}`],
           ['article list (MySQL, uncached)', '/api/v1/articles?limit=12'],
+          ['crawler page (MySQL, uncached)', `/articles/${article.slug}`],
+          ['sitemap (held in memory)', '/sitemap.xml'],
         ]) {
           const r = await measure(articleApi.url, path, conns);
           const bad = Object.entries(codes(r)).filter(([c]) => c !== '200').reduce((n, [, v]) => n + v, 0);

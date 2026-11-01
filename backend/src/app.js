@@ -9,6 +9,7 @@ import { requestId } from './middlewares/requestId.js';
 import { isDraftSave } from './modules/articles/articles.routes.js';
 import { publicImageRouter } from './modules/media/media.routes.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
+import { createSeoRouter } from './modules/seo/seo.routes.js';
 import { createRoutes } from './routes.js';
 
 /**
@@ -37,7 +38,9 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
   const store = (name) => (redisRateLimit ? createRedisStore(name) : undefined);
   app.use('/api/v1/articles', createAreaLimiter(store('read'), apiRateLimit ?? 1500));
   app.use('/api/v1/admin/articles', createAreaLimiter(store('edit'), apiRateLimit ?? 3000));
-  const ownBudget = (req) => /^\/api\/v1\/(articles|admin\/articles)(\/|\?|$)/.test(req.originalUrl);
+  // Crawlers come from a few addresses and read many pages, so the public pages have a budget of their own.
+  app.use(['/sitemap.xml', '/articles'], createAreaLimiter(store('seo'), apiRateLimit ?? 1500));
+  const ownBudget = (req) => /^\/(api\/v1\/(articles|admin\/articles)(\/|\?|$)|sitemap\.xml|articles\/)/.test(req.originalUrl);
   app.use(createApiLimiter(store('api'), apiRateLimit, { skip: ownBudget }));
   // The frontend is a separate app on its own origin: only origins on the allow-list may call the API.
   // Unknown origins get no CORS headers at all (not even Allow-Credentials).
@@ -72,6 +75,7 @@ export function createApp({ redisRateLimit = !env.isTest && isRedisEnabled(), ap
   const autosaveLimiter = createAutosaveLimiter(redisRateLimit ? createRedisStore('autosave') : undefined);
   const clientErrorLimiter = createClientErrorLimiter(redisRateLimit ? createRedisStore('clienterr') : undefined);
   app.use('/api/v1', createRoutes({ strictLimiter, uploadLimiter, autosaveLimiter, clientErrorLimiter }));
+  app.use(createSeoRouter());
 
   app.use(notFound);
   app.use(errorHandler);
