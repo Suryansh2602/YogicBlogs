@@ -3,7 +3,7 @@ import { validate } from '../../middlewares/validate.js';
 import { authenticate, requireMfa, requireRole } from '../../middlewares/authenticate.js';
 import { ROLES } from '../../config/constants.js';
 import * as c from './admin.controller.js';
-import { adminSetupSchema, listAuditLogsQuery, listUsersQuery, recoverAdminSchema, recoveryLookupSchema } from './admin.validation.js';
+import { adminSetupSchema, changeSetupCodeSchema, listAuditLogsQuery, listUsersQuery, recoverAdminSchema, recoveryLookupSchema, removeSetupCodeSchema } from './admin.validation.js';
 import { adminConditionsRouter } from '../conditions/conditions.routes.js';
 import { createAdminMediaRouter } from '../media/media.routes.js';
 import { createAdminArticlesRouter } from '../articles/articles.routes.js';
@@ -25,6 +25,10 @@ export function createAdminRouter(strictLimiter, { uploadLimiter, autosaveLimite
   // Everything else: a signed-in admin whose session passed 2FA.
   router.use(authenticate, requireRole(ROLES.ADMIN), requireMfa);
   router.get('/stats', c.stats);
+  // The setup code, changed from the panel (password + fresh 2FA code; credential rate limit).
+  router.get('/security', c.security);
+  router.put('/security/setup-code', strictLimiter, validate({ body: changeSetupCodeSchema }), c.changeSetupCode);
+  router.delete('/security/setup-code', strictLimiter, validate({ body: removeSetupCodeSchema }), c.removeSetupCode);
   router.get('/users', validate({ query: listUsersQuery }), c.users);
   router.get('/audit-logs', validate({ query: listAuditLogsQuery }), c.auditLogs);
   router.use('/conditions', adminConditionsRouter);

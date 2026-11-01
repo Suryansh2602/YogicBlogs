@@ -1294,6 +1294,93 @@
               }
             }
           ]
+        },
+        {
+          "name": "Security: overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/security",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "security"
+              ]
+            },
+            "description": "Where the setup code comes from (panel / env / none), when and by whom it was last changed, and wrong codes tried in the last 24 h. Admin with 2FA."
+          }
+        },
+        {
+          "name": "Security: change setup code",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{adminPassword}}\",\n  \"totpCode\": \"{{totpCode}}\",\n  \"newCode\": \"{{newSetupCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/security/setup-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "security",
+                "setup-code"
+              ]
+            },
+            "description": "Needs your password and a fresh 2FA code. newCode: 24–200 characters, no spaces, not your password. Stored hashed; applies at once."
+          }
+        },
+        {
+          "name": "Security: remove panel setup code",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{adminPassword}}\",\n  \"totpCode\": \"{{totpCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/security/setup-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "security",
+                "setup-code"
+              ]
+            },
+            "description": "Falls back to ADMIN_SETUP_CODE from .env. 409 NO_FALLBACK if .env has no code."
+          }
         }
       ]
     },

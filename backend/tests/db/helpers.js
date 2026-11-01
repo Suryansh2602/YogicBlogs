@@ -20,6 +20,7 @@ export function connectAsMigrator() {
 }
 
 const TABLES_CHILD_FIRST = [
+  'admin_security',
   'reading_progress',
   'article_bookmarks',
   'article_slug_redirects',

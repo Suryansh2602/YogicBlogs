@@ -8,28 +8,25 @@ import { env } from '../../config/env.js';
 import { models, sequelize } from '../../config/db.js';
 import { ROLES, USER_STATUS } from '../../config/constants.js';
 import { ApiError } from '../../utils/ApiError.js';
-import { randomToken, safeEqual, sha256Hex } from '../../utils/crypto.js';
 import { logger } from '../../utils/logger.js';
 import { audit } from '../../services/audit.js';
 import { assertAcceptablePassword, publicUser } from '../auth/auth.service.js';
 import { hashPassword } from '../auth/password.service.js';
 import { revokeAllForUser } from '../auth/token.service.js';
 import { invalidateUserState } from '../../middlewares/authenticate.js';
+import { checkSetupCode, codeSource, forgetTemporaryCode, temporaryCode } from './setupCode.service.js';
 
-// Generated once per process when no code is configured. Never logged except by announceAdminSetup().
-let generatedSetupCode;
-const setupCode = () => env.ADMIN_SETUP_CODE ?? (generatedSetupCode ??= randomToken(18));
 
 export const adminExists = async () => (await models.User.count({ where: { role: ROLES.ADMIN } })) > 0;
 
 /** At startup: if there is no admin yet, tell the operator (only the operator sees the server log). */
 export async function announceAdminSetup() {
   if (await adminExists()) return;
-  if (env.ADMIN_SETUP_CODE) {
-    logger.warn(`No admin yet. Create one at ${env.APP_URL}/admin/setup with ADMIN_SETUP_CODE from the server environment.`);
+  if ((await codeSource()) !== 'none') {
+    logger.warn(`No admin yet. Create one at ${env.APP_URL}/admin/setup with the setup code (ADMIN_SETUP_CODE in the server environment).`);
   } else {
     // Development convenience; production deployments should set ADMIN_SETUP_CODE instead.
-    logger.warn(`No admin yet. Create one at ${env.APP_URL}/admin/setup with this one-time setup code: ${setupCode()}`);
+    logger.warn(`No admin yet. Create one at ${env.APP_URL}/admin/setup with this one-time setup code: ${temporaryCode()}`);
   }
 }
 
@@ -39,8 +36,8 @@ export async function setupStatus() {
 
 /** Create the first admin. Serialised with a MySQL named lock so two parallel requests can't both succeed. */
 export async function createFirstAdmin({ setupCode: presented, email, password, displayName }, req) {
-  // Compare hashes so the check is constant-time regardless of the presented length.
-  if (!safeEqual(sha256Hex(presented), sha256Hex(setupCode()))) {
+  // Constant-time (or argon2) comparison: see setupCode.service.js for which code counts.
+  if (!(await checkSetupCode(presented, { allowTemporary: true }))) {
     await audit('admin.setup.failure', { req, metadata: { reason: 'bad_code' } });
     throw ApiError.forbidden('The setup code is not correct', 'SETUP_CODE_INVALID');
   }
@@ -70,22 +67,22 @@ export async function createFirstAdmin({ setupCode: presented, email, password, 
     }
   });
 
-  generatedSetupCode = undefined;
+  forgetTemporaryCode();
   await audit('admin.setup.created', { req, actorId: admin.id, entityType: 'user', entityId: admin.id });
   return { user: publicUser(admin) };
 }
 
 // ── Recovery: a forgotten email or password, or a lost 2FA device ───────────────────────────────
-// Reusable, and proven by the configured ADMIN_SETUP_CODE (the server operator's secret). Never by the
+// Reusable, and proven by the setup code (the Admin panel's, else ADMIN_SETUP_CODE). Never by the
 // temporary startup code: recovery must not depend on a code that disappears. It never creates an admin
 // or changes a role. See docs/admin-recovery.md.
 
 async function assertRecoveryCode(presented, req) {
-  if (!env.ADMIN_SETUP_CODE) {
+  const matches = await checkSetupCode(presented);
+  if (matches === null) {
     throw ApiError.unavailable('Recovery isn’t set up on this server. The operator must set ADMIN_SETUP_CODE in the server environment.', 'RECOVERY_NOT_CONFIGURED');
   }
-  // Compare hashes so the check is constant-time regardless of the presented length.
-  if (!safeEqual(sha256Hex(presented), sha256Hex(env.ADMIN_SETUP_CODE))) {
+  if (!matches) {
     await audit('admin.recovery.failure', { req, metadata: { reason: 'bad_code' } });
     throw ApiError.forbidden('The setup code is not correct', 'SETUP_CODE_INVALID');
   }

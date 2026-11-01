@@ -1,4 +1,5 @@
 import * as admin from './admin.service.js';
+import * as setupCode from './setupCode.service.js';
 
 export async function setupStatus(_req, res) {
   res.set('Cache-Control', 'no-store');
@@ -17,6 +18,21 @@ export async function recoveryLookup(req, res) {
 export async function recover(req, res) {
   res.set('Cache-Control', 'no-store');
   res.json(await admin.recoverAdmin(req.body, req));
+}
+
+export async function security(_req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.json(await setupCode.securityOverview());
+}
+
+export async function changeSetupCode(req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.json(await setupCode.changeSetupCode(req.auth.userId, req.body, req));
+}
+
+export async function removeSetupCode(req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.json(await setupCode.removePanelCode(req.auth.userId, req.body, req));
 }
 
 export async function stats(_req, res) {

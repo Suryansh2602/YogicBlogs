@@ -21,6 +21,7 @@ describe('db', () => {
   it('registers every model on the shared instance', () => {
     expect(Object.keys(models).sort()).toEqual(
       [
+        'AdminSecurity',
         'Article',
         'ArticleBookmark',
         'ArticleDraft',

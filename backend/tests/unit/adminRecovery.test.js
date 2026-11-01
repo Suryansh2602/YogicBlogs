@@ -6,7 +6,10 @@ vi.mock('../../src/config/env.js', async (importOriginal) => {
   const { env } = await importOriginal();
   return { env: { ...env, ADMIN_SETUP_CODE: undefined } };
 });
-vi.mock('../../src/config/db.js', () => ({ models: { User: { findAll: vi.fn(), findOne: vi.fn() } }, sequelize: { transaction: vi.fn() } }));
+vi.mock('../../src/config/db.js', () => ({
+  models: { User: { findAll: vi.fn(), findOne: vi.fn() }, AdminSecurity: { scope: () => ({ findByPk: () => Promise.resolve(null) }) } },
+  sequelize: { transaction: vi.fn() },
+}));
 vi.mock('../../src/services/audit.js', () => ({ audit: vi.fn() }));
 
 const { models } = await import('../../src/config/db.js');
