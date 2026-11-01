@@ -2,7 +2,7 @@
 
 Owner, 2026-10-30: "the ADMIN_SETUP_CODE should be like I can change in future", then "do it and update the docs also for this".
 
-Design: [admin-recovery.md](../admin-recovery.md). Owner how-to: [admin-guide.md](../admin-guide.md), section 5.
+Guide and design: [admin-guide.md](../admin-guide.md), section 5.
 
 ## What was built
 

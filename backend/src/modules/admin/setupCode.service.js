@@ -4,7 +4,7 @@
 //   2. otherwise ADMIN_SETUP_CODE from the server environment (the fallback);
 //   3. otherwise, for first-time setup only, a temporary code printed to the server log.
 // Changing or removing the panel code needs a signed-in admin's password and a fresh 2FA code; it applies
-// at once. See docs/admin-recovery.md.
+// at once. See docs/admin-guide.md.
 import { Op } from 'sequelize';
 import { env } from '../../config/env.js';
 import { models } from '../../config/db.js';

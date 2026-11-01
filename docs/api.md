@@ -226,7 +226,7 @@ Password rules: 12–128 characters, must not contain your email name or display
 |---|---|---|---|
 | GET | `/admin/setup/status` ✅ | — | `{ setupRequired: true or false }` |
 | POST | `/admin/setup` ✅ | setup code | `{ setupCode, email, password, displayName }` → `201 { user }`. `403 SETUP_CODE_INVALID`; `409 SETUP_CLOSED` once an admin exists |
-| POST | `/admin/recover/lookup` ✅ | setup code | `{ setupCode }` → `{ admins: [{ id, email, displayName }] }`. Only works when `ADMIN_SETUP_CODE` is configured (`503 RECOVERY_NOT_CONFIGURED`); `403 SETUP_CODE_INVALID`. Audited. See [admin-recovery.md](admin-recovery.md) |
+| POST | `/admin/recover/lookup` ✅ | setup code | `{ setupCode }` → `{ admins: [{ id, email, displayName }] }`. Only works when `ADMIN_SETUP_CODE` is configured (`503 RECOVERY_NOT_CONFIGURED`); `403 SETUP_CODE_INVALID`. Audited. See [admin-guide.md](admin-guide.md) |
 | POST | `/admin/recover` ✅ | setup code | `{ setupCode, adminId, password }` → `{ email }`. New password, 2FA removed (set up again at the next sign-in), every session signed out, active again. `404` if the ID isn't an admin; password rules as at sign-up. Credential rate limit. Audited |
 | GET | `/admin/security` ✅ | admin + 2FA | `{ setupCode: { source: "panel" | "env" | "none", changedAt, changedBy }, failedCodeAttempts24h }`. Never returns the code or its hash |
 | PUT | `/admin/security/setup-code` ✅ | admin + 2FA | `{ password, totpCode, newCode }` (24–200 characters, no spaces, not the password) → `{ setupCode }`. Stored hashed; applies at once; the previous code stops working. `403 PASSWORD_INCORRECT` / `TOTP_INVALID` (audited). Credential rate limit |
