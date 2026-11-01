@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { BlurReveal } from '../components/motion/BlurReveal';
+import { TypedHeadline, type Slogan } from '../components/motion/TypedHeadline';
+import { TypedVerse, type VerseLines } from '../components/motion/TypedVerse';
 import { ArticleCard } from '../features/articles/ArticleCard';
 import { readerApi } from '../features/articles/api';
 import type { ArticleListItem } from '../features/articles/types';
@@ -9,6 +10,7 @@ import { rituOn } from '../features/ritu/calendar';
 import { RituArt } from '../features/ritu/RituArt';
 import { RITU_NAMES } from '../features/ritu/names';
 import { dateIn } from '../features/ritu/sun';
+import { FIRST_VERSE, VERSES, type Verse } from './dashboard/wisdom';
 import './pages.css';
 
 const PILLARS = [
@@ -32,6 +34,19 @@ const PILLARS = [
     text: 'Clear, referenced articles with the classical source and the research beside each claim.',
   },
 ];
+
+// The hero's typed slogans. They describe the site; none promises a health result.
+const SLOGANS: readonly [Slogan, ...Slogan[]] = [
+  { text: 'Ancient wisdom for', accent: 'modern ease' },
+  { text: 'Live in tune with', accent: 'every season' },
+  { text: 'Ayurveda,', accent: 'made clear' },
+  { text: 'Small habits,', accent: 'steady balance' },
+  { text: 'Eat and move', accent: 'with the ritus' },
+  { text: 'Classical texts,', accent: 'modern research' },
+];
+
+const withSource = ({ sanskrit, transliteration, meaning, source }: Verse): VerseLines => ({ sanskrit, transliteration, meaning: `${meaning} (${source})` });
+const BAND_VERSES: readonly [VerseLines, ...VerseLines[]] = [withSource(FIRST_VERSE), ...VERSES.slice(1).map(withSource)];
 
 /** The newest published articles: one lead story, then a short list. Hidden until there are some. */
 function LatestArticles() {
@@ -93,9 +108,7 @@ export default function HomePage() {
             <p className="eyebrow">
               <span className="deva dandas">स्वास्थ्य मार्ग</span> The path to wellbeing
             </p>
-            <h1 className="hero__title">
-              <BlurReveal text="Ancient wisdom for" /> <em className="hero__accent">modern ease</em>
-            </h1>
+            <TypedHeadline slogans={SLOGANS} className="hero__title" />
             <p className="hero__lead">Understand the causes of everyday conditions and find Ayurvedic ways to heal, guided by yoga practitioners.</p>
             <div className="hero__actions">
               {user ? (
@@ -157,9 +170,7 @@ export default function HomePage() {
 
       <section className="sutra-band">
         <div className="container sutra-band__inner">
-          <p className="deva sutra-band__sanskrit">योगश्चित्तवृत्तिनिरोधः</p>
-          <p className="sutra-band__translit">yogaś citta-vṛtti-nirodhaḥ</p>
-          <p className="sutra-band__meaning">Yoga is the settling of the mind’s restless movements. (Yoga Sūtra 1.2)</p>
+          <TypedVerse verses={BAND_VERSES} />
         </div>
       </section>
     </>

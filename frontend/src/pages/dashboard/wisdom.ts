@@ -11,12 +11,12 @@ export const VERSES: Verse[] = [
   { sanskrit: 'स्थिरसुखमासनम्', transliteration: 'sthira-sukham āsanam', meaning: 'A posture should be steady and at ease.', source: 'Yoga Sūtra 2.46' },
   { sanskrit: 'अभ्यासवैराग्याभ्यां तन्निरोधः', transliteration: 'abhyāsa-vairāgyābhyāṃ tan-nirodhaḥ', meaning: 'Steady practice and gentle letting go bring the mind to rest.', source: 'Yoga Sūtra 1.12' },
   { sanskrit: 'हेयं दुःखमनागतम्', transliteration: 'heyaṃ duḥkham anāgatam', meaning: 'Suffering that has not yet come can be avoided.', source: 'Yoga Sūtra 2.16' },
-  { sanskrit: 'समदोषः समाग्निश्च', transliteration: 'sama-doṣaḥ samāgniś ca', meaning: 'Health is balance: of the doshas, and of the digestive fire.', source: 'Suśruta Saṃhitā, Sūtrasthāna 15.41' },
+  { sanskrit: 'समदोषः समाग्निश्च', transliteration: 'sama-doṣaḥ samāgniś ca', meaning: 'Health is balance: of the doshas, and of the digestive fire.', source: 'Suśruta Saṃhitā, Sūtrasthāna 15' },
   { sanskrit: 'योगः कर्मसु कौशलम्', transliteration: 'yogaḥ karmasu kauśalam', meaning: 'Yoga is skill in action.', source: 'Bhagavad Gītā 2.50' },
   { sanskrit: 'सर्वे भवन्तु सुखिनः', transliteration: 'sarve bhavantu sukhinaḥ', meaning: 'May all beings be well and happy.', source: 'Traditional prayer' },
 ];
 
-const FIRST_VERSE: Verse = VERSES[0] ?? { sanskrit: '', transliteration: '', meaning: '', source: '' };
+export const FIRST_VERSE: Verse = VERSES[0] ?? { sanskrit: '', transliteration: '', meaning: '', source: '' };
 
 export function verseOfTheDay(date = new Date()): Verse {
   const start = Date.UTC(date.getFullYear(), 0, 0);

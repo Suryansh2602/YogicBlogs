@@ -54,3 +54,37 @@ flowchart LR
 4. Ritucharya page without boxes; styled language switch.
 5. Articles list and article page: kickers, reading column, rules instead of cards.
 6. Tests at every stage: unit → integration → performance/load → security → regression; then push.
+
+## Hero typing animation
+
+Owner request, 2026-11-01: "I want these fonts to be animated, I want it like typing animation and like this create multiple slogans".
+
+- The hero heading types a slogan, holds it, erases it and types the next, in a loop. Accent words stay in the italic colour.
+- **Fast first paint:** the first slogan shows complete at once, so typing never delays the page.
+- **No layout shift:** every slogan sits invisibly in the same space, so the hero keeps the height of the tallest one.
+- **Accessible:**
+  - screen readers get one steady heading (the typed text is hidden from them);
+  - a Pause button stops the motion (WCAG 2.2.2);
+  - with "reduce motion" on, the first slogan stands still and there is no button.
+- Slogans describe the site and make no health claims. Keep them short: each must fit two lines from 360px up, because the longest one sets the hero's height.
+
+## Verse typing animation
+
+Owner request, 2026-11-01: "do it with this also" (the Sanskrit band on the home page).
+
+- The band types the Sanskrit, then the transliteration, then the meaning; holds for 6 seconds so it can be read; erases; and moves to the next verse.
+- **Starts on arrival:** it begins blank and types when it scrolls into view, so visitors see it happen.
+- **Whole letters:** Sanskrit is split by what a reader sees as one letter (`Intl.Segmenter`), never by code unit, so vowel signs are not cut from their letters. Browsers without it fall back to code points.
+- **Same safeguards as the hero:** all verses reserve their space, screen readers get the first verse, there is a Pause button, and "reduce motion" shows the first verse standing still.
+- **Same verses as the dashboard:** the seven lines in `pages/dashboard/wisdom.ts`. Checked 2026-11-01 before showing them to every visitor. Sources disagree on the Suśruta verse number (15.41 or 15.48), so it is cited by chapter only.
+
+```mermaid
+flowchart LR
+  A[Scrolled into view] --> B[Type Sanskrit]
+  B --> C[Type transliteration]
+  C --> D[Type meaning]
+  D --> E[Hold 6 seconds]
+  E --> F[Erase]
+  F --> G[Next verse]
+  G --> B
+```

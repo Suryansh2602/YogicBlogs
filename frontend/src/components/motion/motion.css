@@ -130,3 +130,94 @@
     transform: translate(-14vmax, 10vmax) scale(1.2);
   }
 }
+
+/* ── Typed headline ─────────────────────────────────────────────────────────────────────────── */
+.typed-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* All slogans share one cell, so the headline keeps the height of the tallest. */
+.typed {
+  display: grid;
+}
+
+.typed__line {
+  grid-area: 1 / 1;
+}
+
+.typed__line--ghost,
+.typed__rest {
+  visibility: hidden;
+}
+
+.typed__accent {
+  font-style: italic;
+  color: var(--primary);
+}
+
+/* No width, so the caret never pushes the text. */
+.typed__caret {
+  display: inline-block;
+  width: 0;
+  height: 0.85em;
+  margin-right: -2px;
+  vertical-align: -0.06em;
+  border-right: 2px solid var(--primary);
+  animation: typed-caret 1s steps(2, jump-none) infinite;
+}
+
+@keyframes typed-caret {
+  to {
+    opacity: 0;
+  }
+}
+
+.typed-verse {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.typed-verse__sanskrit {
+  margin: 0;
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+}
+
+.typed-verse__translit {
+  margin: 0;
+  font-style: italic;
+  color: var(--primary);
+}
+
+.typed-verse__meaning {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.typed-pause {
+  position: absolute;
+  top: -2.1rem;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.typed-pause:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typed__caret {
+    display: none;
+  }
+}
