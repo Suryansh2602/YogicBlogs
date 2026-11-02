@@ -30,8 +30,17 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong. P
     if (error.status >= 500) return 'Our server had a problem (not something you did). Please try again in a moment.';
     return error.message || fallback;
   }
-  if (error instanceof TypeError) return 'Can’t reach Healthmarg right now. Check your internet connection and try again.';
+  if (error instanceof TypeError) return unreachableMessage();
   return fallback;
+}
+
+// The browser reports "no internet", "server down" and "server refused this site" (CORS) the same way, so
+// only the browser's own online flag can tell the visitor's connection apart from ours.
+function unreachableMessage(): string {
+  if (!navigator.onLine) return 'You’re offline. Check your Wi-Fi or mobile data, then try again.';
+  const message = 'Healthmarg’s server didn’t answer. Your internet is working; please try again in a minute.';
+  if (!import.meta.env.DEV) return message;
+  return `${message} (Developer hint: check that the API is running and that CLIENT_ORIGIN in backend/.env includes ${window.location.origin}.)`;
 }
 
 /** Field-level messages from a 400 response's `details`, keyed by field path. */
