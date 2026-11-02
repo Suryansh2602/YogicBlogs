@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { env } from '../../src/config/env.js';
 import { createMigrator } from '../../src/db/migrator.js';
+import { pendingMigrations } from '../../src/db/pendingMigrations.js';
 import { connectAsApp, connectAsMigrator } from './helpers.js';
 
 const APP_TABLES = [
@@ -63,6 +64,18 @@ describe('schema (migrations)', () => {
 
   it('has no pending migrations', async () => {
     expect(await createMigrator(migrator).pending()).toEqual([]);
+  });
+
+  it('the startup check works as the runtime user and agrees with the migrator', async () => {
+    const app = connectAsApp();
+    try {
+      expect(await pendingMigrations(app.sequelize)).toEqual([]);
+      // The runtime user can't create tables, so the check must only read: it sees the same history.
+      const [rows] = await app.sequelize.query('SELECT name FROM schema_migrations ORDER BY name');
+      expect(rows.map((r) => r.name)).toEqual((await createMigrator(migrator).executed()).map((m) => m.name));
+    } finally {
+      await app.close();
+    }
   });
 
   it('every migration rolls back and re-applies cleanly', async () => {
