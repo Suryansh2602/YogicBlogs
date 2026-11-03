@@ -18,7 +18,8 @@ export interface SeoInput {
   jsonLd?: readonly object[];
 }
 
-export const siteOrigin = () => import.meta.env.VITE_SITE_URL ?? window.location.origin;
+// While prerendering there is no window: the tags are applied in the browser anyway (useSeo is an effect).
+export const siteOrigin = () => import.meta.env.VITE_SITE_URL ?? (typeof window === 'undefined' ? 'https://healthmarg.invalid' : window.location.origin);
 const absolute = (path: string) => new URL(path, siteOrigin()).href;
 
 function setMeta(attribute: 'name' | 'property', key: string, content: string) {

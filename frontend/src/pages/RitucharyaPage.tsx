@@ -17,6 +17,7 @@ import {
   type SourceId,
 } from '../features/ritu/ritucharya';
 import { dateIn } from '../features/ritu/sun';
+import { useHydrated, useNow } from '../prerender/hydration';
 import { ritucharyaSeo } from '../seo/ritucharyaSeo';
 import { useSeo } from '../seo/useSeo';
 import '../features/ritu/ritu.css';
@@ -222,11 +223,14 @@ function RituDetailHindi({ ritu }: { ritu: Ritu }) {
 
 export default function RitucharyaPage() {
   const [params, setParams] = useSearchParams();
-  const today = dateIn('Asia/Kolkata');
+  const today = dateIn('Asia/Kolkata', useNow());
   const current = rituOn(today.month, today.day);
-  const requested = params.get('ritu');
+  // The prerendered page is one file for every address, so it shows the current season in English. While
+  // hydrating, draw exactly that; a requested season or Hindi follows straight after.
+  const hydrated = useHydrated();
+  const requested = hydrated ? params.get('ritu') : null;
   const selected: RituId = isRitu(requested) ? requested : current;
-  const hindi = params.get('lang') === 'hi';
+  const hindi = hydrated && params.get('lang') === 'hi';
   const tabRefs = useRef<Partial<Record<RituId, HTMLButtonElement | null>>>({});
 
   useSeo(ritucharyaSeo(isRitu(requested) ? requested : null, hindi));

@@ -5,6 +5,23 @@
   gap: 0.55rem;
 }
 
+/* Sizes as classes, not inline styles: the CSP blocks those in prerendered pages. */
+.logo--32 {
+  --logo-size: 32px;
+}
+
+.logo--34 {
+  --logo-size: 34px;
+}
+
+.logo--38 {
+  --logo-size: 38px;
+}
+
+.logo--40 {
+  --logo-size: 40px;
+}
+
 .logo .logo-mark {
   flex: none;
   width: var(--logo-size);

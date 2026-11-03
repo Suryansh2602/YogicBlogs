@@ -3,8 +3,10 @@
 // It pauses on hover, on keyboard focus and with its Pause button, and stands still for visitors who
 // prefer reduced motion. Location: New Delhi until the visitor chooses "Use my location" (the browser asks
 // them then, never on page load); their place is remembered only in this browser.
-import { useEffect, useState } from 'react';
+// Prerendered pages draw it for the build time and New Delhi; the browser then shows today and the saved place.
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router';
+import { useNow } from '../../prerender/hydration';
 import { rituOn, sandhiOn } from './calendar';
 import { RituArt } from './RituArt';
 import { RITU_NAMES } from './names';
@@ -13,36 +15,45 @@ import './seasonStrip.css';
 
 const PLACE_KEY = 'hm-place';
 
-function savedPlace(): Place {
+function readSavedPlace(): string | null {
   try {
-    const raw = localStorage.getItem(PLACE_KEY);
-    if (!raw) return NEW_DELHI;
+    return localStorage.getItem(PLACE_KEY);
+  } catch {
+    return null; // storage blocked
+  }
+}
+
+function parsePlace(raw: string | null): Place {
+  if (!raw) return NEW_DELHI;
+  try {
     const p = JSON.parse(raw) as Partial<Place>;
     if (typeof p.latitude === 'number' && typeof p.longitude === 'number' && typeof p.timeZone === 'string' && typeof p.name === 'string') {
       return p as Place;
     }
   } catch {
-    // Storage blocked or the value is damaged: fall back to the default.
+    // The value is damaged: fall back to the default.
   }
   return NEW_DELHI;
 }
 
+// Another tab choosing a place updates this one too.
+const subscribeToPlace = (onChange: () => void) => {
+  window.addEventListener('storage', onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+  };
+};
+
 export function SeasonStrip() {
-  const [now, setNow] = useState(() => new Date());
-  const [place, setPlace] = useState<Place>(savedPlace);
+  const now = useNow(); // updated each minute, so the date is right if the page stays open past midnight
+  const savedRaw = useSyncExternalStore(subscribeToPlace, readSavedPlace, () => null);
+  const saved = useMemo(() => parsePlace(savedRaw), [savedRaw]);
+  // A place chosen on this page, used even when storage is blocked and it can't be remembered.
+  const [chosen, setChosen] = useState<Place | null>(null);
+  const place = chosen ?? saved;
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
-
-  // Refresh once a minute so the date and times are right if the page stays open past midnight.
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 60_000);
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
 
   const { year, month, day } = dateIn(place.timeZone, now);
   const rituId = rituOn(month, day);
@@ -66,7 +77,7 @@ export function SeasonStrip() {
           longitude: Math.round(pos.coords.longitude * 100) / 100,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         };
-        setPlace(next);
+        setChosen(next);
         setLocating(false);
         try {
           localStorage.setItem(PLACE_KEY, JSON.stringify(next));
@@ -87,7 +98,7 @@ export function SeasonStrip() {
   };
 
   const useDelhi = () => {
-    setPlace(NEW_DELHI);
+    setChosen(NEW_DELHI);
     setLocationError(null);
     try {
       localStorage.removeItem(PLACE_KEY);

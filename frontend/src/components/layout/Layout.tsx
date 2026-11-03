@@ -7,6 +7,7 @@ import { useAuth } from '../../features/auth/useAuth';
 import { SeasonStrip } from '../../features/ritu/SeasonStrip';
 import { OfflineNotice } from '../OfflineNotice';
 import { RouteSeo } from '../../seo/RouteSeo';
+import { useNow } from '../../prerender/hydration';
 import './layout.css';
 
 const PAGES = [
@@ -131,6 +132,7 @@ function MobileMenu() {
 /** Public site shell: header with the main links, the season strip, the page, and a footer with site links. */
 export default function Layout() {
   const { user } = useAuth();
+  const year = useNow().getFullYear();
   return (
     <div className="layout">
       <RouteSeo />
@@ -192,7 +194,7 @@ export default function Layout() {
             </nav>
           </div>
           <div className="container footer__bottom">
-            <small>© {new Date().getFullYear()} Healthmarg</small>
+            <small>© {year} Healthmarg</small>
             <small>Guidance, not a substitute for medical care. Please see a qualified doctor for any health problem.</small>
           </div>
         </footer>
