@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { QueryTypes } from 'sequelize';
 import { env } from '../../config/env.js';
 import { sequelize } from '../../config/db.js';
-import { escapeHtml } from './seo.html.js';
+import { emptyShell, escapeHtml } from './seo.html.js';
 
 const SITEMAP_TTL_MS = 10 * 60 * 1000;
 const TEMPLATE_TTL_MS = 60 * 1000;
@@ -47,6 +47,6 @@ export async function sitemapXml() {
 export async function indexTemplate() {
   if (template.html && Date.now() < template.expires) return template.html;
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- server-configured path
-  template = { html: await readFile(env.SITE_INDEX_HTML, 'utf8'), expires: Date.now() + TEMPLATE_TTL_MS };
+  template = { html: emptyShell(await readFile(env.SITE_INDEX_HTML, 'utf8')), expires: Date.now() + TEMPLATE_TTL_MS };
   return template.html;
 }
