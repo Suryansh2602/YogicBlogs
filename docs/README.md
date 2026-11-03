@@ -9,6 +9,7 @@
 | [capacity.md](capacity.md) | How much load the site handles: measured load test results, users it can serve, limits, what to measure before launch |
 | [admin-guide.md](admin-guide.md) | The admin account: setup, daily sign-in, recovery and changing the setup code (step by step), plus the technical reference |
 | [seo.md](seo.md) | Search engines: decisions, how articles are served to crawlers, launch settings and the owner's steps |
+| [page-speed.md](page-speed.md) | Why phones waited, prerendering the public pages, the rules that keep hydration correct, host settings, results |
 | [security.md](security.md) | Credential handling, DB least privilege, hardening checklist |
 | [workflow.md](workflow.md) | Branch per task; Developer → Reviewer → Tester → owner review stream |
 

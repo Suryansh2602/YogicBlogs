@@ -20,6 +20,7 @@ Owner request, 2026-11-01: "Do the SEO (Search Engine Optimisations) also".
 | **Members articles stay teasers, marked `isAccessibleForFree: false`.** | That is [Google's paywall markup](https://developers.google.com/search/docs/appearance/structured-data/paywalled-content), and the hidden text never reaches the browser. |
 | **No `MedicalWebPage`, `reviewedBy` or practitioner claims.** | Structured data must be a [true picture of the page](https://developers.google.com/search/docs/appearance/structured-data/sd-policies). No reviewer is shown on the site, so none is claimed. |
 | **The author is the organisation** until articles show a named person. | [Every author shown must match the markup](https://developers.google.com/search/docs/appearance/structured-data/article). |
+| **Home, Ritucharya, Articles, Terms and Privacy are prerendered** ([page-speed.md](page-speed.md)): their text is in the HTML. | Fast on phones, and crawlers and readers without JavaScript get the real page. Ritucharya's file shows the current season in English; other seasons and Hindi follow in the browser. |
 
 ## Priority order
 
@@ -56,7 +57,7 @@ flowchart TD
 |---|---|---|
 | `VITE_SITE_URL` | Frontend build | The public address, such as `https://healthmarg.com`. Without it, the build keeps the default head and adds no canonical or sitemap line. |
 | `APP_URL` | Backend | The same public address. It is used in the sitemap and canonical links. |
-| `SITE_INDEX_HTML` | Backend | Path to the built `frontend/dist/index.html`. Unset, the two page routes are off. |
+| `SITE_INDEX_HTML` | Backend | Path to the built `frontend/dist/index.html`. Unset, the two page routes are off. It is Home's prerendered page; the API takes that HTML out before using it for an article. |
 | `SITE_CSP` | Backend | The site's `Content-Security-Policy`, the same as the static host's. Required with `SITE_INDEX_HTML` in production. |
 | `SITE_API_URL` | Backend | The API's public address, used for article preview images. |
 
