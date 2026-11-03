@@ -36,6 +36,15 @@ cd frontend && npm install && npm run dev     # http://localhost:5173
 
 Run `npm test` in either folder for unit + integration tests, or `npm run qa` for the full check (lint, coverage, audit, and build for the client).
 
+From the project folder, these run in both apps:
+
+| Command | What it does |
+|---|---|
+| `npm run install:all` | Install backend and frontend packages |
+| `npm run build` | Backend: code check (it runs from `src/`, so there is nothing to compile). Frontend: type check and production build into `frontend/dist/` |
+| `npm run qa` | The full check in both apps |
+| `npm run check:secrets` | The credential check to run before every commit |
+
 ## Goals
 
 - Lightweight and cheap to run

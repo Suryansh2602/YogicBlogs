@@ -1,0 +1,12 @@
+{
+  "name": "healthmarg",
+  "private": true,
+  "description": "Shortcuts that run the same command in backend/ and frontend/. Each app keeps its own dependencies.",
+  "type": "module",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "qa": "npm run qa --prefix backend && npm run qa --prefix frontend",
+    "check:secrets": "node scripts/check-staged-secrets.js"
+  }
+}
