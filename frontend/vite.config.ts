@@ -3,18 +3,27 @@ import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { assertNoSecretsInClientEnv } from './config/envGuard.ts';
 import { seoPlugin } from './config/seoPlugin.ts';
+import { prerenderPlugin } from './config/prerenderPlugin.ts';
 
 export default defineConfig(({ mode }) => {
   const clientEnv = loadEnv(mode, process.cwd(), 'VITE_');
   assertNoSecretsInClientEnv(clientEnv);
 
   return {
-    plugins: [react(), seoPlugin(clientEnv.VITE_SITE_URL)],
+    // seoPlugin writes the page copies first; prerenderPlugin then fills them with each page's HTML.
+    plugins: [react(), seoPlugin(clientEnv.VITE_SITE_URL), prerenderPlugin()],
     server: {
       port: 5173,
       // Test and build output isn't app code: without this, every test run's coverage report made the
       // dev server reload the open browser tab.
       watch: { ignored: ['**/coverage/**', '**/dist/**'] },
+    },
+    // `vite preview` (used by the browser tests) sends the CSP recommended for production in docs/security.md,
+    // with any local API port, so the tests catch anything that policy would block.
+    preview: {
+      headers: {
+        'Content-Security-Policy': "default-src 'self'; connect-src 'self' http://localhost:*; img-src 'self' data: http://localhost:*",
+      },
     },
     build: {
       // No source maps in production: they would publish the original source.
