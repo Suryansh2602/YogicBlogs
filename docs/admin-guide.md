@@ -109,6 +109,8 @@ You can change the setup code at any time, without editing files or restarting a
 
 | Message | What to do |
 |---|---|
+| **"Healthmarg's server didn't answer"** | The API isn't running, or it refuses this website. Start it (`npm run dev` in `backend`). On your computer, check that `CLIENT_ORIGIN` in `backend/.env` lists the exact address in your browser's address bar, for example `http://localhost:5173,http://localhost:5174`, then restart the API. |
+| **"You're offline"** | Your device has no internet connection. Reconnect, then try again. |
 | **"Recovery isn't set up on this server"** | No code is set (neither in the panel nor in `.env`). Do step 1, restart the API, try again. |
 | **"Your password is not correct"** (Security page) | Enter your admin sign-in password. |
 | **"The two-step sign-in code is not correct, or was already used"** | Wait for the next code in your app (each code works once), then try again. |

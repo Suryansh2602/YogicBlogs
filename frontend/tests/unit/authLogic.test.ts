@@ -51,8 +51,33 @@ describe('error messages', () => {
     expect(errorMessage(new ApiRequestError(429, 'x', 'LOGIN_LOCKED', undefined, 840))).toMatch(/Try again in about 14 minutes, or reset your password/);
     expect(errorMessage(new ApiRequestError(401, 'The email or password is incorrect.', 'INVALID_CREDENTIALS'))).toBe('The email or password is incorrect.');
     expect(errorMessage(new ApiRequestError(500, 'boom'))).toContain('server had a problem (not something you did)');
-    expect(errorMessage(new TypeError('Failed to fetch'))).toMatch(/Can’t reach Healthmarg/);
     expect(errorMessage('weird', 'Fallback')).toBe('Fallback');
+  });
+
+  it('tells "you are offline" apart from "our server did not answer"', () => {
+    const online = vi.spyOn(navigator, 'onLine', 'get');
+    try {
+      online.mockReturnValue(false);
+      expect(errorMessage(new TypeError('Failed to fetch'))).toBe('You’re offline. Check your Wi-Fi or mobile data, then try again.');
+
+      // Online but no answer: server down, or this site not allowed by CLIENT_ORIGIN. Never blame the visitor's internet.
+      online.mockReturnValue(true);
+      const message = errorMessage(new TypeError('Failed to fetch'));
+      expect(message).toMatch(/^Healthmarg’s server didn’t answer\. Your internet is working/);
+      expect(message).not.toMatch(/Check your internet/);
+      expect(message).toContain(`CLIENT_ORIGIN in backend/.env includes ${window.location.origin}`); // tests run in dev mode
+    } finally {
+      online.mockRestore();
+    }
+  });
+
+  it('keeps the developer hint out of production builds', () => {
+    vi.stubEnv('DEV', false);
+    try {
+      expect(errorMessage(new TypeError('Failed to fetch'))).toBe('Healthmarg’s server didn’t answer. Your internet is working; please try again in a minute.');
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('turns Retry-After seconds into words', () => {
