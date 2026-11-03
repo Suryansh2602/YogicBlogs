@@ -474,6 +474,56 @@
   height: 2.1rem;
 }
 
+/* Each theme's three colours (the same as THEMES in theme/themes.ts; a test checks they match). */
+.theme-swatch--ushas {
+  --swatch-1: #fbf6ef;
+  --swatch-2: #e8728f;
+  --swatch-3: #12807f;
+}
+
+.theme-swatch--ratri {
+  --swatch-1: #0e0d0c;
+  --swatch-2: #f2b85a;
+  --swatch-3: #3cc4c0;
+}
+
+.theme-swatch--kesar {
+  --swatch-1: #fff5e8;
+  --swatch-2: #e8941a;
+  --swatch-3: #c2481b;
+}
+
+.theme-swatch--vana {
+  --swatch-1: #f0f5ef;
+  --swatch-2: #d0607e;
+  --swatch-3: #1f7a57;
+}
+
+.theme-swatch span:nth-child(1) {
+  background: var(--swatch-1);
+}
+
+.theme-swatch span:nth-child(2) {
+  background: var(--swatch-2);
+}
+
+.theme-swatch span:nth-child(3) {
+  background: var(--swatch-3);
+}
+
+/* The toggle holds every theme; only the active one shows (no data-theme yet: the default). */
+.theme-switcher__current {
+  display: none;
+}
+
+:root[data-theme='ushas'] .theme-switcher__current--ushas,
+:root[data-theme='ratri'] .theme-switcher__current--ratri,
+:root[data-theme='kesar'] .theme-switcher__current--kesar,
+:root[data-theme='vana'] .theme-switcher__current--vana,
+:root:not([data-theme]) .theme-switcher__current--ushas {
+  display: contents;
+}
+
 .theme-switcher__menu {
   position: absolute;
   right: 0;

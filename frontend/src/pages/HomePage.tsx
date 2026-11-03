@@ -10,6 +10,7 @@ import { rituOn } from '../features/ritu/calendar';
 import { RituArt } from '../features/ritu/RituArt';
 import { RITU_NAMES } from '../features/ritu/names';
 import { dateIn } from '../features/ritu/sun';
+import { useNow } from '../prerender/hydration';
 import { FIRST_VERSE, VERSES, type Verse } from './dashboard/wisdom';
 import './pages.css';
 
@@ -97,7 +98,7 @@ function LatestArticles() {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const today = dateIn('Asia/Kolkata');
+  const today = dateIn('Asia/Kolkata', useNow());
   const rituId = rituOn(today.month, today.day);
   const ritu = RITU_NAMES[rituId];
   return (

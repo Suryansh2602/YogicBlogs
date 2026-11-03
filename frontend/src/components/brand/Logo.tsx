@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import './brand.css';
 
 const RING_LINKS: [number, number, number][] = [
@@ -71,10 +70,13 @@ export function LogoMark({ size = 40, animated = false, className = '' }: LogoMa
   );
 }
 
+/** The sizes the wordmark comes in: each is a CSS class, because inline styles are blocked by the CSP. */
+export type LogoSize = 32 | 34 | 38 | 40;
+
 /** Mark + "Health·marg" wordmark. */
-export function Logo({ size = 40, animated = false }: { size?: number; animated?: boolean }) {
+export function Logo({ size = 40, animated = false }: { size?: LogoSize; animated?: boolean }) {
   return (
-    <span className="logo" style={{ '--logo-size': `${size}px` } as CSSProperties}>
+    <span className={`logo logo--${size}`}>
       <LogoMark size={size} animated={animated} />
       <span className="logo__word">
         <span className="logo__a">Health</span>

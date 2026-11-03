@@ -13,6 +13,7 @@ export const isThemeId = (value: unknown): value is ThemeId => THEMES.some((t) =
 
 /** Same rule as public/theme-init.js: saved choice, else the device's light/dark preference. */
 export function initialTheme(): ThemeId {
+  if (typeof window === 'undefined') return 'ushas'; // prerendering: nothing on the page depends on it
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (isThemeId(saved)) return saved;

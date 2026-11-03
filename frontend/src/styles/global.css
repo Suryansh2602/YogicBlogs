@@ -80,6 +80,11 @@ svg {
   color: var(--text);
 }
 
+/* A page built in advance for another address (public/theme-init.js): never shown; the app replaces it. */
+.hm-shell #root > * {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;

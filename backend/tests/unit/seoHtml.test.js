@@ -1,6 +1,6 @@
 // Filling index.html for an article: right tags, one of each, and hostile text stays plain text.
 import { describe, expect, it } from 'vitest';
-import { articlePage, escapeHtml, missingPage } from '../../src/modules/seo/seo.html.js';
+import { articlePage, emptyShell, escapeHtml, missingPage } from '../../src/modules/seo/seo.html.js';
 
 const TEMPLATE = `<html lang="en"><head>
     <meta name="description" content="Default" />
@@ -82,6 +82,28 @@ describe('article page', () => {
     expect(html).toContain('A short summary.');
     expect(html).not.toContain('Breathe');
     expect(jsonLd(html)[0]).toMatchObject({ isAccessibleForFree: false, hasPart: { cssSelector: '.article-lock' } });
+  });
+});
+
+describe('prerendered index.html (Home with its HTML built in)', () => {
+  const PRERENDERED = TEMPLATE.replace('<script src="/theme-init.js">', '<meta name="hm-prerendered" content="/" />\n    <script src="/theme-init.js">').replace(
+    '<body><div id="root"></div>',
+    '<body><div id="root" data-prerendered="/" data-rendered-at="1793690400000"><div class="layout"><main><h1>Ancient wisdom</h1></main><div>footer</div></div></div>',
+  );
+
+  it('starts empty for an article: no Home HTML, no path marker, and the noscript text in place', () => {
+    const shell = emptyShell(PRERENDERED);
+    expect(shell).not.toContain('Ancient wisdom');
+    expect(shell).not.toContain('hm-prerendered');
+    expect(shell).not.toContain('data-prerendered');
+    const html = articlePage(shell, ARTICLE, PLACE);
+    expect(html).toContain('<div id="root"></div><noscript><article><h1>Calm breath</h1>');
+    expect(html).toContain('src="/assets/index.js"');
+    expect(html).toContain('src="/theme-init.js"');
+  });
+
+  it('leaves an ordinary index.html as it is', () => {
+    expect(emptyShell(TEMPLATE)).toBe(TEMPLATE);
   });
 });
 

@@ -69,6 +69,23 @@ function blockHtml(node) {
   return (node.content ?? []).map(blockHtml).join('');
 }
 
+/**
+ * The site's index.html is Home's page with its HTML built in (frontend docs/page-speed.md). For an article,
+ * take that HTML and its path marker out, so the page starts empty and the browser builds the article.
+ */
+export function emptyShell(html) {
+  const open = /<div id="root" data-prerendered="[^"]*" data-rendered-at="\d+">/.exec(html);
+  if (!open) return html;
+  // The root's own closing tag: count nested divs (React escapes "<" in text, so every "<div" is a tag).
+  const tags = /<div\b|<\/div>/g;
+  tags.lastIndex = open.index + open[0].length;
+  let depth = 1;
+  let match;
+  while (depth > 0 && (match = tags.exec(html))) depth += match[0] === '</div>' ? -1 : 1;
+  if (depth > 0) return html; // unbalanced: leave it; the browser's start-up check still handles it
+  return `${html.slice(0, open.index)}<div id="root"></div>${html.slice(tags.lastIndex)}`.replace(/ *<meta name="hm-prerendered" content="[^"]*" \/>\n?/, '');
+}
+
 /** Replaces index.html's fixed head tags, and adds extra markup to the head and after the app's root. */
 function fill(template, { title, head, noscript = '' }) {
   return template
