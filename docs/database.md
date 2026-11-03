@@ -280,6 +280,8 @@ Redis is an in-memory key-value store: very fast, but treated as **disposable**.
 | `docker compose up -d redis` | Start local Redis (needs Docker Desktop running) |
 | `docker compose down` | Stop Redis (data kept in a Docker volume) |
 
+**After every `git pull`, run `npm run db:migrate`.** Code arrives with Git, but new tables only exist once their migration has run. The API checks this at startup: if the database is behind, it logs *"The database is missing N setup step(s)…"* with the file names (an error in production, a warning elsewhere). It still starts, but features that need the missing tables fail with server errors until you migrate. The check only reads `schema_migrations`, so it works with the runtime user (`src/db/pendingMigrations.js`).
+
 ### Looking inside
 - **MySQL:** connect MySQL Workbench or the VS Code "MySQL" extension to `localhost:3306` as `healthmarg_app` (password in `backend/.env`) and open `healthmarg`.
 - **Redis:** RedisInsight (free GUI) on `127.0.0.1:6379` with the password from `backend/.env`, or:

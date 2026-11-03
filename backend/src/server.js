@@ -4,7 +4,8 @@ import 'dotenv/config';
 import { createApp } from './app.js';
 import { createHttpServer, requestTimeoutFor } from './httpServer.js';
 import { env } from './config/env.js';
-import { closeDatabase, pingDatabase } from './config/db.js';
+import { closeDatabase, pingDatabase, sequelize } from './config/db.js';
+import { warnAboutPendingMigrations } from './db/pendingMigrations.js';
 import { closeRedis, connectRedis, isRedisEnabled } from './config/redis.js';
 import { logger } from './utils/logger.js';
 import { announceAdminSetup } from './modules/admin/admin.service.js';
@@ -35,6 +36,9 @@ async function start() {
     logger.fatal({ err }, 'Could not connect to a required service');
     process.exit(1);
   }
+
+  // A database behind the code: say so now, not as a confusing server error on the first request.
+  await warnAboutPendingMigrations(sequelize);
 
   // Uploads interrupted by a crash or restart leave temp files behind: clear them now and every hour.
   const sweepUploads = () =>
