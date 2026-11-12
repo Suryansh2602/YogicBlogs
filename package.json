@@ -4,9 +4,10 @@
   "description": "Shortcuts that run the same command in backend/ and frontend/. Each app keeps its own dependencies.",
   "type": "module",
   "scripts": {
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend && npm install --prefix e2e",
     "build": "npm run build --prefix backend && npm run build --prefix frontend",
     "qa": "npm run qa --prefix backend && npm run qa --prefix frontend",
+    "stages": "npm run stages --prefix e2e",
     "check:secrets": "node scripts/check-staged-secrets.js"
   }
 }

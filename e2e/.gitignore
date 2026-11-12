@@ -1,0 +1,9 @@
+# Everything these scripts produce: builds, test uploads, screenshots, logs.
+node_modules/
+*-dist/
+uploads/
+shots/
+design/
+*.log
+*.png
+*.jpg

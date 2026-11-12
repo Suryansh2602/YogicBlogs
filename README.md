@@ -40,9 +40,10 @@ From the project folder, these run in both apps:
 
 | Command | What it does |
 |---|---|
-| `npm run install:all` | Install backend and frontend packages |
+| `npm run install:all` | Install backend, frontend and browser-check (`e2e/`) packages |
 | `npm run build` | Backend: code check (it runs from `src/`, so there is nothing to compile). Frontend: type check and production build into `frontend/dist/` |
 | `npm run qa` | The full check in both apps |
+| `npm run stages` | Every test stage in order, including the Edge checks (see `e2e/README.md`) |
 | `npm run check:secrets` | The credential check to run before every commit |
 
 ## Goals
