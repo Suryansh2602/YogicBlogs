@@ -71,6 +71,8 @@ describe('GET /sitemap.xml', () => {
     expect(res.headers['content-type']).toMatch(/application\/xml/);
     expect(res.text).toContain('<loc>https://site.example/</loc>');
     expect(res.text).toContain('<loc>https://site.example/ritucharya?ritu=vasanta&amp;lang=hi</loc>');
+    expect(res.text).toContain('<loc>https://site.example/about</loc>');
+    expect(res.text).toContain('<loc>https://site.example/about?lang=hi</loc>');
     expect(res.text).toContain('<loc>https://site.example/articles/calm-breath</loc><lastmod>2026-10-05T00:00:00.000Z</lastmod>');
   });
 

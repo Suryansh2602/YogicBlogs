@@ -41,6 +41,7 @@ export const AdminAudit = lazyPage(() => import('../pages/admin/AdminAudit'));
 export const AdminConditions = lazyPage(() => import('../pages/admin/AdminConditions'));
 export const AdminMedia = lazyPage(() => import('../pages/admin/AdminMedia'));
 export const RitucharyaPage = lazyPage(() => import('../pages/RitucharyaPage'));
+export const AboutPage = lazyPage(() => import('../pages/about/AboutPage'));
 export const ArticlesPage = lazyPage(() => import('../pages/articles/ArticlesPage'));
 export const ArticlePage = lazyPage(() => import('../pages/articles/ArticlePage'));
 export const AdminArticles = lazyPage(() => import('../pages/admin/AdminArticles'));
@@ -51,6 +52,7 @@ export const AdminArticleEditor = lazyPage(() => import('../pages/admin/AdminArt
 export const PRERENDERED_PAGE_CODE: Record<PrerenderPath, (() => Promise<unknown>) | null> = {
   '/': null,
   '/ritucharya': RitucharyaPage.preload,
+  '/about': AboutPage.preload,
   '/articles': ArticlesPage.preload,
   '/terms': LegalPage.preload,
   '/privacy': LegalPage.preload,
