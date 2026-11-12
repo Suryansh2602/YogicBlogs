@@ -1,0 +1,15 @@
+{
+  "name": "healthmarg-e2e",
+  "private": true,
+  "description": "Browser checks in Edge and the full test-stage run. See README.md.",
+  "type": "module",
+  "scripts": {
+    "stages": "powershell -NoProfile -ExecutionPolicy Bypass -File run-stages.ps1",
+    "regression": "node flow.mjs",
+    "seo-live": "node seo-live.mjs",
+    "perf": "node perf.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.0"
+  }
+}
