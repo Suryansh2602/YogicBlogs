@@ -13,7 +13,9 @@ const BUDGET = {
   entryJs: 115 * KB, // React + router + app shell (React alone is ~60 kB of this)
   lazyChunk: 25 * KB, // any single page loaded on demand
   editor: 150 * KB, // the admin article editor and everything only it loads (TipTap + ProseMirror)
-  totalCss: 20 * KB,
+  // Every stylesheet in the build, the admin's and the editor's included. 20 → 22 kB on 2026-11-13 for the
+  // About page (its CSS loads only on /about) and the footer's contact links; readers' first load grew ~0.3 kB.
+  totalCss: 22 * KB,
 };
 const EDITOR_PAGE = 'src/pages/admin/AdminArticleEditor.tsx';
 const READER_PAGES = ['src/pages/articles/ArticlesPage.tsx', 'src/pages/articles/ArticlePage.tsx'];

@@ -7,6 +7,7 @@ import RouteError from '../pages/RouteError';
 import { GuestOnly, RequireAuth } from '../features/auth/guards';
 import { EmailOnly } from '../features/auth/EmailOnly';
 import {
+  AboutPage,
   AdminAudit,
   AdminConditions,
   AdminMedia,
@@ -86,6 +87,7 @@ export const routes: RouteObject[] = [
           { path: 'terms', element: <LegalPage doc="terms" /> },
           { path: 'privacy', element: <LegalPage doc="privacy" /> },
           { path: 'ritucharya', element: <RitucharyaPage /> },
+          { path: 'about', element: <AboutPage /> },
           { path: 'articles', element: <ArticlesPage /> },
           { path: 'articles/:slug', element: <ArticlePage /> },
           { path: 'admin/setup', element: <AdminSetupPage /> },

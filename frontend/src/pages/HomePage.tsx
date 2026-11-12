@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { TypedHeadline, type Slogan } from '../components/motion/TypedHeadline';
 import { TypedVerse, type VerseLines } from '../components/motion/TypedVerse';
+import { ContactLinks } from '../components/ContactLinks';
 import { ArticleCard } from '../features/articles/ArticleCard';
 import { readerApi } from '../features/articles/api';
 import type { ArticleListItem } from '../features/articles/types';
@@ -13,6 +14,30 @@ import { dateIn } from '../features/ritu/sun';
 import { useNow } from '../prerender/hydration';
 import { FIRST_VERSE, VERSES, type Verse } from './dashboard/wisdom';
 import './pages.css';
+
+// Why connect with Healthmarg (the owner's points, fact-checked: docs/about-page.md). No promise of a cure.
+const REASONS = [
+  {
+    deva: 'शास्त्र',
+    title: 'Rooted in the classical texts',
+    text: 'Charaka, Sushruta and Ashtanga Hridaya for health and food; Patanjali and Gheranda for yoga. Every article names its source.',
+  },
+  {
+    deva: 'दिनचर्या',
+    title: 'Routines you can keep',
+    text: 'Small daily and seasonal habits, explained simply, that fit into an ordinary day.',
+  },
+  {
+    deva: 'प्रकृति',
+    title: 'Closer to nature at home',
+    text: 'Simple, traditional alternatives to kitchen and bathroom products full of synthetic additives.',
+  },
+  {
+    deva: 'संवाद',
+    title: 'A real person to talk to',
+    text: 'A question about a routine, a season or a practice? Message or call Yogesh Upadhyay.',
+  },
+];
 
 const PILLARS = [
   {
@@ -167,6 +192,23 @@ export default function HomePage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="container home-section" aria-labelledby="why-title">
+        <header className="home-section__head">
+          <h2 id="why-title">Why people choose Healthmarg</h2>
+          <Link to="/about">Our story →</Link>
+        </header>
+        <ul className="pillars">
+          {REASONS.map((r) => (
+            <li key={r.title} className="pillar">
+              <span className="deva pillar__deva">{r.deva}</span>
+              <h3>{r.title}</h3>
+              <p className="muted">{r.text}</p>
+            </li>
+          ))}
+        </ul>
+        <ContactLinks className="home-why__contact" />
       </section>
 
       <section className="sutra-band">

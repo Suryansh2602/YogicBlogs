@@ -8,12 +8,15 @@ import { SeasonStrip } from '../../features/ritu/SeasonStrip';
 import { OfflineNotice } from '../OfflineNotice';
 import { RouteSeo } from '../../seo/RouteSeo';
 import { useNow } from '../../prerender/hydration';
+import { BUSINESS, fssaiText } from '../../config/business';
+import { ContactLinks } from '../ContactLinks';
 import './layout.css';
 
 const PAGES = [
   { to: '/', label: 'Home', end: true },
   { to: '/articles', label: 'Articles', end: false },
   { to: '/ritucharya', label: 'Ritucharya', end: false },
+  { to: '/about', label: 'About', end: false },
 ];
 
 function PageLinks({ className }: { className: string }) {
@@ -172,7 +175,13 @@ export default function Layout() {
           <div className="container footer__grid">
             <div className="footer__about">
               <Logo size={32} />
-              <p className="muted">Ayurveda and yoga for everyday health, explained clearly and checked against classical texts and research.</p>
+              <p className="muted">
+                Healthmarg brings the daily and seasonal routines, yoga and herbal knowledge of India’s classical texts into everyday life,
+                explained clearly, with the source beside each claim.
+              </p>
+              <Link to="/about" className="footer__more">
+                About Healthmarg <span aria-hidden="true">→</span>
+              </Link>
               <p className="deva footer__deva">स्वास्थ्य का मार्ग</p>
             </div>
             <nav aria-label="Explore" className="footer__col">
@@ -180,6 +189,7 @@ export default function Layout() {
               <Link to="/">Home</Link>
               <Link to="/articles">Articles</Link>
               <Link to="/ritucharya">Ritucharya: the six seasons</Link>
+              <Link to="/about">About us</Link>
             </nav>
             <nav aria-label="Account" className="footer__col">
               <h2 className="footer__heading">Account</h2>
@@ -192,10 +202,20 @@ export default function Layout() {
                 </>
               )}
             </nav>
+            <section aria-labelledby="footer-contact" className="footer__col footer__contact">
+              <h2 id="footer-contact" className="footer__heading">
+                Talk to us
+              </h2>
+              <p className="muted">{BUSINESS.proprietor}, on WhatsApp or by phone.</p>
+              <ContactLinks />
+            </section>
           </div>
           <div className="container footer__bottom">
             <small>© {year} Healthmarg</small>
             <small>Guidance, not a substitute for medical care. Please see a qualified doctor for any health problem.</small>
+            <small className="footer__registration">
+              {BUSINESS.tradeName} · Proprietor {BUSINESS.proprietor} · {BUSINESS.place} · GSTIN {BUSINESS.gstin} · {fssaiText()}
+            </small>
           </div>
         </footer>
       </Suspense>

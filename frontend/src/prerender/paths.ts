@@ -1,5 +1,5 @@
 /** The public pages whose HTML is built in advance (docs/page-speed.md). Articles are served by the API. */
-export const PRERENDER_PATHS = ['/', '/ritucharya', '/articles', '/terms', '/privacy'] as const;
+export const PRERENDER_PATHS = ['/', '/ritucharya', '/about', '/articles', '/terms', '/privacy'] as const;
 
 export type PrerenderPath = (typeof PRERENDER_PATHS)[number];
 
@@ -10,6 +10,7 @@ export type PrerenderPath = (typeof PRERENDER_PATHS)[number];
 export const PRERENDER_PAGE_MODULES: Record<PrerenderPath, string | null> = {
   '/': null,
   '/ritucharya': 'src/pages/RitucharyaPage.tsx',
+  '/about': 'src/pages/about/AboutPage.tsx',
   '/articles': 'src/pages/articles/ArticlesPage.tsx',
   '/terms': 'src/pages/LegalPage.tsx',
   '/privacy': 'src/pages/LegalPage.tsx',

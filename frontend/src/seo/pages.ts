@@ -23,6 +23,12 @@ export const STATIC_PAGES: readonly PageSeo[] = [
     title: 'Ritucharya: living by the six seasons · Healthmarg',
     description: 'Ritucharya is Ayurveda’s guide to the six seasons: what to eat, how to move and what to avoid as the year turns.',
   },
+  {
+    path: '/about',
+    title: 'About Healthmarg: our sources and what we do · Healthmarg',
+    description:
+      'Healthmarg brings daily and seasonal routines, yoga and herbal knowledge from Charaka, Sushruta, Ashtanga Hridaya and the yoga texts into everyday life.',
+  },
   { path: '/terms', title: 'Terms of Use · Healthmarg', description: 'The terms for using Healthmarg.' },
   { path: '/privacy', title: 'Privacy Policy · Healthmarg', description: 'How Healthmarg handles your information.' },
 ];

@@ -131,6 +131,9 @@ try {
   check('Ritucharya raw HTML links its own code and CSS, and preloads the main fonts', /rel="modulepreload" crossorigin href="\/assets\/RitucharyaPage-/.test(ritu.text) && /rel="stylesheet" crossorigin href="\/assets\/RitucharyaPage-/.test(ritu.text) && (ritu.text.match(/rel="preload" as="font"/g) ?? []).length === 2);
   check('home raw HTML carries its text, with no inline script or style', home.text.includes('Ancient wisdom for') && !/<script>/.test(home.text) && !/\sstyle="/.test(home.text));
   check('article raw HTML starts empty: none of Home’s text, no path marker', open.text.includes('<div id="root"></div><noscript>') && !open.text.includes('Ancient wisdom') && !open.text.includes('hm-prerendered'));
+  const about = await get('/about');
+  check('About raw HTML carries its text and registration details, marked as built for /about', about.text.includes('Where our guidance comes from') && about.text.includes('23AEYPU5249R1Z7') && about.text.includes('data-prerendered="/about"') && about.text.includes('href="https://wa.me/918982579178?text='));
+  check('sitemap lists the About page in English and Hindi', sitemap.text.includes(`<loc>${SITE}/about</loc>`) && sitemap.text.includes(`<loc>${SITE}/about?lang=hi</loc>`));
   const shell = await get('/app.html');
   check('app.html is an empty page for hosts that can use it as their fallback', shell.status === 200 && shell.text.includes('<div id="root"></div>') && !shell.text.includes('hm-prerendered'));
 
@@ -206,7 +209,7 @@ try {
       if (document.readyState === 'interactive') window.__parsedH1 = document.querySelector('main h1');
     });
   });
-  for (const path of ['/', '/ritucharya', '/articles', '/terms']) {
+  for (const path of ['/', '/ritucharya', '/about', '/articles', '/terms']) {
     await kept.goto(`${WEB}${path}`, { waitUntil: 'load' });
     await kept.waitForTimeout(1500);
     const state = await kept.evaluate(() => ({

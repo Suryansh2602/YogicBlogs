@@ -11,7 +11,7 @@ const TEMPLATE_TTL_MS = 60 * 1000;
 const MAX_ARTICLES = 5000;
 
 const RITUS = ['shishira', 'vasanta', 'grishma', 'varsha', 'sharad', 'hemanta'];
-const FIXED_PATHS = ['/', '/articles', '/ritucharya', '/ritucharya?lang=hi', ...RITUS.flatMap((ritu) => [`/ritucharya?ritu=${ritu}`, `/ritucharya?ritu=${ritu}&lang=hi`])];
+const FIXED_PATHS = ['/', '/articles', '/about', '/about?lang=hi', '/ritucharya', '/ritucharya?lang=hi', ...RITUS.flatMap((ritu) => [`/ritucharya?ritu=${ritu}`, `/ritucharya?ritu=${ritu}&lang=hi`])];
 
 const LIVE_ARTICLES_SQL = `SELECT slug, COALESCE(content_updated_at, published_at) AS lastmod FROM articles
   WHERE status = 'published' AND published_at <= NOW() AND deleted_at IS NULL

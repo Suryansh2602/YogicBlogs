@@ -1,0 +1,29 @@
+/* ── Contact: WhatsApp button and call link ─────────────────────────────────────────────────── */
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.contact-links__icon {
+  flex: none;
+}
+
+.contact-links__call {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.contact-links__call:hover .contact-links__number {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contact-links__number {
+  white-space: nowrap;
+}

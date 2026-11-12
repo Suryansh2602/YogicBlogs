@@ -202,6 +202,10 @@
   font-weight: 600;
 }
 
+.home-why__contact {
+  margin-top: var(--space-6);
+}
+
 /* ── Home: sutra band ────────────────────────────────────────────────────────────────────────── */
 .sutra-band {
   margin-top: var(--space-8);
