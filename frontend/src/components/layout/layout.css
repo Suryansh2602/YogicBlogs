@@ -208,18 +208,31 @@
 
 .container.footer__grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.7fr) repeat(2, minmax(0, 0.9fr)) minmax(0, 1.4fr);
   gap: var(--space-6);
   padding-block: var(--space-7) var(--space-6);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .footer__grid {
     grid-template-columns: 1fr 1fr;
   }
-  .footer__about {
+  .footer__about,
+  .footer__contact {
     grid-column: 1 / -1;
   }
+}
+
+.footer__more {
+  font-weight: 600;
+}
+
+.footer__contact p {
+  margin: 0 0 var(--space-1);
+}
+
+.footer__registration {
+  flex-basis: 100%;
 }
 
 .footer__about {
@@ -239,12 +252,13 @@
   gap: var(--space-2);
 }
 
-.footer__col a {
+/* The column's own links only, not the contact button inside it. */
+.footer__col > a {
   color: var(--text-muted);
   text-decoration: none;
 }
 
-.footer__col a:hover {
+.footer__col > a:hover {
   color: var(--text);
   text-decoration: underline;
   text-underline-offset: 3px;
