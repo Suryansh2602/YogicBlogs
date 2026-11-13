@@ -10,6 +10,7 @@
 | [admin-guide.md](admin-guide.md) | The admin account: setup, daily sign-in, recovery and changing the setup code (step by step), plus the technical reference |
 | [seo.md](seo.md) | Search engines: decisions, how articles are served to crawlers, launch settings and the owner's steps |
 | [page-speed.md](page-speed.md) | Why phones waited, prerendering the public pages, the rules that keep hydration correct, host settings, results |
+| [products.md](products.md) | Products shop plan: catalogue, ordering on WhatsApp, the rules for each kind of product, data, API, priority order, questions for the owner |
 | [security.md](security.md) | Credential handling, DB least privilege, hardening checklist |
 | [workflow.md](workflow.md) | Branch per task; Developer → Reviewer → Tester → owner review stream |
 
